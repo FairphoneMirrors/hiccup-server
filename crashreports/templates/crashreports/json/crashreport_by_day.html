@@ -1,0 +1,11 @@
+{{ '{' }}
+ "label": "crash reports per day",
+ "data" : [
+{% for entry in entries  %}
+  [{{ entry.date_created }}, {{entry.created_count}} ]
+        {% if not forloop.last %}
+            ,
+        {% endif %}
+{% endfor %}
+]
+{{ '}' }}
