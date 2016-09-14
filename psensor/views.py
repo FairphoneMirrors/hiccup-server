@@ -1,7 +1,6 @@
 from models import PSensorSetting
 from rest_framework import viewsets
 from serializers import PSensorSettingSerializer
-from rest_framework.decorators import detail_route, list_route
 from rest_framework.permissions import BasePermission
 
 class IsCreationOrIsAuthenticated(BasePermission):
@@ -14,7 +13,6 @@ class IsCreationOrIsAuthenticated(BasePermission):
                 return False
         else:
             return True
-
 
 
 class PSensorSettingViewSet(viewsets.ModelViewSet):

@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'crashreports',
     'psensor',
+    'crispy_forms',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -117,7 +118,8 @@ USE_TZ = True
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-    )
+    ),
+    'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.DjangoFilterBackend',)
 }
 
 # Static files (CSS, JavaScript, Images)
