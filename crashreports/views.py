@@ -51,7 +51,13 @@ def index(request):
         else:
             return HttpResponse(status=400)
     else:
-        return HttpResponse(status=400)
+        return HttpResponse(status=400) 
+
+@login_required
+def hiccup_stats(request):
+    template = loader.get_template('crashreports/hiccup_stats.html')
+    return HttpResponse(template.render({}, request))
+
 
 class IsCreationOrIsAuthenticated(BasePermission):
     def has_permission(self, request, view):
