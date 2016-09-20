@@ -7,4 +7,4 @@ class CrashReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Crashreport
         fields = ('pk','uuid', 'uptime', 'build_fingerprint', 'boot_reason',
-        'power_on_reason', 'power_off_reason', 'aux_data', 'date')
+        'power_on_reason', 'power_off_reason', 'aux_data', 'date','app_version', 'report_type')

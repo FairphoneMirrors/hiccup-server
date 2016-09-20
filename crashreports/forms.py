@@ -11,3 +11,5 @@ class CrashreportForm(forms.Form):
     aux_data = forms.CharField()
     crashreport = forms.FileField(required=False)
     date = forms.DateTimeField()
+    report_type = forms.CharField()
+    app_version = forms.IntegerField()

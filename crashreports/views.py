@@ -20,7 +20,6 @@ from rest_framework import generics
 import django_filters
 from django.template import loader
 
-
 import datetime
 import time
 
@@ -33,31 +32,44 @@ def index(request):
     if request.method == 'POST':
         form = CrashreportForm(request.POST, request.FILES)
         if form.is_valid():
+            # DEAL with the old version of the app:
+            if 'app_version' not in request.POST:
+                app_version = 0
+                boot_reason=form.cleaned_data['boot_reason'],
+                report_type = "FAKE_REPORT" if boot_reason == "FAKECRASH" else "CRASH_REPORT",
+            else:
+                app_version = form.cleaned_data['app_version']
+                boot_reason = form.cleaned_data['boot_reason']
+                report_type = form.cleaned_data["report_type"]
+
             new_cr = Crashreport(uuid=form.cleaned_data['uuid'],
                         aux_data=form.cleaned_data['aux_data'],
                         uptime=form.cleaned_data['uptime'],
-                        boot_reason=form.cleaned_data['boot_reason'],
+                        boot_reason=boot_reason,
                         power_on_reason=form.cleaned_data['power_on_reason'],
                         power_off_reason=form.cleaned_data['power_off_reason'],
                         build_fingerprint=form.cleaned_data['build_fingerprint'],
-                        date=form.cleaned_data['date'])
+                        date=form.cleaned_data['date'],
+                        app_version = app_version,
+                        report_type = report_type)
+
             try:
                 new_cr.crashreport_file = request.FILES['crashreport']
             except:
                 new_cr.crashreport_file = None
+
             new_cr.save()
             # Redirect to the document list after POST
             return HttpResponse(status=204)
         else:
             return HttpResponse(status=400)
     else:
-        return HttpResponse(status=400) 
+        return HttpResponse(status=400)
 
 @login_required
 def hiccup_stats(request):
     template = loader.get_template('crashreports/hiccup_stats.html')
     return HttpResponse(template.render({}, request))
-
 
 class IsCreationOrIsAuthenticated(BasePermission):
     def has_permission(self, request, view):
@@ -74,7 +86,6 @@ class ListFilter(django_filters.Filter):
         value_list = value.split(u',')
         return super(ListFilter, self).filter(qs, django_filters.fields.Lookup(value_list, 'in'))
 
-
 class CrashreportFilter(filters.FilterSet):
     start_date = django_filters.DateTimeFilter(name="date", lookup_expr='gte')
     end_date = django_filters.DateTimeFilter(name="date", lookup_expr='lte')
@@ -82,7 +93,6 @@ class CrashreportFilter(filters.FilterSet):
     class Meta:
         model = Crashreport
         fields = ['build_fingerprint','boot_reason', 'power_on_reason', 'power_off_reason']
-
 
 class CrashreportViewSet(viewsets.ModelViewSet):
     queryset = Crashreport.objects.all()

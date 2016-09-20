@@ -8,6 +8,8 @@ def crashreport_file_name(instance, filename):
 
 class Crashreport(models.Model):
     uuid = models.CharField(max_length=200)
+    report_type = models.CharField(max_length=200)
+    app_version = models.IntegerField()
     uptime = models.CharField(max_length=200)
     build_fingerprint = models.CharField(max_length=200)
     boot_reason = models.CharField(max_length=200)
