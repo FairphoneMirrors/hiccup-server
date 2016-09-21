@@ -40,8 +40,8 @@ def index(request):
             # DEAL with the old version of the app:
             if 'app_version' not in request.POST:
                 app_version = 0
-                boot_reason=form.cleaned_data['boot_reason'],
-                report_type = "FAKE_REPORT" if boot_reason == "FAKECRASH" else "CRASH_REPORT",
+                boot_reason=form.cleaned_data['boot_reason']
+                report_type = "FAKE_REPORT" if boot_reason == "FAKECRASH" else "CRASH_REPORT"
             else:
                 app_version = form.cleaned_data['app_version']
                 boot_reason = form.cleaned_data['boot_reason']
