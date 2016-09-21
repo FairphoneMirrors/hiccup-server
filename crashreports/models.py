@@ -3,7 +3,7 @@ from django.db import models
 import datetime
 
 def crashreport_file_name(instance, filename):
-    return '/'.join(['saved_crashreports', instance.uuid, str(datetime.date.today().year), str(datetime.date.today().month), str(datetime.date.today().day), filename])
+    return '/'.join(["crashreport_uploads", instance.uuid, str(datetime.date.today().year), str(datetime.date.today().month), str(datetime.date.today().day), filename])
 
 
 class Crashreport(models.Model):
@@ -17,4 +17,13 @@ class Crashreport(models.Model):
     power_off_reason = models.CharField(max_length=200)
     aux_data = models.CharField(max_length=200)
     date = models.DateTimeField()
-    crashreport_file = models.FileField(upload_to=crashreport_file_name,null=True, blank=True)
+    crashreport_file = models.FileField(upload_to=crashreport_file_name, null=True, blank=True)
+
+    def crashreport_file_link(self):
+        if self.crashreport_file:
+            return '<a href="/hiccup/' + str(self.crashreport_file.url) + '">' + 'Logfile' + '</a>'
+        else:
+            return '<a href="''"></a>'
+
+    crashreport_file_link.allow_tags = True
+    crashreport_file_link.short_description = "File Link"

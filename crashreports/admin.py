@@ -4,5 +4,5 @@ from  models import Crashreport
 
 @admin.register(Crashreport)
 class CrashreportAdmin(admin.ModelAdmin):
-    list_display = ['build_fingerprint', 'boot_reason', 'power_on_reason', 'power_off_reason', 'aux_data', 'date', 'uuid']
+    list_display = ['report_type', 'build_fingerprint', 'boot_reason', 'power_on_reason', 'power_off_reason', 'aux_data', 'date', 'uuid', 'crashreport_file_link']
     pass

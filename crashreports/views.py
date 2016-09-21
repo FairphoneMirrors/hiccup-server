@@ -1,29 +1,34 @@
 # -*- coding: utf-8 -*-
-from django.shortcuts import render_to_response
-from django.shortcuts import render
-from django.http import HttpResponseRedirect
-from django.http import HttpResponse
-from django.core.urlresolvers import reverse
-
-from crashreports.models import Crashreport
-from crashreports.forms import CrashreportForm
-from django.views.decorators.csrf import csrf_exempt
-from django.http import Http404
-
-from django.contrib.auth.decorators import login_required
-from django.db.models import Count
-from rest_framework import viewsets
-from serializers import CrashReportSerializer
-from rest_framework.permissions import BasePermission
-from rest_framework import filters
-from rest_framework import generics
-import django_filters
-from django.template import loader
 
 import datetime
+import django_filters
+import os
 import time
 
+from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.core.urlresolvers import reverse
+from django.db.models import Count
+from django.http import Http404
+from django.http import HttpResponse
+from django.http import HttpResponseRedirect
+from django.shortcuts import render
+from django.shortcuts import render_to_response
+from django.template import loader
+from django.views.decorators.csrf import csrf_exempt
+from django.views.static import serve
+
 from ratelimit.decorators import ratelimit
+
+from rest_framework import filters
+from rest_framework import generics
+from rest_framework import viewsets
+from rest_framework.permissions import BasePermission
+
+from crashreports.forms import CrashreportForm
+from crashreports.models import Crashreport
+from serializers import CrashReportSerializer
+
 
 @ratelimit( key='ip', rate='100/h')
 @csrf_exempt
@@ -70,6 +75,19 @@ def index(request):
 def hiccup_stats(request):
     template = loader.get_template('crashreports/hiccup_stats.html')
     return HttpResponse(template.render({}, request))
+
+
+@login_required
+def serve_saved_crashreport (request, path):
+    if settings.DEBUG == False:
+        response = HttpResponse()
+        response["Content-Disposition"] = "attachment; filename={0}".format(
+            os.path.basename(path))
+        response['X-Accel-Redirect'] = "/hiccup/protected/{0}".format(path)
+        return response
+    else:
+        return serve(request, os.path.basename(path), os.path.dirname(settings.BASE_DIR + "/crashreport_uploads/" + path))
+
 
 class IsCreationOrIsAuthenticated(BasePermission):
     def has_permission(self, request, view):
