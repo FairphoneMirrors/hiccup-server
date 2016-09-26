@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '7u+#ha3hk!x+*)clhs46%n*)w1q+5s4+yoc#1!nm0b%fwwrud@'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False 
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'crashreports',
     'psensor',
     'crispy_forms',
+    'bootstrap3',
 ]
 
 MIDDLEWARE_CLASSES = [

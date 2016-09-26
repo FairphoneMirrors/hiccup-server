@@ -71,9 +71,18 @@ def index(request):
     else:
         return HttpResponse(status=400)
 
+
+
 @login_required
-def hiccup_stats(request):
-    template = loader.get_template('crashreports/hiccup_stats.html')
+def hiccup_stats(request,version=2):
+    version = int(version)
+    templates = {
+        1 : 'crashreports/hiccup_stats.html',
+        2 : 'crashreports/hiccup_stats2.html',
+    }
+    if version not in  templates:
+        version = 2
+    template = loader.get_template(templates[version])
     return HttpResponse(template.render({}, request))
 
 
@@ -110,7 +119,7 @@ class CrashreportFilter(filters.FilterSet):
     boot_reason = ListFilter(name='boot_reason')
     class Meta:
         model = Crashreport
-        fields = ['build_fingerprint','boot_reason', 'power_on_reason', 'power_off_reason']
+        fields = ['build_fingerprint','boot_reason', 'power_on_reason', 'power_off_reason', 'report_type']
 
 class CrashreportViewSet(viewsets.ModelViewSet):
     queryset = Crashreport.objects.all()
@@ -118,3 +127,15 @@ class CrashreportViewSet(viewsets.ModelViewSet):
     permission_classes = [IsCreationOrIsAuthenticated]
     filter_backends = (filters.DjangoFilterBackend,)
     filter_class = CrashreportFilter
+    
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+class CrashReportPerDayView(APIView):
+    permission_classes = [IsCreationOrIsAuthenticated]
+    def get(self, request, format=None):
+        """
+        Return a list of all users.
+        """
+        result = Crashreport.objects.filter(date__gt="2016-01-01").extra({'date':"date(date)"}).values('date').annotate(count=Count('id'))
+        return Response(result)
