@@ -5,8 +5,7 @@ from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     url(r'^hiccup/admin/', admin.site.urls),
-    url(r'^psensor/', include('psensor.urls')),
     url(r'^hiccup/', include('crashreports.urls')),
     url(r'^accounts/login/$', auth_views.login),
-    url(r'^.*$', RedirectView.as_view(url='https://fairphone.com', permanent=False), name='index')
+#    url(r'^.*$', RedirectView.as_view(url='https://fairphone.com', permanent=False), name='index')
 ]
