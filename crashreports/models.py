@@ -50,10 +50,9 @@ class Crashreport(models.Model):
 
 
 class LogFile(models.Model):
-    logfile_type = models.TextField(max_length=36)
-    device = models.ForeignKey(Device, on_delete=models.CASCADE)
+    logfile_type = models.TextField(max_length=36, default="last_kmsg")
     crashreport = models.ForeignKey(Crashreport, on_delete=models.CASCADE)
-    crashreport_file = models.FileField(upload_to=crashreport_file_name)
+    logfile = models.FileField(upload_to=crashreport_file_name)
 
 
 class HeartBeat(models.Model):
