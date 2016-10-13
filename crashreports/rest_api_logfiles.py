@@ -18,7 +18,7 @@ from crashreports.permissions import user_is_hiccup_staff
 @api_view(http_method_names=['POST'], )
 @parser_classes(FileUploadParser)
 @permission_classes(IsAuthenticated,)
-def logfile_put(request, crashreport_pk):
+def logfile_put(request):
     try:
         crashreport = Crashreport.objects.get(crashreport_pk)
     except:

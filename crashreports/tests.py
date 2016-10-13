@@ -83,7 +83,7 @@ class HeartbeatListTestCase(APITestCase):
         self.setup_users()
         self.data = self.create_dummy_data(self.uuid)
         self.url = "/hiccup/api/v1/heartbeats/"
-        
+        self.url_by_uuid = "/hiccup/api/v1/devices/{}/heartbeats/"
 
     def setup_users(self):
         self.password = "test"
@@ -104,7 +104,6 @@ class HeartbeatListTestCase(APITestCase):
                                     + self.other_token)
         self.noauth_client = APIClient()
 
-                                    
     def create_dummy_data(self, uuid="not set"):
         return {
             'uuid': uuid,
@@ -148,8 +147,33 @@ class HeartbeatListTestCase(APITestCase):
         self.post_multiple(self.user, self.data, count)
         request = self.admin.get(self.url)
         self.assertEqual(request.status_code, 200)
-        self.assertTrue(len(request.data) >= count)
-        
+        self.assertTrue(len(request.data) == count)
+
+    def test_retrieve_single(self, user=None, expected_result=200):
+        count = 5
+        if user is None:
+            user = self.admin
+        self.post_multiple(self.user, self.data, count)
+        url = "{}1/".format(self.url)
+        request = user.get(url)
+        self.assertEqual(request.status_code, expected_result)
+
+    def test_retrieve_single_noauth(self):
+        self.test_retrieve_single(user=self.user, expected_result=403)
+
+    def test_retrieve_single_device_owner(self):
+        self.test_retrieve_single(self.noauth_client, 401)
+
+    def test_list_by_uuid(self):
+        count = 5
+        self.post_multiple(self.user, self.data, count)
+        self.post_multiple(self.admin, self.create_dummy_data(self.other_uuid),
+                           count)
+        url = self.url_by_uuid.format(self.uuid)
+        request = self.admin.get(url)
+        self.assertEqual(request.status_code, 200)
+        self.assertTrue(len(request.data) == count)
+
     def test_list_noauth(self):
         count = 5
         self.post_multiple(self.user, self.data, count)
@@ -183,7 +207,7 @@ class CrashreportListTestCase(HeartbeatListTestCase):
         self.setup_users()
         self.data = self.create_dummy_data(self.uuid)
         self.url = "/hiccup/api/v1/crashreports/"
-
+        self.url_by_uuid = "/hiccup/api/v1/devices/{}/crashreports/"
 
     def create_dummy_data(self, uuid="not set"):
         return create_crashreport(uuid)
@@ -221,5 +245,4 @@ class LogfileUploadTest(APITestCase):
                                     + self.other_token)
 
     def test_Logfile_upload_as_admin(self):
-        client = APIClient()
-        client.login(username='myuser', password='test')
+        pass

@@ -1,6 +1,4 @@
 from rest_framework import serializers
-from rest_framework.utils.serializer_helpers import ReturnDict
-
 from rest_framework.exceptions import NotFound
 from crashreports.models import Crashreport
 from crashreports.models import Device
@@ -48,7 +46,7 @@ class HeartBeatSerializer(serializers.ModelSerializer):
     uuid = serializers.CharField(max_length=64)
     id = PrivateField()
     device_local_id = serializers.IntegerField(required=False)
-    
+
     class Meta:
         model = HeartBeat
         exclude = ('device',)
