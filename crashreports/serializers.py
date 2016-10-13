@@ -1,15 +1,31 @@
 from rest_framework import serializers
+from rest_framework.utils.serializer_helpers import ReturnDict
 
 from rest_framework.exceptions import NotFound
 from crashreports.models import Crashreport
 from crashreports.models import Device
 from crashreports.models import HeartBeat
 from rest_framework import permissions
+from crashreports.permissions import user_is_hiccup_staff
+
+
+class PrivateField(serializers.ReadOnlyField):
+
+    def get_attribute(self, instance):
+        """
+        Given the *outgoing* object instance, return the primitive value
+        that should be used for this field.
+        """
+        if user_is_hiccup_staff(self.context['request'].user):
+            return super(PrivateField, self).get_attribute(instance)
+        return -1
 
 
 class CrashReportSerializer(serializers.ModelSerializer):
     permission_classes = (permissions.AllowAny,)
     uuid = serializers.CharField(max_length=64)
+    id = PrivateField()
+    device_local_id = serializers.IntegerField(required=False)
 
     class Meta:
         model = Crashreport
@@ -30,7 +46,9 @@ class CrashReportSerializer(serializers.ModelSerializer):
 class HeartBeatSerializer(serializers.ModelSerializer):
     permission_classes = (permissions.AllowAny,)
     uuid = serializers.CharField(max_length=64)
-
+    id = PrivateField()
+    device_local_id = serializers.IntegerField(required=False)
+    
     class Meta:
         model = HeartBeat
         exclude = ('device',)

@@ -80,19 +80,31 @@ class ListDevicesTestCase(APITestCase):
 class HeartbeatListTestCase(APITestCase):
 
     def setUp(self):
+        self.setup_users()
+        self.data = self.create_dummy_data(self.uuid)
+        self.url = "/hiccup/api/v1/heartbeats/"
+        
+
+    def setup_users(self):
         self.password = "test"
-        self.admin = User.objects.create_superuser(
-            'myuser', 'myemail@test.com', self.password)
-        # we need a device
         request = self.client.post("/hiccup/api/v1/devices/register/", {})
         self.uuid = request.data['uuid']
         self.token = request.data['token']
         request = self.client.post("/hiccup/api/v1/devices/register/", {})
         self.other_uuid = request.data['uuid']
         self.other_token = request.data['token']
-        self.data = self.create_dummy_data(self.uuid)
-        self.url = "/hiccup/api/v1/heartbeats/"
+        self.admin = User.objects.create_superuser(
+            'myuser', 'myemail@test.com', self.password)
+        self.admin = APIClient()
+        self.admin.login(username='myuser', password='test')
+        self.user = APIClient()
+        self.other_user = APIClient()
+        self.user.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        self.other_user.credentials(HTTP_AUTHORIZATION='Token '
+                                    + self.other_token)
+        self.noauth_client = APIClient()
 
+                                    
     def create_dummy_data(self, uuid="not set"):
         return {
             'uuid': uuid,
@@ -103,99 +115,111 @@ class HeartbeatListTestCase(APITestCase):
         }
 
     def test_create_no_auth(self):
-        client = APIClient()
-        request = client.post(self.url, self.data)
+        request = self.noauth_client.post(self.url, self.data)
         self.assertEqual(request.status_code, 401)
 
     def test_create_as_admin(self):
-        client = APIClient()
-        client.login(username='myuser', password='test')
-        request = client.post(self.url, self.data)
+        request = self.admin.post(self.url, self.data)
         self.assertEqual(request.status_code, 201)
-        client.logout()
+        self.assertTrue(request.data['id'] > 0)
 
     def test_create_as_admin_not_existing_device(self):
-        client = APIClient()
-        client.login(username='myuser', password='test')
-        request = client.post(self.url,
-                              self.create_dummy_data())
+        request = self.admin.post(self.url,
+                                  self.create_dummy_data())
         self.assertEqual(request.status_code, 404)
-        client.logout()
 
     def test_create_as_uuid_owner(self):
-        client = APIClient()
-        client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        request = client.post(self.url,
-                              self.create_dummy_data(self.uuid))
+        request = self.user.post(self.url,
+                                 self.create_dummy_data(self.uuid))
         self.assertEqual(request.status_code, 201)
-        client.credentials()
+        self.assertTrue(request.data['id'] == -1)
 
     def test_create_as_uuid_not_owner(self):
-        client = APIClient()
-        client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        request = client.post(self.url,
-                              self.create_dummy_data(self.other_uuid))
+        request = self.user.post(self.url,
+                                 self.create_dummy_data(self.other_uuid))
         self.assertEqual(request.status_code, 403)
-        client.credentials()
 
-    def post_heartbeats(self, client, heartbeat, count=5):
+    def post_multiple(self, client, data, count=5):
         for i in range(count):
-            client.post(self.url, heartbeat)
+            client.post(self.url, data)
 
     def test_list(self):
         count = 5
-        client = APIClient()
-        client.login(username='myuser', password='test')
-        self.post_heartbeats(client, self.data, count)
-        request = client.get(self.url)
+        self.post_multiple(self.user, self.data, count)
+        request = self.admin.get(self.url)
         self.assertEqual(request.status_code, 200)
         self.assertTrue(len(request.data) >= count)
-        client.logout()
-
+        
     def test_list_noauth(self):
         count = 5
-        client = APIClient()
-        client.login(username='myuser', password='test')
-        self.post_heartbeats(client, self.data, count)
-        client.logout()
-        request = client.get(self.url)
+        self.post_multiple(self.user, self.data, count)
+        request = self.noauth_client.get(self.url)
         self.assertEqual(request.status_code, 401)
 
     def test_list_device_owner(self):
         count = 5
-        client = APIClient()
-        client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        self.post_heartbeats(client, self.data, count)
-        request = client.get(self.url)
-        client.logout()
+        self.post_multiple(self.user, self.data, count)
+        request = self.user.get(self.url)
         self.assertEqual(request.status_code, 403)
+
+
+def create_crashreport(uuid="not set"):
+    return {
+        'uuid': uuid,
+        'is_fake_report': 0,
+        'app_version': 2,
+        'uptime': "2 Hours",
+        'build_fingerprint': "models.CharField(max_length=200)",
+        'boot_reason': "models.CharField(max_length=200)",
+        'power_on_reason': "models.CharField(max_length=200)",
+        'power_off_reason': "models.CharField(max_length=200)",
+        'date': str(datetime.datetime(year=2016, month=1, day=1))
+    }
 
 
 class CrashreportListTestCase(HeartbeatListTestCase):
 
     def setUp(self):
-        self.password = "test"
-        self.admin = User.objects.create_superuser(
-            'myuser', 'myemail@test.com', self.password)
+        self.setup_users()
+        self.data = self.create_dummy_data(self.uuid)
+        self.url = "/hiccup/api/v1/crashreports/"
+
+
+    def create_dummy_data(self, uuid="not set"):
+        return create_crashreport(uuid)
+
+
+class LogfileUploadTest(APITestCase):
+    def setUp(self):
+        self.setup_users()
         # we need a device
+        self.user.post("/hiccup/api/v1/crashreports/",
+                       create_crashreport(self.uuid))
+        self.user.post("/hiccup/api/v1/crashreports/",
+                       create_crashreport(self.uuid))
+        self.user.post("/hiccup/api/v1/crashreports/",
+                       create_crashreport(self.other_uuid))
+        self.user.post("/hiccup/api/v1/crashreports/",
+                       create_crashreport(self.other_uuid))
+
+    def setup_users(self):
+        self.password = "test"
         request = self.client.post("/hiccup/api/v1/devices/register/", {})
         self.uuid = request.data['uuid']
         self.token = request.data['token']
         request = self.client.post("/hiccup/api/v1/devices/register/", {})
         self.other_uuid = request.data['uuid']
         self.other_token = request.data['token']
-        self.data = self.create_dummy_data(self.uuid)
-        self.url = "/hiccup/api/v1/crashreports/"
+        self.admin = User.objects.create_superuser(
+            'myuser', 'myemail@test.com', self.password)
+        self.admin = APIClient()
+        self.admin.login(username='myuser', password='test')
+        self.user = APIClient()
+        self.other_user = APIClient()
+        self.user.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        self.other_user.credentials(HTTP_AUTHORIZATION='Token '
+                                    + self.other_token)
 
-    def create_dummy_data(self, uuid="not set"):
-        return {
-            'uuid': uuid,
-            'is_fake_report': 0,
-            'app_version': 2,
-            'uptime': "2 Hours",
-            'build_fingerprint': "models.CharField(max_length=200)",
-            'boot_reason': "models.CharField(max_length=200)",
-            'power_on_reason': "models.CharField(max_length=200)",
-            'power_off_reason': "models.CharField(max_length=200)",
-            'date': str(datetime.datetime(year=2016, month=1, day=1))
-        }
+    def test_Logfile_upload_as_admin(self):
+        client = APIClient()
+        client.login(username='myuser', password='test')

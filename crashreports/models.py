@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+from django.db import transaction
 
 from django.contrib.auth.models import User
 from taggit.managers import TaggableManager
@@ -20,6 +21,22 @@ class Device(models.Model):
     tags = TaggableManager(blank=True)
     last_heartbeat = models.DateTimeField(null=True, blank=True)
     token = models.CharField(max_length=200, null=True, blank=True)
+    next_per_crashreport_key = models.PositiveIntegerField(default=1)
+    next_per_heartbeat_key = models.PositiveIntegerField(default=1)
+
+    @transaction.atomic
+    def get_crashreport_key(self):
+        ret = self.next_per_crashreport_key
+        self.next_per_crashreport_key = self.next_per_crashreport_key + 1
+        self.save()
+        return ret
+
+    @transaction.atomic
+    def get_heartbeat_key(self):
+        ret = self.next_per_heartbeat_key
+        self.next_per_crashreport_key = self.next_per_heartbeat_key + 1
+        self.save()
+        return ret
 
 
 def crashreport_file_name(instance, filename):
@@ -42,6 +59,20 @@ class Crashreport(models.Model):
     power_off_reason = models.CharField(max_length=200)
     date = models.DateTimeField()
     tags = TaggableManager(blank=True)
+    device_local_id = models.PositiveIntegerField(blank=True)
+    next_crashreport_key = models.PositiveIntegerField(default=1)
+
+    @transaction.atomic
+    def get_logfile_key(self):
+        ret = self.next_logfile_key
+        self.next_logfile_key = self.next_logfile_key + 1
+        self.save()
+        return ret
+
+    def save(self, *args, **kwargs):
+        if not self.device_local_id:
+            self.device_local_id = self.device.get_crashreport_key()
+        super(Crashreport, self).save(*args, **kwargs)
 
     def _get_uuid(self):
         "Returns the person's full name."
@@ -53,6 +84,12 @@ class LogFile(models.Model):
     logfile_type = models.TextField(max_length=36, default="last_kmsg")
     crashreport = models.ForeignKey(Crashreport, on_delete=models.CASCADE)
     logfile = models.FileField(upload_to=crashreport_file_name)
+    crashreport_local_id = models.PositiveIntegerField(blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.device_local_id:
+            self.device_local_id = self.crashreport.next_logfile_key()
+        super(LogFile, self).save(*args, **kwargs)
 
 
 class HeartBeat(models.Model):
@@ -61,6 +98,12 @@ class HeartBeat(models.Model):
     uptime = models.CharField(max_length=200)
     build_fingerprint = models.CharField(max_length=200)
     date = models.DateTimeField()
+    device_local_id = models.PositiveIntegerField(blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.device_local_id:
+            self.device_local_id = self.device.get_heartbeat_key()
+        super(HeartBeat, self).save(*args, **kwargs)
 
     def _get_uuid(self):
         "Returns the person's full name."
