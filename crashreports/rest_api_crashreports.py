@@ -25,7 +25,7 @@ class RetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Crashreport.objects.all()
     permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
     serializer_class = CrashReportSerializer
-    multiple_lookup_fields = {'id', 'uuid', 'device_local_id'}
+    multiple_lookup_fields = {'id', 'device__uuid', 'device_local_id'}
 
     def get_object(self):
         queryset = self.get_queryset()

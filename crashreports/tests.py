@@ -164,6 +164,23 @@ class HeartbeatListTestCase(APITestCase):
     def test_retrieve_single_device_owner(self):
         self.test_retrieve_single(self.noauth_client, 401)
 
+    def test_retrieve_single_by_device(self, user=None, expected_result=200):
+        count = 5
+        if user is None:
+            user = self.admin
+        self.post_multiple(self.user, self.data, count)
+        url = "{}1/".format(self.url_by_uuid.format(self.uuid))
+        print(url)
+        request = user.get(url)
+        self.assertEqual(request.status_code, expected_result)
+
+    def test_retrieve_single_by_device_noauth(self):
+        self.test_retrieve_single_by_device(user=self.user,
+                                            expected_result=403)
+
+    def test_retrieve_single_by_device_device_owner(self):
+        self.test_retrieve_single_by_device(self.noauth_client, 401)
+
     def test_list_by_uuid(self):
         count = 5
         self.post_multiple(self.user, self.data, count)

@@ -15,7 +15,7 @@ urlpatterns = [
     url(r'^api/v1/crashreports/(?P<id>[0-9]+)/$',
         rest_api_crashreports.RetrieveUpdateDestroyView.as_view(),
         name='api_v1_crashreport'),
-    url(r'^api/v1/devices/(?P<uuid>[a-f0-9-]+)/crashreports/' +
+    url(r'^api/v1/devices/(?P<device__uuid>[a-f0-9-]+)/crashreports/' +
         '(?P<device_local_id>[0-9]+)/$',
         rest_api_crashreports.RetrieveUpdateDestroyView.as_view(),
         name='api_v1_crashreports_by_uuid'),
@@ -33,7 +33,7 @@ urlpatterns = [
     url(r'^api/v1/heartbeats/(?P<id>[0-9]+)/$',
         rest_api_heartbeats.RetrieveUpdateDestroyView.as_view(),
         name='api_v1_heatbeat'),
-    url(r'^api/v1/devices/(?P<uuid>[a-f0-9-]+)/heartbeats/' +
+    url(r'^api/v1/devices/(?P<device__uuid>[a-f0-9-]+)/heartbeats/' +
         '(?P<device_local_id>[0-9]+)/$',
         rest_api_heartbeats.RetrieveUpdateDestroyView.as_view(),
         name='api_v1_heartbeat_by_uuid'),

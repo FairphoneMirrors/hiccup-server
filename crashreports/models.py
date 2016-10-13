@@ -34,7 +34,7 @@ class Device(models.Model):
     @transaction.atomic
     def get_heartbeat_key(self):
         ret = self.next_per_heartbeat_key
-        self.next_per_crashreport_key = self.next_per_heartbeat_key + 1
+        self.next_per_heartbeat_key = self.next_per_heartbeat_key + 1
         self.save()
         return ret
 
