@@ -42,7 +42,7 @@ class CrashReportSerializer(serializers.ModelSerializer):
 
 
 class HeartBeatSerializer(serializers.ModelSerializer):
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (permissions.IsAuthenticated,)
     uuid = serializers.CharField(max_length=64)
     id = PrivateField()
     device_local_id = serializers.IntegerField(required=False)

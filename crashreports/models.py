@@ -42,8 +42,8 @@ class Device(models.Model):
 def crashreport_file_name(instance, filename):
     return '/'.join([
         "crashreport_uploads",
-        instance.device.uuid,
-        instance.crashreport.id,
+        instance.crashreport.device.uuid,
+        str(instance.crashreport.id),
         str(instance.crashreport.date),
         filename])
 
@@ -60,7 +60,7 @@ class Crashreport(models.Model):
     date = models.DateTimeField()
     tags = TaggableManager(blank=True)
     device_local_id = models.PositiveIntegerField(blank=True)
-    next_crashreport_key = models.PositiveIntegerField(default=1)
+    next_logfile_key = models.PositiveIntegerField(default=1)
 
     @transaction.atomic
     def get_logfile_key(self):
@@ -87,8 +87,8 @@ class LogFile(models.Model):
     crashreport_local_id = models.PositiveIntegerField(blank=True)
 
     def save(self, *args, **kwargs):
-        if not self.device_local_id:
-            self.device_local_id = self.crashreport.next_logfile_key()
+        if not self.crashreport_local_id:
+            self.crashreport_local_id = self.crashreport.get_logfile_key()
         super(LogFile, self).save(*args, **kwargs)
 
 

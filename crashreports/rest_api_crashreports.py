@@ -3,8 +3,6 @@ from crashreports.models import Crashreport
 from django.shortcuts import get_object_or_404
 from crashreports.permissions import HasRightsOrIsDeviceOwnerDeviceCreation
 from crashreports.serializers import CrashReportSerializer
-from rest_framework import exceptions
-import traceback 
 
 
 class ListCreateView(generics.ListCreateAPIView):

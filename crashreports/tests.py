@@ -1,7 +1,9 @@
 from django.contrib.auth.models import User
 from rest_framework.test import APITestCase
 from rest_framework.test import APIClient
+from rest_framework import status
 import datetime
+import tempfile
 
 # Create your tests here.
 
@@ -15,7 +17,7 @@ class DeviceTestCase(APITestCase):
         request = self.client.post("/hiccup/api/v1/devices/register/", {})
         self.assertTrue("token" in request.data)
         self.assertTrue("uuid" in request.data)
-        self.assertEqual(request.status_code, 200)
+        self.assertEqual(request.status_code, status.HTTP_200_OK)
 
 # Create your tests here.
 
@@ -40,20 +42,20 @@ class ListDevicesTestCase(APITestCase):
         request = client.get("/hiccup/api/v1/devices/", {})
         self.assertTrue("uuid" in request.data[1])
         self.assertTrue(len(request.data) >= 3)
-        self.assertEqual(request.status_code, 200)
+        self.assertEqual(request.status_code, status.HTTP_200_OK)
         client.logout()
 
     def test_device_list_unauth(self):
         client = APIClient()
         request = client.get("/hiccup/api/v1/devices/", {})
-        self.assertEqual(request.status_code, 401)
+        self.assertEqual(request.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_retrieve_device_auth(self):
         client = APIClient()
         client.login(username='myuser', password='test')
         request = client.get(
             "/hiccup/api/v1/devices/{}/".format(self.uuid_to_retrieve), {})
-        self.assertEqual(request.status_code, 200)
+        self.assertEqual(request.status_code, status.HTTP_200_OK)
         self.assertEqual(request.data['uuid'],  str(self.uuid_to_retrieve))
         self.assertEqual(request.data['token'],  self.token_to_retrieve)
         client.logout()
@@ -62,7 +64,7 @@ class ListDevicesTestCase(APITestCase):
         client = APIClient()
         request = client.get(
             "/hiccup/api/v1/devices/{}/".format(self.uuid_to_retrieve), {})
-        self.assertEqual(request.status_code, 401)
+        self.assertEqual(request.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_delete_device_auth(self):
         client = APIClient()
@@ -70,10 +72,10 @@ class ListDevicesTestCase(APITestCase):
         url = "/hiccup/api/v1/devices/{}/".format(self.uuid_to_delete)
         request = client.delete(
             url.format(self.uuid_to_delete), {})
-        self.assertEqual(request.status_code, 204)
+        self.assertEqual(request.status_code, status.HTTP_204_NO_CONTENT)
         request = client.delete(
             url.format(self.uuid_to_delete), {})
-        self.assertEqual(request.status_code, 404)
+        self.assertEqual(request.status_code, status.HTTP_404_NOT_FOUND)
         client.logout()
 
 
@@ -115,28 +117,28 @@ class HeartbeatListTestCase(APITestCase):
 
     def test_create_no_auth(self):
         request = self.noauth_client.post(self.url, self.data)
-        self.assertEqual(request.status_code, 401)
+        self.assertEqual(request.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_create_as_admin(self):
         request = self.admin.post(self.url, self.data)
-        self.assertEqual(request.status_code, 201)
+        self.assertEqual(request.status_code, status.HTTP_201_CREATED)
         self.assertTrue(request.data['id'] > 0)
 
     def test_create_as_admin_not_existing_device(self):
         request = self.admin.post(self.url,
                                   self.create_dummy_data())
-        self.assertEqual(request.status_code, 404)
+        self.assertEqual(request.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_create_as_uuid_owner(self):
         request = self.user.post(self.url,
                                  self.create_dummy_data(self.uuid))
-        self.assertEqual(request.status_code, 201)
+        self.assertEqual(request.status_code, status.HTTP_201_CREATED)
         self.assertTrue(request.data['id'] == -1)
 
     def test_create_as_uuid_not_owner(self):
         request = self.user.post(self.url,
                                  self.create_dummy_data(self.other_uuid))
-        self.assertEqual(request.status_code, 403)
+        self.assertEqual(request.status_code, status.HTTP_403_FORBIDDEN)
 
     def post_multiple(self, client, data, count=5):
         for i in range(count):
@@ -146,10 +148,11 @@ class HeartbeatListTestCase(APITestCase):
         count = 5
         self.post_multiple(self.user, self.data, count)
         request = self.admin.get(self.url)
-        self.assertEqual(request.status_code, 200)
+        self.assertEqual(request.status_code, status.HTTP_200_OK)
         self.assertTrue(len(request.data) == count)
 
-    def test_retrieve_single(self, user=None, expected_result=200):
+    def test_retrieve_single(self, user=None,
+                             expected_result=status.HTTP_200_OK):
         count = 5
         if user is None:
             user = self.admin
@@ -159,27 +162,31 @@ class HeartbeatListTestCase(APITestCase):
         self.assertEqual(request.status_code, expected_result)
 
     def test_retrieve_single_noauth(self):
-        self.test_retrieve_single(user=self.user, expected_result=403)
+        self.test_retrieve_single(user=self.user,
+                                  expected_result=status.HTTP_403_FORBIDDEN)
 
     def test_retrieve_single_device_owner(self):
-        self.test_retrieve_single(self.noauth_client, 401)
+        self.test_retrieve_single(self.noauth_client,
+                                  status.HTTP_401_UNAUTHORIZED)
 
-    def test_retrieve_single_by_device(self, user=None, expected_result=200):
+    def test_retrieve_single_by_device(self, user=None,
+                                       expected_result=status.HTTP_200_OK):
         count = 5
         if user is None:
             user = self.admin
         self.post_multiple(self.user, self.data, count)
         url = "{}1/".format(self.url_by_uuid.format(self.uuid))
-        print(url)
         request = user.get(url)
         self.assertEqual(request.status_code, expected_result)
 
     def test_retrieve_single_by_device_noauth(self):
-        self.test_retrieve_single_by_device(user=self.user,
-                                            expected_result=403)
+        self.test_retrieve_single_by_device(
+            user=self.user,
+            expected_result=status.HTTP_403_FORBIDDEN)
 
     def test_retrieve_single_by_device_device_owner(self):
-        self.test_retrieve_single_by_device(self.noauth_client, 401)
+        self.test_retrieve_single_by_device(
+            self.noauth_client, status.HTTP_401_UNAUTHORIZED)
 
     def test_list_by_uuid(self):
         count = 5
@@ -188,20 +195,20 @@ class HeartbeatListTestCase(APITestCase):
                            count)
         url = self.url_by_uuid.format(self.uuid)
         request = self.admin.get(url)
-        self.assertEqual(request.status_code, 200)
+        self.assertEqual(request.status_code, status.HTTP_200_OK)
         self.assertTrue(len(request.data) == count)
 
     def test_list_noauth(self):
         count = 5
         self.post_multiple(self.user, self.data, count)
         request = self.noauth_client.get(self.url)
-        self.assertEqual(request.status_code, 401)
+        self.assertEqual(request.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_list_device_owner(self):
         count = 5
         self.post_multiple(self.user, self.data, count)
         request = self.user.get(self.url)
-        self.assertEqual(request.status_code, 403)
+        self.assertEqual(request.status_code, status.HTTP_403_FORBIDDEN)
 
 
 def create_crashreport(uuid="not set"):
@@ -253,13 +260,21 @@ class LogfileUploadTest(APITestCase):
         self.other_token = request.data['token']
         self.admin = User.objects.create_superuser(
             'myuser', 'myemail@test.com', self.password)
-        self.admin = APIClient()
-        self.admin.login(username='myuser', password='test')
         self.user = APIClient()
         self.other_user = APIClient()
         self.user.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         self.other_user.credentials(HTTP_AUTHORIZATION='Token '
                                     + self.other_token)
 
+    def get_url(self, uuid, report_id, filename):
+        return ("/hiccup/api/v1/devices/{}/crashreports/{}/logfile_put/{}/".
+                format(uuid, report_id, "test.log"))
+
     def test_Logfile_upload_as_admin(self):
-        pass
+        self.client.force_authenticate(self.admin)
+        f = tempfile.NamedTemporaryFile('w+', suffix=".log", delete=True)
+        f.write(u"blihblahblub")
+        request = self.client.post(
+            self.get_url(self.uuid, 1, f.name),
+            {'file': f}, format="multipart")
+        self.assertEqual(status.HTTP_201_CREATED, request.status_code)
