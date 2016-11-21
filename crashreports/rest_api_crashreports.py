@@ -3,6 +3,8 @@ from crashreports.models import Crashreport
 from django.shortcuts import get_object_or_404
 from crashreports.permissions import HasRightsOrIsDeviceOwnerDeviceCreation
 from crashreports.serializers import CrashReportSerializer
+from rest_framework import status
+from rest_framework.response import Response
 
 
 class ListCreateView(generics.ListCreateAPIView):
@@ -17,6 +19,13 @@ class ListCreateView(generics.ListCreateAPIView):
             self.queryset = Crashreport.objects.filter(
                 device__uuid=kwargs['uuid'])
         return generics.ListCreateAPIView.dispatch(self, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        serializer.save()
+        return Response(
+            {
+                'device_local_id': serializer.data['device_local_id']
+            },  status.HTTP_200_OK)
 
 
 class RetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):

@@ -61,6 +61,7 @@ class Crashreport(models.Model):
     tags = TaggableManager(blank=True)
     device_local_id = models.PositiveIntegerField(blank=True)
     next_logfile_key = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     @transaction.atomic
     def get_logfile_key(self):
@@ -83,8 +84,9 @@ class Crashreport(models.Model):
 class LogFile(models.Model):
     logfile_type = models.TextField(max_length=36, default="last_kmsg")
     crashreport = models.ForeignKey(Crashreport, on_delete=models.CASCADE)
-    logfile = models.FileField(upload_to=crashreport_file_name)
+    logfile = models.FileField(upload_to=crashreport_file_name, max_length=500)
     crashreport_local_id = models.PositiveIntegerField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
         if not self.crashreport_local_id:
@@ -99,6 +101,7 @@ class HeartBeat(models.Model):
     build_fingerprint = models.CharField(max_length=200)
     date = models.DateTimeField()
     device_local_id = models.PositiveIntegerField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
         if not self.device_local_id:
