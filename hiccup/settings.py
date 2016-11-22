@@ -135,3 +135,8 @@ REST_FRAMEWORK = {
 STATIC_URL = '/static/'
 
 STATIC_ROOT = "/home/hiccup/static/static"
+
+try:
+    from local_settings import *
+except ImportError as e:
+    pass
