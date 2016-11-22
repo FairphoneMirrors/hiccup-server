@@ -93,3 +93,5 @@ ENV/
 saved_crashredports
 
 db.sqlite3
+
+local_settings.py
