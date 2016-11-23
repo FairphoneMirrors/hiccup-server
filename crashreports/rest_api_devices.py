@@ -42,6 +42,8 @@ def register_device(request):
     permission = Permission.objects.get(name='Can add crashreport')
     user.user_permissions.add(permission)
     user.save()
+    device.board_date = request.data['board_date']
+    device.chipset = request.data['chipset']
     device.user = user
     device.token = Token.objects.create(user=user).key
     device.save()
