@@ -1,29 +1,28 @@
+from crashreports.models import Device
+from crashreports.models import User
+from crashreports.permissions import HasRightsOrIsDeviceOwnerDeviceCreation
+from crashreports.serializers import DeviceSerializer
+from django.contrib.auth.models import Permission
 from rest_framework import generics
-from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.authtoken.models import Token
-from django.contrib.auth.models import Permission
-
-from crashreports.models import Device
-from crashreports.models import User
-
-from crashreports.serializers import DeviceSerializer
+from rest_framework.response import Response
 
 
 class ListCreateDevices(generics.ListCreateAPIView):
     queryset = Device.objects.all()
     paginate_by = 20
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
     serializer_class = DeviceSerializer
     pass
 
 
 class RetrieveUpdateDestroyDevice(generics.RetrieveUpdateDestroyAPIView):
     queryset = Device.objects.all()
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
     serializer_class = DeviceSerializer
     lookup_field = 'uuid'
     pass
