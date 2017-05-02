@@ -12,6 +12,8 @@ class ListCreateView(generics.ListCreateAPIView):
     paginate_by = 20
     permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
     serializer_class = CrashReportSerializer
+    filter_fields = ('device','build_fingerprint')
+
     pass
 
     def dispatch(self, *args, **kwargs):

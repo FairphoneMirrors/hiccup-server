@@ -9,8 +9,10 @@ import uuid
 
 
 class Device(models.Model):
+    def __str__( self ):
+        return self.uuid
     # for every device there is a django user
-    uuid = models.CharField(max_length=64, unique=True,
+    uuid = models.CharField( db_index=True,max_length=64, unique=True,
                             default=uuid.uuid4, editable=False)
     user = models.OneToOneField(
         User, related_name='Hiccup_Device', on_delete=models.CASCADE,
@@ -49,15 +51,15 @@ def crashreport_file_name(instance, filename):
 
 
 class Crashreport(models.Model):
-    device = models.ForeignKey(Device, on_delete=models.CASCADE)
+    device = models.ForeignKey(Device, db_index=True, related_name='crashreports', on_delete=models.CASCADE)
     is_fake_report = models.BooleanField(default=False)
     app_version = models.IntegerField()
     uptime = models.CharField(max_length=200)
-    build_fingerprint = models.CharField(max_length=200)
-    boot_reason = models.CharField(max_length=200)
-    power_on_reason = models.CharField(max_length=200)
-    power_off_reason = models.CharField(max_length=200)
-    date = models.DateTimeField()
+    build_fingerprint = models.CharField(db_index=True, max_length=200)
+    boot_reason = models.CharField(db_index=True, max_length=200)
+    power_on_reason = models.CharField(db_index=True, max_length=200)
+    power_off_reason = models.CharField(db_index=True, max_length=200)
+    date = models.DateTimeField(db_index=True)
     tags = TaggableManager(blank=True)
     device_local_id = models.PositiveIntegerField(blank=True)
     next_logfile_key = models.PositiveIntegerField(default=1)
@@ -83,7 +85,7 @@ class Crashreport(models.Model):
 
 class LogFile(models.Model):
     logfile_type = models.TextField(max_length=36, default="last_kmsg")
-    crashreport = models.ForeignKey(Crashreport, on_delete=models.CASCADE)
+    crashreport = models.ForeignKey(Crashreport,related_name='logfiles', on_delete=models.CASCADE)
     logfile = models.FileField(upload_to=crashreport_file_name, max_length=500)
     crashreport_local_id = models.PositiveIntegerField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -95,11 +97,14 @@ class LogFile(models.Model):
 
 
 class HeartBeat(models.Model):
-    device = models.ForeignKey(Device, on_delete=models.CASCADE)
+    device = models.ForeignKey(Device,
+        db_index=True,
+        related_name='heartbeats',
+        on_delete=models.CASCADE)
     app_version = models.IntegerField()
     uptime = models.CharField(max_length=200)
-    build_fingerprint = models.CharField(max_length=200)
-    date = models.DateTimeField()
+    build_fingerprint = models.CharField( db_index=True, max_length=200)
+    date = models.DateTimeField(db_index=True)
     device_local_id = models.PositiveIntegerField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

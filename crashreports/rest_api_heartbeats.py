@@ -13,6 +13,8 @@ class ListCreateView(generics.ListCreateAPIView):
     paginate_by = 20
     permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
     serializer_class = HeartBeatSerializer
+    filter_fields = ('device','build_fingerprint')
+
 
     def get(self, *args, **kwargs):
         if 'uuid' in kwargs:

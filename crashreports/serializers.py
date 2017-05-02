@@ -3,6 +3,8 @@ from rest_framework.exceptions import NotFound
 from crashreports.models import Crashreport
 from crashreports.models import Device
 from crashreports.models import HeartBeat
+from crashreports.models import LogFile
+
 from rest_framework import permissions
 from crashreports.permissions import user_is_hiccup_staff
 
@@ -21,6 +23,11 @@ class PrivateField(serializers.ReadOnlyField):
 
 class CrashReportSerializer(serializers.ModelSerializer):
     permission_classes = (permissions.AllowAny,)
+    logfiles = serializers.HyperlinkedRelatedField(
+        read_only=True,
+        many=True,
+        view_name='api_v1_logfiles_by_id',
+        )
     uuid = serializers.CharField(max_length=64)
     id = PrivateField()
     device_local_id = serializers.IntegerField(required=False)
@@ -61,6 +68,13 @@ class HeartBeatSerializer(serializers.ModelSerializer):
         heartbeat.device = device
         heartbeat.save()
         return heartbeat
+
+
+class LogFileSerializer(serializers.ModelSerializer):
+    permission_classes = (permissions.IsAdminUser,)
+
+    class Meta:
+        model = LogFile
 
 
 class DeviceSerializer(serializers.ModelSerializer):

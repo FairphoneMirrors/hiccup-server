@@ -8,10 +8,27 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.exceptions import NotFound
 
 from rest_framework.response import Response
+
+from crashreports.serializers import LogFileSerializer
+
 from crashreports.models import LogFile
 from crashreports.models import Crashreport
 from crashreports.permissions import user_owns_uuid
 from crashreports.permissions import user_is_hiccup_staff
+from crashreports.permissions import HasRightsOrIsDeviceOwnerDeviceCreation
+from rest_framework import generics
+
+
+class ListCreateView(generics.ListAPIView):
+    queryset = LogFile.objects.all()
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+    serializer_class = LogFileSerializer
+
+
+class RetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = LogFile.objects.all()
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+    serializer_class = LogFileSerializer
 
 
 @api_view(http_method_names=['POST'], )

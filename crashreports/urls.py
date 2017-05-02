@@ -28,9 +28,12 @@ urlpatterns = [
         rest_api_logfiles.logfile_put,
         name='api_v1_putlogfile_for_device_id'),
 
-    # url(r'^api/v1/logfile_put$',
-    #     rest_api_logfiles.logfile_put,
-    #     name='api_v1_crashreports_put_logfile'),
+    url(r'^api/v1/logfiles/$',
+         rest_api_logfiles.ListCreateView.as_view(),
+         name='api_v1_logfiles'),
+    url(r'^api/v1/logfiles/(?P<pk>[0-9]+)/$',
+        rest_api_logfiles.RetrieveUpdateDestroyView.as_view(),
+        name='api_v1_logfiles_by_id'),
 
     # heartbeats
     url(r'^api/v1/heartbeats/$',
@@ -48,12 +51,14 @@ urlpatterns = [
         name='api_v1_heartbeat_by_uuid'),
 
     # devices
-
     url(r'^api/v1/devices/$', rest_api_devices.ListCreateDevices.as_view(),
         name='api_v1_list_devices'),
     url(r'^api/v1/devices/(?P<uuid>[a-f0-9-]+)/$',
         rest_api_devices.RetrieveUpdateDestroyDevice.as_view(),
         name='api_v1_retrieve_device'),
+    url(r'^api/v1/devices/(?P<uuid>[a-f0-9-]+)/stats/$',
+        rest_api_devices.DeviceStat.as_view(),
+        name='api_v1_retrieve_device_stats'),
     url(r'^api/v1/devices/register/$', rest_api_devices.register_device,
         name='api_v1_register_device'),
 ]
