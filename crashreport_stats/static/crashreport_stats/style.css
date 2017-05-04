@@ -1,0 +1,37 @@
+div.chart {
+  height: 400px;
+  padding: 10px
+}
+
+div.line_chart {
+  height: 400px;
+  padding: 10px
+}
+
+div.datatable {
+  padding:10px;
+}
+body {
+  background: #EEE;
+}
+
+
+td.dt_col_h1 {
+  font-weight: bold;
+}
+
+textarea.logfile_textarea {
+  min-width: 100%;
+  font-size:12px;
+  font-family: monospace;
+  wrap: hard;
+}
+
+div.modal-dialog {
+  width: 80em;
+  width: 50%;
+}
+
+div#logfile-modal-body {
+  margin: 25px;
+}

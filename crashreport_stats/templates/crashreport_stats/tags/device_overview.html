@@ -1,0 +1,28 @@
+<div class="panel datatable" > 
+  <h2>{{ title }}</h2> 
+  <table id = "{{element_name}}"  class="display table table-striped" ></table>
+ </div>
+<script>
+
+$(document).ready(function() {
+  console.log("Generating report table");
+  $.getJSON( "{% url 'hiccup_stats_api_v1_device_overview' uuid %}", function(json_response) {
+    dataSet = [];
+    dataSet.push(["UUID:", json_response.uuid]);
+    dataSet.push(["Last Active:", new Date(json_response.last_active)]);
+    dataSet.push(["HeartBeats sent:", json_response.heartbeats]);
+    dataSet.push(["Prob. Crashes:", json_response.crashreports]);
+    dataSet.push(["Prob. Crashes per Day:", json_response.crashes_per_day.toFixed(2)]);
+    dataSet.push(["SMPLs:", json_response.smpls]);
+    dataSet.push(["SMPLs per Day:", json_response.smpl_per_day.toFixed(2)]);
+    $('#{{element_name}}').DataTable( {
+        data: dataSet,
+        columns: [
+          { title: "",  className: "dt_col_h1"},
+          { title: "" },
+        ]
+    } );
+});
+});
+
+</script>

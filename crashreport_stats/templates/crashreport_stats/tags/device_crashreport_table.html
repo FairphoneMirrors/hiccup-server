@@ -1,0 +1,73 @@
+<div class="panel datatable" > 
+  <h2>{{ title }}</h2> 
+  <table id = "{{element_name}}"  class="display table table-striped" ></table>
+ </div>
+ <!-- Modal -->
+<div id="logfileModal" class="logfile_modal modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">last_kmsg</h4>
+      </div>
+      <div id="logfile-modal-body">
+        <p>No logfile found.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+ 
+<script>
+
+function escapeHtml(unsafe) {
+    return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+ }
+
+function show_logfile(url) {
+  $.getJSON(url, function(json_response) {
+    $("#logfileModal").modal();
+    url = "/hiccup_stats/api/v1/logfile_download/"+json_response.id;
+    $.getJSON(url, function(json_response) {
+      $("#logfile-modal-body").html("<textarea class='logfile_textarea' wrap='hard' rows='25'>" + escapeHtml(json_response.last_kmsg) +"</textarea>");
+    });
+  });
+}
+
+$(document).ready(function() {
+  console.log("Generating report table");
+  $.getJSON( "{% url 'api_v1_crashreports_by_uuid' uuid %}", function(json_response) {
+    console.log("Generating report table");
+    console.log(json_response);
+    dataSet = json_response.results.map(function(obj) {
+        ret = [
+              obj.build_fingerprint.split('/')[4], new Date(obj.date),
+              obj.boot_reason, '<a  onclick="show_logfile(\''+obj.logfiles[0]+'\'); return false;" >Logfile</a>'
+             ];
+        return ret;
+    });
+    $('#{{element_name}}').DataTable( {
+        data: dataSet,
+        columns: [
+          { title: "Build Fingerprint" },
+          { title: "Date" },
+          { title: "Boot Reason" },
+          { 
+            title: "Logfiles",
+          }
+        ]
+    } );
+});
+});
+
+</script>

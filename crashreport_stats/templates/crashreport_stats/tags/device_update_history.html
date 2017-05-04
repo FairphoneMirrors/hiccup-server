@@ -1,0 +1,33 @@
+<div class="panel datatable" > 
+  <h2>{{ title }}</h2> 
+  <table id = "{{element_name}}"  class="display table table-striped" ></table>
+ </div>
+<script>
+
+$(document).ready(function() {
+  console.log("Generating report table");
+  $.getJSON( "{% url 'hiccup_stats_api_v1_device_update_history' uuid %}", function(json_response) {
+    console.log("Generating update history table");
+    console.log(json_response);
+    dataSet = json_response.map(function(obj) {
+        ret = [
+              obj.build_fingerprint.split('/')[4], new Date(obj.update_date)
+             ];
+        return ret;
+    });
+    
+    $('#{{element_name}}').DataTable( {
+        data: dataSet,
+        columns: [
+          { title: "Version" },
+          { title: "Update Date", 
+            render: function(date) {
+              return date.toDateString();
+            }
+          }
+        ]
+    } );
+});
+});
+
+</script>

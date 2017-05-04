@@ -1,0 +1,39 @@
+<div id = "{{element_name}}" class="panel line_chart"> </div>
+<script>
+google.charts.setOnLoadCallback(drawChartReportPerDay);
+
+function drawChartReportPerDay(element) {
+  element = "heartbeats"
+  var chart = new google.visualization.ColumnChart(document.getElementById("{{element_name}}"));
+  var data = new google.visualization.DataTable();
+  var options = {
+    title: "{{ title }}",
+    legend: { position: 'bottom' },
+    chartArea: {width: '100%', height: '100%'},
+    legend: {position: 'in'},
+    titlePosition: 'in', axisTitlesPosition: 'in',
+    bar: { groupWidth: '175%' },
+    isStacked: true,
+    hAxis: {textPosition: 'in'}, vAxis: {textPosition: 'in'}
+  };
+  $.getJSON( "{% url 'hiccup_stats_api_v1_device_report_history' uuid %}", function( json_response ) {
+    res = [];
+    if (json_response.results)
+      res = json_response.results;
+    else
+      res = json_response;
+    reformated_array = res.map(function(obj){
+        ret =  [new Date(obj.date), obj.heartbeats, obj.prob_crashes, obj.smpl, obj.other];
+        return ret;
+    });
+    data.addColumn('date', 'Date');
+    data.addColumn('number', 'Heartbeats');
+    data.addColumn('number', 'prob. Crashes');
+    data.addColumn('number', 'SMPL');
+    data.addColumn('number', 'other');
+
+    data.addRows(reformated_array);
+    chart.draw(data,  options);
+  });
+}
+</script>

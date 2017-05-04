@@ -40,10 +40,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'crashreports',
+    'crashreport_stats',
     'taggit',
     'crispy_forms',
     'bootstrap3',
     'django_extensions',
+    'djfrontend',
+    'djfrontend.skeleton'
 ]
 
 MIDDLEWARE_CLASSES = [

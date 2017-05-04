@@ -1,0 +1,56 @@
+{% extends 'djfrontend/skeleton.html' %}
+{% load djfrontend %}
+
+{% block head_js %}
+    {% djfrontend_jquery_datatables_css %}
+    {% djfrontend_modernizr %}
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <link rel="stylesheet" type="text/css" href="/static/crashreport_stats/bootstrap.min.css">
+    {% djfrontend_jquery %}
+    {% djfrontend_jquery_datatables %}
+    {% djfrontend_twbs_js %}
+    <link rel="stylesheet" type="text/css" href="/static/crashreport_stats/style.css">
+{% endblock head_js %}
+
+{% block body_content %}
+
+<div class="container">
+  <div class="navbar navbar-custom">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+      </div>
+      <a class="navbar-brand" href="javascript:void(0)">Hiccup</a>
+      <div class="navbar-collapse collapse navbar-responsive-collapse">
+        <ul class="nav navbar-nav">
+          <li class="active"><a href="javascript:void(0)">Statistics</a></li>
+          <li><a href="/hiccup/admin/">Admin Area</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li class="dropdown">
+            <a href="bootstrap-elements.html" data-target="#" class="dropdown-toggle" data-toggle="dropdown">{{ request.user }}
+              <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="/hiccup/admin/logout/">Logout</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  {% block content %}{% endblock content %}
+</div>
+{% endblock body_content %}
+
+ {% block body_js %}
+
+<script>
+google.charts.load('current', {'packages':['corechart','line']});
+// Load the Visualization API and the corechart package.
+// Set a callback to run when the Google Visualization API is loaded.
+</script>
+{% endblock body_js %}

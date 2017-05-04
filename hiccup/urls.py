@@ -7,5 +7,5 @@ urlpatterns = [
     url(r'^hiccup/admin/', admin.site.urls),
     url(r'^hiccup/', include('crashreports.urls')),
     url(r'^accounts/login/$', auth_views.login),
-#    url(r'^.*$', RedirectView.as_view(url='https://fairphone.com', permanent=False), name='index')
+    url(r'^hiccup_stats/', include('crashreport_stats.urls')),
 ]
