@@ -29,6 +29,10 @@ class HasRightsOrIsDeviceOwnerDeviceCreation(BasePermission):
         # if user has all permissions for crashreport return true
         if (user_is_hiccup_staff(request.user)):
             return True
+
+        if (request.user.groups.filter(name='FairphoneSoftwareTeam').exists()):
+            return True
+
         # special case:
         # user is the owner of a device. in this case creations are allowed.
         # we have to check if the device with the supplied uuid indeed

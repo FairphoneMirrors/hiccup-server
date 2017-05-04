@@ -15,6 +15,9 @@ body {
   background: #EEE;
 }
 
+div.panel {
+  padding: 10px;
+}
 
 td.dt_col_h1 {
   font-weight: bold;

@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
@@ -44,9 +45,14 @@ INSTALLED_APPS = [
     'taggit',
     'crispy_forms',
     'bootstrap3',
+    'bootstrapform',
     'django_extensions',
     'djfrontend',
-    'djfrontend.skeleton'
+    'djfrontend.skeleton',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -62,10 +68,16 @@ MIDDLEWARE_CLASSES = [
 
 ROOT_URLCONF = 'hiccup.urls'
 
+TEMPLATE_LOADERS = (
+    'django.template.loaders.filesystem.Loader',
+    'django.template.loaders.app_directories.Loader',
+#     'django.template.loaders.eggs.Loader',
+)
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR,'hiccup', 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -73,10 +85,20 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # `allauth` needs this from django
+                'django.template.context_processors.request',
             ],
         },
     },
 ]
+
+AUTHENTICATION_BACKENDS = (
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+
+    # `allauth` specific authentication methods, such as login by e-mail
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
 
 #WSGI_APPLICATION = 'hiccup_server.wsgi.application'
 
@@ -110,7 +132,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-    
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
 
@@ -131,7 +152,28 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.DjangoFilterBackend',),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 1000
+    'PAGE_SIZE': 100
+}
+
+SITE_ID = 1
+
+SOCIALACCOUNT_ADAPTER ="hiccup.allauth_adapters.FairphoneAccountAdapter"
+LOGIN_REDIRECT_URL="/hiccup_stats/"
+# disable form signups
+ACCOUNT_ADAPTER ="hiccup.allauth_adapters.FormAccountAdapter"
+ACCOUNT_EMAIL_REQUIRED=True
+ACCOUNT_LOGOUT_REDIRECT_URL="/accounts/login/"
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    }
 }
 
 # Static files (CSS, JavaScript, Images)

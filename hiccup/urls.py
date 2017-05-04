@@ -6,6 +6,6 @@ from django.contrib.auth import views as auth_views
 urlpatterns = [
     url(r'^hiccup/admin/', admin.site.urls),
     url(r'^hiccup/', include('crashreports.urls')),
-    url(r'^accounts/login/$', auth_views.login),
     url(r'^hiccup_stats/', include('crashreport_stats.urls')),
+    url(r'^accounts/', include('allauth.urls')),
 ]
