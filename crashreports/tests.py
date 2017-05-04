@@ -14,25 +14,29 @@ class DeviceTestCase(APITestCase):
         pass
 
     def test(self):
-        request = self.client.post("/hiccup/api/v1/devices/register/", {})
+        request = self.client.post("/hiccup/api/v1/devices/register/", device_register_data)
         self.assertTrue("token" in request.data)
         self.assertTrue("uuid" in request.data)
         self.assertEqual(request.status_code, status.HTTP_200_OK)
 
 # Create your tests here.
 
+device_register_data = {
+ "board_date": str(datetime.datetime(year=2016, month=1, day=1)),
+ "chipset": "chipset"
 
+}
 class ListDevicesTestCase(APITestCase):
 
     def setUp(self):
         self.password = "test"
         self.admin = User.objects.create_superuser(
             'myuser', 'myemail@test.com', self.password)
-        self.client.post("/hiccup/api/v1/devices/register/", {})
-        request = self.client.post("/hiccup/api/v1/devices/register/", {})
+        self.client.post("/hiccup/api/v1/devices/register/", device_register_data)
+        request = self.client.post("/hiccup/api/v1/devices/register/", device_register_data)
         self.uuid_to_retrieve = request.data['uuid']
         self.token_to_retrieve = request.data['token']
-        request = self.client.post("/hiccup/api/v1/devices/register/", {})
+        request = self.client.post("/hiccup/api/v1/devices/register/", device_register_data)
         self.uuid_to_delete = request.data['uuid']
         self.token_to_delete = request.data['token']
 
@@ -40,8 +44,8 @@ class ListDevicesTestCase(APITestCase):
         client = APIClient()
         client.login(username='myuser', password='test')
         request = client.get("/hiccup/api/v1/devices/", {})
-        self.assertTrue("uuid" in request.data[1])
-        self.assertTrue(len(request.data) >= 3)
+        self.assertTrue(request.data['results'][1]['uuid'] is not '')
+        self.assertTrue(len(request.data['results']) >= 3)
         self.assertEqual(request.status_code, status.HTTP_200_OK)
         client.logout()
 
@@ -89,10 +93,10 @@ class HeartbeatListTestCase(APITestCase):
 
     def setup_users(self):
         self.password = "test"
-        request = self.client.post("/hiccup/api/v1/devices/register/", {})
+        request = self.client.post("/hiccup/api/v1/devices/register/", device_register_data)
         self.uuid = request.data['uuid']
         self.token = request.data['token']
-        request = self.client.post("/hiccup/api/v1/devices/register/", {})
+        request = self.client.post("/hiccup/api/v1/devices/register/", device_register_data)
         self.other_uuid = request.data['uuid']
         self.other_token = request.data['token']
         self.admin = User.objects.create_superuser(
@@ -149,7 +153,7 @@ class HeartbeatListTestCase(APITestCase):
         self.post_multiple(self.user, self.data, count)
         request = self.admin.get(self.url)
         self.assertEqual(request.status_code, status.HTTP_200_OK)
-        self.assertTrue(len(request.data) == count)
+        self.assertTrue(len(request.data['results']) == count)
 
     def test_retrieve_single(self, user=None,
                              expected_result=status.HTTP_200_OK):
@@ -196,7 +200,7 @@ class HeartbeatListTestCase(APITestCase):
         url = self.url_by_uuid.format(self.uuid)
         request = self.admin.get(url)
         self.assertEqual(request.status_code, status.HTTP_200_OK)
-        self.assertTrue(len(request.data) == count)
+        self.assertTrue(len(request.data['results']) == count)
 
     def test_list_noauth(self):
         count = 5
@@ -252,10 +256,10 @@ class LogfileUploadTest(APITestCase):
 
     def setup_users(self):
         self.password = "test"
-        request = self.client.post("/hiccup/api/v1/devices/register/", {})
+        request = self.client.post("/hiccup/api/v1/devices/register/", device_register_data)
         self.uuid = request.data['uuid']
         self.token = request.data['token']
-        request = self.client.post("/hiccup/api/v1/devices/register/", {})
+        request = self.client.post("/hiccup/api/v1/devices/register/", device_register_data)
         self.other_uuid = request.data['uuid']
         self.other_token = request.data['token']
         self.admin = User.objects.create_superuser(
