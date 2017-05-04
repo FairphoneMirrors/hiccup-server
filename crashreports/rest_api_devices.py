@@ -47,25 +47,3 @@ def register_device(request):
     device.token = Token.objects.create(user=user).key
     device.save()
     return Response({'uuid': device.uuid, 'token': device.token})
-
-
-class DeviceStat(APIView):
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
-    def get(self, request, uuid, format=None, ):
-        device          = Device.objects.filter(uuid=uuid)
-        last_active     = HeartBeat.objects.filter(device=device).order_by('-date')[0].date
-        heartbeats      = HeartBeat.objects.filter(device=device).count()
-        crashreports    = Crashreport.objects.filter(device=device).filter(boot_reason__in=["UNKNOWN", "keyboard power on"]).count()
-        crashes_per_day = crashreports*1.0/heartbeats if heartbeats > 0 else 0
-        smpls           = Crashreport.objects.filter(device=device).filter(boot_reason__in=["RTC alarm"]).count()
-        smpl_per_day    = smpls*1.0/heartbeats if heartbeats > 0 else 0
-        return Response(
-            {
-                'uuid'            : uuid,
-                'last_active'     : last_active,
-                'heartbeats'      : heartbeats,
-                'crashreports'    : crashreports,
-                'crashes_per_day' : crashes_per_day,
-                'smpls'           : smpls,
-                'smpl_per_day'    : smpl_per_day
-            })

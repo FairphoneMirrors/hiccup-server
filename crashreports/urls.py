@@ -22,7 +22,6 @@ urlpatterns = [
         name='api_v1_crashreports_by_uuid'),
 
     # logfiles
-
     url(r'^api/v1/devices/(?P<uuid>[a-f0-9-]+)/crashreports/' +
         '(?P<device_local_id>[0-9]+)/logfile_put/(?P<filename>[^/]+)/$',
         rest_api_logfiles.logfile_put,
@@ -56,9 +55,6 @@ urlpatterns = [
     url(r'^api/v1/devices/(?P<uuid>[a-f0-9-]+)/$',
         rest_api_devices.RetrieveUpdateDestroyDevice.as_view(),
         name='api_v1_retrieve_device'),
-    url(r'^api/v1/devices/(?P<uuid>[a-f0-9-]+)/stats/$',
-        rest_api_devices.DeviceStat.as_view(),
-        name='api_v1_retrieve_device_stats'),
     url(r'^api/v1/devices/register/$', rest_api_devices.register_device,
         name='api_v1_register_device'),
 ]

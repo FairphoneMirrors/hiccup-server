@@ -82,7 +82,7 @@ class Crashreport(models.Model):
         return self.device.uuid
     uuid = property(_get_uuid)
 
-
+#TODO remove logfile_type or make it meaningful
 class LogFile(models.Model):
     logfile_type = models.TextField(max_length=36, default="last_kmsg")
     crashreport = models.ForeignKey(Crashreport,related_name='logfiles', on_delete=models.CASCADE)

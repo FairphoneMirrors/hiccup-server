@@ -25,7 +25,6 @@ def user_is_hiccup_staff(user):
 
 
 class HasRightsOrIsDeviceOwnerDeviceCreation(BasePermission):
-
     def has_permission(self, request, view):
         # if user has all permissions for crashreport return true
         if (user_is_hiccup_staff(request.user)):
