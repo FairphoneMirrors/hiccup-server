@@ -1,5 +1,5 @@
-<div class="panel datatable" > 
-  <h2>{{ title }}</h2> 
+<div class="panel datatable" >
+  <h2>{{ title }}</h2>
   <table id = "{{element_name}}"  class="display table table-striped" ></table>
  </div>
 <script>
@@ -11,20 +11,35 @@ $(document).ready(function() {
     console.log(json_response);
     dataSet = json_response.map(function(obj) {
         ret = [
-              obj.build_fingerprint.split('/')[4], new Date(obj.update_date)
+              obj.build_fingerprint.split('/')[4],
+              new Date(obj.update_date),
+              obj.heartbeats,
+              (obj.prob_crashes/(obj.heartbeats * 1.0)),
+              (obj.SMPL/(obj.heartbeats * 1.0)),
              ];
         return ret;
     });
-    
+
     $('#{{element_name}}').DataTable( {
         data: dataSet,
         columns: [
           { title: "Version" },
-          { title: "Update Date", 
+          { title: "Update Date",
             render: function(date) {
               return date.toDateString();
             }
-          }
+          },
+          { title: "HB"},
+          { title: "PC",
+            render: function(n) {
+              return n.toFixed(2);
+            }
+          },
+          { title: "SMPLs",
+            render: function(n) {
+              return n.toFixed(2);
+            }
+          },
         ]
     } );
 });
