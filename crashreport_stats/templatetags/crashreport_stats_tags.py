@@ -34,3 +34,36 @@ def device_report_history(title = "Report History", uuid='e1c0cc95-ab8d-461a-a76
         'uuid': uuid,
         "title": title,
         "element_name": "device_report_history"})
+
+
+@register.simple_tag
+def versions_table(title = "FP2 OS Versions",  is_official_release="1"):
+    t = template.loader.get_template('crashreport_stats/tags/versions_table.html')
+    return t.render({
+        "title": title,
+        "is_official_release":is_official_release,
+        "element_name": "versions_overview_table"})
+
+@register.simple_tag
+def versions_pie_chart(title = "FP2 Version Distribution", is_official_release="1"):
+    t = template.loader.get_template('crashreport_stats/tags/versions_pie_chart.html')
+    return t.render({
+        "title": title,
+        "is_official_release":is_official_release,
+        "element_name": "versions_overview_pie_chart"})
+
+@register.simple_tag
+def versions_area_chart(title = "FP2 Version Distribution",  is_official_release="1"):
+    t = template.loader.get_template('crashreport_stats/tags/versions_area_chart.html')
+    return t.render({
+        "title": title,
+        "is_official_release":is_official_release,
+        "element_name": "versions_overview_area_chart"})
+
+@register.simple_tag
+def versions_bar_chart(title = "Version Stability", is_official_release="1"):
+    t = template.loader.get_template('crashreport_stats/tags/versions_bar_chart.html')
+    return t.render({
+        "title": title,
+        "is_official_release":is_official_release,
+        "element_name": "versions_overview_bar_chart"})

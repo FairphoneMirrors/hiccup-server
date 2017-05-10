@@ -1,0 +1,44 @@
+<div id = "{{element_name}}" class="panel line_chart"> </div>
+<script>
+google.charts.setOnLoadCallback(drawChartReportPerDay);
+
+function drawChartReportPerDay(element) {
+  element = "heartbeats"
+  var chart = new google.visualization.PieChart(document.getElementById("{{element_name}}"));
+  var data = new google.visualization.DataTable();
+  var options = {
+    title: "{{ title }}",
+    pieHole: 0.4,
+    sliceVisibilityThreshold: .01,
+    legend: {
+      position: "labeled",
+    },
+    chartArea: {
+      left:0,
+      right:0,
+      top:50,
+      bottom:0,
+    },
+  };
+  $.getJSON( "{% url 'hiccup_stats_api_v1_version_daily' %}",
+   {
+     date: new Date(new Date().setDate(new Date().getDate()-1)).toISOString().split('T')[0],
+     version__is_official_release: "{{ is_official_release }}",
+     version__is_beta_release: "{{ is_beta_release }}",
+   }, function( json_response ) {
+    res = [];
+    if (json_response.results)
+      res = json_response.results;
+    else
+      res = json_response;
+    reformated_array = res.map(function(obj) {
+        ret =  [obj.build_fingerprint.split('/')[4], obj.heartbeats];
+        return ret;
+    });
+    data.addColumn('string', 'Version');
+    data.addColumn('number', 'Heartbeats');
+    data.addRows(reformated_array);
+    chart.draw(data,  options);
+  });
+}
+</script>

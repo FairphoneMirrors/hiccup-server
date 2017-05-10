@@ -1,0 +1,47 @@
+<div class="panel datatable" >
+  <h2>{{ title }}</h2>
+  <table id = "{{element_name}}"  class="display table table-striped" ></table>
+ </div>
+<script>
+
+$(document).ready(function() {
+  console.log("Generating report table");
+  $.getJSON( "{% url 'hiccup_stats_api_v1_versions' %}",
+  {
+    limit:200,
+    is_official_release: "{{ is_official_release }}",
+    is_beta_release: "{{ is_beta_release }}",
+  }, function(json_response) {
+    console.log("Generating update history table");
+    console.log(json_response);
+    dataSet = json_response.results.map(function(obj) {
+        ret = [
+              obj.build_fingerprint.split('/')[4],
+              obj.heartbeats,
+              (obj.prob_crashes/(obj.heartbeats * 1.0)),
+              (obj.smpl/(obj.heartbeats * 1.0)),
+             ];
+        return ret;
+    });
+
+    $('#{{element_name}}').DataTable( {
+        data: dataSet,
+        columns: [
+          { title: "Version" },
+          { title: "HB"},
+          { title: "PC",
+            render: function(n) {
+              return n.toFixed(2);
+            }
+          },
+          { title: "SMPLs",
+            render: function(n) {
+              return n.toFixed(2);
+            }
+          },
+        ]
+    } );
+});
+});
+
+</script>

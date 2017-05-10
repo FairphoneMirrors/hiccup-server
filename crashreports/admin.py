@@ -5,7 +5,6 @@ from crashreports.models import HeartBeat
 from crashreports.models import LogFile
 
 
-
 @admin.register(Crashreport)
 class CrashreportAdmin(admin.ModelAdmin):
     pass

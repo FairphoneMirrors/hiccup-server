@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+    {% block content %}
+    {% load crashreport_stats_tags %}
+    <h1> Versions Overview </h1>
+    <div class="row">
+      <div class="col-md-6">
+        {% versions_table is_official_release=is_official_release%}
+      </div>
+      <div class="col-md-6">
+          {% versions_pie_chart is_official_release=is_official_release%}
+      </div>
+      <div class="col-md-6">
+          {% versions_bar_chart is_official_release=is_official_release%}
+      </div>
+      <div class="col-md-6">
+      </div>
+    </div>
+    <div class="col-md-12">
+        {% versions_area_chart is_official_release=is_official_release%}
+    </div>
+ {% endblock content %}

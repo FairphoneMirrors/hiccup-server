@@ -1,0 +1,68 @@
+<div id = "{{element_name}}" class="panel line_chart"> </div>
+<script>
+google.charts.setOnLoadCallback(drawChartReportPerDay);
+
+var groupByDate = function(xs) {
+  key = 'date'
+  return xs.reduce(function(rv, x) {
+    (rv[x[key]] = rv[x[key]] || []).push(x);
+    return rv;
+  }, {});
+};
+
+function drawChartReportPerDay(element) {
+  element = "heartbeats"
+  var chart = new google.visualization.AreaChart(document.getElementById("{{element_name}}"));
+  var data = new google.visualization.DataTable();
+  var options = {
+    title: "{{ title }}",
+    isStacked: 'relative',
+    chartArea: {
+      left:0,
+      right:0,
+      top:50,
+      bottom:50,
+    },
+    legend : {
+      position:'top',
+    }
+  };
+  $.getJSON( "{% url 'hiccup_stats_api_v1_version_daily' %}",
+    {
+      version__is_official_release: "{{ is_official_release }}",
+      version__is_beta_release: "{{ is_beta_release }}",
+      limit:10000,
+      date_start: "2017-01-01",
+      date_end: new Date(new Date().setDate(new Date().getDate())).toISOString().split('T')[0],
+    },
+    function( json_response ) {
+      res = [];
+      if (json_response.results)
+        res = json_response.results;
+      else
+        res = json_response;
+      tmp = {}
+      res.forEach(function(n){
+        tmp[n.date]={}
+        res.forEach(function(m){
+          tmp[n.date][m.build_fingerprint] = 0;
+        });
+      });
+      res.forEach(function(n){
+        all_fingerprints= Object.keys(tmp[n.date]);
+        tmp[n.date][n.build_fingerprint] = n.heartbeats;
+      });
+      reformated_array = []
+      all_dates = Object.keys(tmp);
+      all_dates.forEach(function(date) {
+        reformated_array.push([new Date(date),].concat(all_fingerprints.map(function(o){return tmp[date][o]})));
+      });
+      data.addColumn('date', 'date');
+      all_fingerprints.forEach(function(fingerprint){
+        data.addColumn('number', fingerprint.split('/')[4]);
+      });
+      data.addRows(reformated_array);
+      chart.draw(data,  options);
+    });
+}
+</script>

@@ -25,7 +25,17 @@ def device_stats(request):
     if not Device.objects.filter(uuid=uuid).exists():
         raise Http404("Device doesn't exist.")
     return HttpResponse(template.render({'uuid':uuid}, request))
-    
+
+@user_passes_test(is_fairphone_staff)
+def versions_all_overview(request):
+    template = loader.get_template('crashreport_stats/versions.html')
+    return HttpResponse(template.render({"is_official_release":"1"}, request))
+
+@user_passes_test(is_fairphone_staff)
+def versions_overview(request):
+    template = loader.get_template('crashreport_stats/versions.html')
+    return HttpResponse(template.render({"is_official_release":"2"}, request))
+
 @user_passes_test(is_fairphone_staff)
 def home(request):
     if request.method == 'POST':

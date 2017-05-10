@@ -5,8 +5,12 @@ from rest_framework.views import APIView
 from crashreports.permissions import HasRightsOrIsDeviceOwnerDeviceCreation
 from django.db import connection
 from . import raw_querys
+from crashreport_stats.models import *
 import zipfile
 from crashreports.models import *
+from django.db.models.expressions import F
+import django_filters
+from rest_framework import filters
 
 def dictfetchall(cursor):
     "Returns all rows from a cursor as a dict"
@@ -74,3 +78,51 @@ class LogFileDownload(APIView):
             fo = zf.open(f)
             ret[f.filename] = fo.read()
         return Response(ret)
+        
+
+class VersionFilter(filters.FilterSet):
+    first_seen_before = django_filters.DateFilter(name="first_seen_on", lookup_expr='lte')
+    first_seen_after   = django_filters.DateFilter(name="first_seen_on", lookup_expr='gte')
+    released_before = django_filters.DateFilter(name="released_on", lookup_expr='lte')
+    released_after   = django_filters.DateFilter(name="released_on", lookup_expr='gte')
+    class Meta:
+        model = Version
+
+class VersionSerializer(serializers.ModelSerializer):
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+    class Meta:
+        model = Version
+
+class VersionListView(generics.ListAPIView):
+
+    queryset = Version.objects.all().order_by('-heartbeats')
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+    serializer_class = VersionSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filter_class = (VersionFilter)
+
+
+class VersionDailyFilter(filters.FilterSet):
+    date_start = django_filters.DateFilter(name="date", lookup_expr='gte')
+    date_end   = django_filters.DateFilter(name="date", lookup_expr='lte')
+    version__build_fingerprint = django_filters.CharFilter()
+    version__is_official_release = django_filters.BooleanFilter()
+    version__is_beta_release = django_filters.BooleanFilter()
+    class Meta:
+        model = VersionDaily
+
+
+class VersionDailySerializer(serializers.ModelSerializer):
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+    build_fingerprint  = serializers.CharField()
+    class Meta:
+        model = VersionDaily
+
+
+class VersionDailyListView(generics.ListAPIView):
+    queryset = VersionDaily.objects.annotate(build_fingerprint=F('version__build_fingerprint')).all()
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+    filter_backends = (filters.DjangoFilterBackend,)
+    serializer_class = VersionDailySerializer
+    filter_class = (VersionDailyFilter)
+    filter_fields = ('version__build_fingerprint','version__is_official_release','version__is_beta_release',)
