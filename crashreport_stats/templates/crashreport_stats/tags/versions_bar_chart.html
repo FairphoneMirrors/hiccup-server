@@ -27,7 +27,7 @@ function drawChartReportPerDay(element) {
     }
   };
   $.getJSON( "{% url 'hiccup_stats_api_v1_versions' %}",
-   { limit: 5,
+   { limit: 10,
      is_official_release: "{{ is_official_release }}",
      is_beta_release: "{{ is_beta_release }}"
    }, function( json_response ) {

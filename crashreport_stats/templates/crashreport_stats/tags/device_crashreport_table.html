@@ -35,7 +35,8 @@ function escapeHtml(unsafe) {
  }
 
 function show_logfile(url) {
-  $.getJSON(url, function(json_response) {
+  $.getJSON(url, {
+    }, function(json_response) {
     $("#logfileModal").modal();
     url = "/hiccup_stats/api/v1/logfile_download/"+json_response.id;
     $.getJSON(url, function(json_response) {
@@ -46,7 +47,7 @@ function show_logfile(url) {
 
 $(document).ready(function() {
   console.log("Generating report table");
-  $.getJSON( "{% url 'api_v1_crashreports_by_uuid' uuid %}", function(json_response) {
+  $.getJSON( "{% url 'api_v1_crashreports_by_uuid' uuid %}",{limit:2000}, function(json_response) {
     console.log("Generating report table");
     console.log(json_response);
     dataSet = json_response.results.map(function(obj) {
