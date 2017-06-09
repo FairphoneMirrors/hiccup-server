@@ -94,13 +94,11 @@ class VersionSerializer(serializers.ModelSerializer):
         model = Version
 
 class VersionListView(generics.ListAPIView):
-
     queryset = Version.objects.all().order_by('-heartbeats')
     permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
     serializer_class = VersionSerializer
     filter_backends = (filters.DjangoFilterBackend,)
     filter_class = (VersionFilter)
-
 
 class VersionDailyFilter(filters.FilterSet):
     date_start = django_filters.DateFilter(name="date", lookup_expr='gte')
@@ -111,16 +109,14 @@ class VersionDailyFilter(filters.FilterSet):
     class Meta:
         model = VersionDaily
 
-
 class VersionDailySerializer(serializers.ModelSerializer):
     permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
     build_fingerprint  = serializers.CharField()
     class Meta:
         model = VersionDaily
 
-
 class VersionDailyListView(generics.ListAPIView):
-    queryset = VersionDaily.objects.annotate(build_fingerprint=F('version__build_fingerprint')).all()
+    queryset = VersionDaily.objects.annotate(build_fingerprint=F('version__build_fingerprint')).all().order_by('date')
     permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
     filter_backends = (filters.DjangoFilterBackend,)
     serializer_class = VersionDailySerializer
