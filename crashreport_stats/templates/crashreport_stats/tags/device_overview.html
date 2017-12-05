@@ -9,7 +9,8 @@ $(document).ready(function() {
   $.getJSON( "{% url 'hiccup_stats_api_v1_device_overview' uuid %}", function(json_response) {
     dataSet = [];
     dataSet.push(["UUID:", json_response.uuid]);
-    dataSet.push(["Last Active:", new Date(json_response.last_active)]);
+    dataSet.push(["Board Date:", new Date(json_response.board_date).toDateString()]);
+    dataSet.push(["Last Active:", new Date(json_response.last_active).toDateString()]);
     dataSet.push(["HeartBeats sent:", json_response.heartbeats]);
     dataSet.push(["Prob. Crashes:", json_response.crashreports]);
     dataSet.push(["Prob. Crashes per Day:", json_response.crashes_per_day.toFixed(2)]);

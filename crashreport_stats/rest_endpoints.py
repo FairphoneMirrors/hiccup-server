@@ -62,7 +62,8 @@ class DeviceStat(APIView):
                 'crashreports'    : crashreports,
                 'crashes_per_day' : crashes_per_day,
                 'smpls'           : smpls,
-                'smpl_per_day'    : smpl_per_day
+                'smpl_per_day'    : smpl_per_day,
+                'board_date'      : device[0].board_date,
             })
 
 class LogFileDownload(APIView):
