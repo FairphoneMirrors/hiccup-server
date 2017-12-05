@@ -38,3 +38,7 @@ div.modal-dialog {
 div#logfile-modal-body {
   margin: 25px;
 }
+
+td#uuid {
+font-family: monospace;
+}

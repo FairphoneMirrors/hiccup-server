@@ -1,27 +1,71 @@
 {% extends "base.html" %}
-    {% block content %}
-    {% load crashreport_stats_tags %}
-    {% load bootstrap %}
-    {% load crispy_forms_tags %}
+{% block content %}
+{% load crashreport_stats_tags %}
+{% load bootstrap %}
+{% load crispy_forms_tags %}
 
-    <div class="row">
-      <div class="col-md-12">
-        <div class="panel">
-          <div> 
+  <div class="row">
+    <div class="col-md-12">
+
+      <div class="panel">
+          <div>
             <h4>Search for device:</h4>
-            {% if messages %}
-            <ul class="messages">
-              {% for message in messages %}
-              <li class="{{ message.tags }}">{{ message }}</li>
-              {% endfor %}
-            </ul>
-            {% endif %}
-          <form action="" method="post">
-            {% csrf_token %}
-              {{ form|bootstrap  }}
-                <input type="submit" value="Search" />
-          </form>
+            <form action="" method="post">
+              {% csrf_token %}
+                {{ form|bootstrap  }}
+                  <input type="submit" value="Search" />
+            </form>
         </div>
       </div>
+
+      {% if devices %}
+      <div class="panel">
+        <div>
+          <h4> Search Results </h4>
+          <table id='devices' class="display" width="100%" cellspacing="0">
+            <thead>
+              <tr>
+                <th>UUID</th>
+                <th>Board date</th>
+                <th>Chipset</th>  
+              </tr>
+            </thead>
+            {% for device in devices %}
+            <tr>
+              <td class='uuid'>
+                <a href="{% url 'hiccup_stats_device'%}?uuid={{device.uuid}}">{{device.uuid}}</a>
+              </td>
+              <td>
+                {{device.board_date}}
+              </td>
+              <td>
+                {{device.chipset}}
+              </td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if messages %}
+      <div class="panel">
+        <div>
+          <h4> Status Messages </h4>
+          <ul class="messages">
+            {% for message in messages %}
+            <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+
     </div>
+  </div>
+  <script>
+$(document).ready(function() {
+    $('#devices').DataTable();
+} );
+</script>
  {% endblock content %}
