@@ -27,12 +27,14 @@ function drawChartReportPerDay(element) {
       position:'top',
     }
   };
+  start_date=new Date();
+  start_date.setMonth(start_date.getMonth()-3);
   $.getJSON( "{% url 'hiccup_stats_api_v1_version_daily' %}",
     {
       version__is_official_release: "{{ is_official_release }}",
       version__is_beta_release: "{{ is_beta_release }}",
       limit:10000,
-      date_start: "2017-01-01",
+      date_start: start_date.toISOString().split('T')[0],
       date_end: new Date(new Date().setDate(new Date().getDate())).toISOString().split('T')[0],
     },
     function( json_response ) {
