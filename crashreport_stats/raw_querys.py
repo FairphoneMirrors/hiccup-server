@@ -39,7 +39,7 @@ def sqlite_execute_device_update_history_query(cursor, params):
         ( select count(crashreports_crashreport.id) from crashreports_crashreport
         where  boot_reason in ("RTC alarm")
         and    crashreports_device.id == crashreports_crashreport.device_id
-        and    crashreports_crashreport.build_fingerprint == crashreports_heartbeat.build_fingerprint ) as SMPL,
+        and    crashreports_crashreport.build_fingerprint == crashreports_heartbeat.build_fingerprint ) as smpl,
         ( select count(crashreports_crashreport.id) from crashreports_crashreport
         where  boot_reason not in ("UNKNOWN", "keyboard power on", "RTC alarm")
         and    crashreports_device.id == crashreports_crashreport.device_id
@@ -65,18 +65,18 @@ def psql_execute_device_update_history_query(cursor, params):
     SELECT
         min(crashreports_heartbeat.date) as update_date,
         build_fingerprint,
-        max(device_id),
+        max(crashreports_device.id),
         ( select count(crashreports_crashreport.id) from crashreports_crashreport
           where  boot_reason in ('UNKNOWN', 'keyboard power on')
-          and    device_id = crashreports_crashreport.device_id
+          and    max(crashreports_device.id) = crashreports_crashreport.device_id
           and    crashreports_crashreport.build_fingerprint = crashreports_heartbeat.build_fingerprint ) as prob_crashes,
         ( select count(crashreports_crashreport.id) from crashreports_crashreport
         where  boot_reason in ('RTC alarm')
-        and    device_id = crashreports_crashreport.device_id
-        and    crashreports_crashreport.build_fingerprint = crashreports_heartbeat.build_fingerprint ) as SMPL,
+        and    max(crashreports_device.id) = crashreports_crashreport.device_id
+        and    crashreports_crashreport.build_fingerprint = crashreports_heartbeat.build_fingerprint ) as smpl,
         ( select count(crashreports_crashreport.id) from crashreports_crashreport
         where  boot_reason not in ('UNKNOWN', 'keyboard power on', 'RTC alarm')
-        and    device_id = crashreports_crashreport.device_id
+        and    max(crashreports_device.id) = crashreports_crashreport.device_id
         and    crashreports_crashreport.build_fingerprint = crashreports_heartbeat.build_fingerprint ) as other,
         count(crashreports_heartbeat.id) as heartbeats
     FROM
