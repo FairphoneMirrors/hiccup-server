@@ -144,7 +144,7 @@ def psql_execute_device_report_history(cursor, params):
     join crashreports_heartbeat on crashreports_device.id = crashreports_heartbeat.device_id
     left join crashreports_crashreport on crashreports_device.id = crashreports_crashreport.device_id and  crashreports_heartbeat.date::date = crashreports_crashreport.date::date
     where
-      crashreports_device.uuid = '18f530d7-e9c3-4dcf-adba-3dddcd7d3155' group by crashreports_heartbeat.date, crashreports_device.id;
+      crashreports_device.uuid = %s group by crashreports_heartbeat.date, crashreports_device.id;
     '''
     uuid = params.get('uuid', '18f530d7-e9c3-4dcf-adba-3dddcd7d3155')
     param_array = [uuid]
