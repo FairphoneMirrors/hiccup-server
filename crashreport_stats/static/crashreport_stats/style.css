@@ -42,3 +42,7 @@ div#logfile-modal-body {
 td#uuid {
 font-family: monospace;
 }
+
+.right-align {
+  text-align: right;
+}

@@ -1,6 +1,13 @@
-<div id = "{{element_name}}" class="panel line_chart"> </div>
+<div class="panel right-align">
+<div>
+ <input type="text" name="daterange" value="01/01/2015 - 01/31/2015" />
+</div>
+<div id = "{{element_name}}" class="line_chart" ></div>
 <script>
+
 google.charts.setOnLoadCallback(drawChartReportPerDay);
+
+const arrayColumn = (arr, n) => arr.map(x => x[n]);
 
 function drawChartReportPerDay(element) {
   element = "heartbeats"
@@ -8,35 +15,74 @@ function drawChartReportPerDay(element) {
   var data = new google.visualization.DataTable();
   var options = {
     title: "{{ title }}",
-    viewWindow: {
-        max: new Date(),
-    },
     legend: { position: 'bottom' },
     chartArea: {width: '100%', height: '100%'},
     legend: {position: 'in'},
     titlePosition: 'in', axisTitlesPosition: 'in',
     bar: { groupWidth: '175%' },
     isStacked: true,
-    hAxis: {textPosition: 'in'}, vAxis: {textPosition: 'in'}
+    hAxis: {textPosition: 'in',
+      viewWindow: {
+      },
+    }, vAxis: {textPosition: 'in'}
   };
   $.getJSON( "{% url 'hiccup_stats_api_v1_device_report_history' uuid %}", function( json_response ) {
     res = [];
+
     if (json_response.results)
       res = json_response.results;
     else
       res = json_response;
+
     reformated_array = res.map(function(obj){
         ret =  [new Date(obj.date), obj.heartbeats, obj.prob_crashes, obj.smpl, obj.other];
         return ret;
     });
+    dates_sorted = arrayColumn(reformated_array,0).sort(function(a,b){
+      // Turn your strings into dates, and then subtract them
+      // to get a value that is either negative, positive, or zero.
+      return new Date(b.date) - new Date(a.date);
+    });
+    start_date = dates_sorted[0];
+    var hiccup_introduction_date = "2016-08-01";
+    if (start_date - new Date(hiccup_introduction_date) < 0) {
+      start_date = new Date(hiccup_introduction_date);
+    }
+    end_date = dates_sorted[dates_sorted.length - 3];
+    console.log(dates_sorted);
+
+    console.log(end_date);
     data.addColumn('date', 'Date');
     data.addColumn('number', 'Heartbeats');
     data.addColumn('number', 'prob. Crashes');
     data.addColumn('number', 'SMPL');
     data.addColumn('number', 'other');
-
     data.addRows(reformated_array);
     chart.draw(data,  options);
+    initDateRange(chart, data, start_date, end_date, options);
+
   });
+}
+
+function initDateRange(chart, data, start_date, end_date, options) {
+  $('input[name="daterange"]').daterangepicker( {
+    locale: {
+      format: 'YYYY-MM-DD'
+    },
+    showDropdowns: true,
+    endDate: end_date,
+    startDate: start_date,
+    minDate: start_date,
+    maxDate: end_date,
+    opens: "left",
+    },
+    function(start, end, label) {
+      options.hAxis.viewWindow.min=new Date(start);
+      options.hAxis.viewWindow.max=new Date(end);
+      chart.draw(data, options);
+    });
+  options.hAxis.viewWindow.min=start_date;
+  options.hAxis.viewWindow.max=end_date;
+  chart.draw(data, options);
 }
 </script>
