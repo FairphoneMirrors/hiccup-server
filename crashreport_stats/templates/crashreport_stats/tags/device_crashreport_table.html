@@ -51,6 +51,15 @@ $(document).ready(function() {
     console.log("Generating report table");
     console.log(json_response);
     dataSet = json_response.results.map(function(obj) {
+      if (obj.boot_reason == "RTC alarm") {
+        obj.boot_reason = "Loose Battery";
+      }
+      if (obj.boot_reason == "SMPL") {
+        obj.boot_reason = "Battery removed";
+      }
+      if (obj.boot_reason == "keyboard power on") {
+        obj.boot_reason = "Random reboot";
+      }
         ret = [
               obj.build_fingerprint.split('/')[4], new Date(obj.date),
               obj.boot_reason, '<a  onclick="show_logfile(\''+obj.logfiles[0]+'\'); return false;" >Logfile</a>'
@@ -62,7 +71,7 @@ $(document).ready(function() {
         columns: [
           { title: "Build Fingerprint" },
           { title: "Date" },
-          { title: "Boot Reason" },
+          { title: "Likely Reboot Reason" },
           { 
             title: "Logfiles",
           }

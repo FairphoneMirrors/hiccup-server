@@ -44,6 +44,18 @@ class DeviceReportHistory(APIView):
         res = dictfetchall(cursor)
         return Response(res)
 
+class Status(APIView):
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+    def get(self, request, format=None, ):
+        num_devices = Device.objects.count()
+        num_crashreports = Crashreport.objects.count()
+        num_heartbeats = HeartBeat.objects.count()
+        return Response( {
+                'devices': num_devices,
+                'crashreports': num_crashreports,
+                'heartbeats': num_heartbeats
+        })
+
 class DeviceStat(APIView):
     permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
     def get(self, request, uuid, format=None, ):
@@ -62,7 +74,8 @@ class DeviceStat(APIView):
                 'crashreports'    : crashreports,
                 'crashes_per_day' : crashes_per_day,
                 'smpls'           : smpls,
-                'smpl_per_day'    : smpl_per_day
+                'smpl_per_day'    : smpl_per_day,
+                'board_date'      : device[0].board_date,
             })
 
 class LogFileDownload(APIView):

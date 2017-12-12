@@ -8,8 +8,11 @@
     <link rel="stylesheet" type="text/css" href="/static/crashreport_stats/bootstrap.min.css">
     {% djfrontend_jquery %}
     {% djfrontend_jquery_datatables %}
+    <script src="/static/crashreport_stats/moment.js"> </script>
+    <script src="/static/crashreport_stats/daterangepicker.js"> </script>
     {% djfrontend_twbs_js %}
     <link rel="stylesheet" type="text/css" href="/static/crashreport_stats/style.css">
+    <link rel="stylesheet" type="text/css" href="/static/crashreport_stats/daterangepicker.css">
 {% endblock head_js %}
 
 {% block body_content %}
@@ -33,7 +36,9 @@ google.charts.load('current', {'packages':['corechart','line']});
       <a class="navbar-brand" href="javascript:void(0)">Hiccup</a>
       <div class="navbar-collapse collapse navbar-responsive-collapse">
         <ul class="nav navbar-nav">
-          <li class="active"><a href="/hiccup_stats/">Statistics</a></li>
+          <li class="active"><a href="/hiccup_stats/">Device Statistics</a></li>
+          <li class="active"><a href="/hiccup_stats/versions/">Version Statistics</a></li>
+
           <li><a href="/hiccup/admin/">Admin Area</a></li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
