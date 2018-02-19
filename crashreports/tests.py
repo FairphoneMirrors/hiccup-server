@@ -215,6 +215,25 @@ class HeartbeatListTestCase(APITestCase):
         request = self.user.get(self.url)
         self.assertEqual(request.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_no_radio_version(self):
+        data = self.data.copy()
+        data.pop('radio_version')
+        self.post_multiple(self.user, data, 1)
+        url = self.url_by_uuid.format(self.uuid)
+        request = self.admin.get(url)
+        self.assertEqual(request.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(request.data['results']), 1)
+        self.assertIsNone(request.data['results'][0]['radio_version'])
+
+    def test_radio_version_field(self):
+        self.post_multiple(self.user, self.data, 1)
+        url = self.url_by_uuid.format(self.uuid)
+        request = self.admin.get(url)
+        self.assertEqual(request.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(request.data['results']), 1)
+        self.assertEqual(request.data['results'][0]['radio_version'],
+                self.data['radio_version'])
+
 
 def create_crashreport(uuid="not set"):
     return {
