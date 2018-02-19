@@ -13,6 +13,11 @@ def on_crashreport_create(sender, **kwargs):
     vd, _ = VersionDaily.objects.get_or_create(version=v, date=crashreport.date)
     stats = [v, vd]
 
+    if crashreport.radio_version:
+        rv, _ = RadioVersion.objects.get_or_create(radio_version=crashreport.radio_version)
+        rvd, _ = RadioVersionDaily.objects.get_or_create(version=rv, date=crashreport.date)
+        stats += [rv, rvd]
+
     if crashreport.boot_reason == "RTC alarm":
         for element in stats:
             element.smpl = F('smpl') + 1
@@ -33,8 +38,14 @@ def on_heartbeat_create(sender, **kwargs):
 
     v, _ = Version.objects.get_or_create(build_fingerprint=hb.build_fingerprint)
     vd, _ = VersionDaily.objects.get_or_create(version=v, date=hb.date)
+    stats = [v, vd]
 
-    for element in [v, vd]:
+    if hb.radio_version:
+        rv, _ = RadioVersion.objects.get_or_create(radio_version=hb.radio_version)
+        rvd, _ = RadioVersionDaily.objects.get_or_create(version=rv, date=hb.date)
+        stats += [rv, rvd]
+
+    for element in stats:
         element.heartbeats = F('heartbeats') + 1
         element.save()
 
@@ -71,4 +82,15 @@ class Version(_VersionStats):
 
 class VersionDaily(_DailyVersionStats):
     version = models.ForeignKey(Version, db_index=True, related_name='daily_stats',
+            on_delete=models.CASCADE)
+
+
+class RadioVersion(_VersionStats):
+    radio_version = models.CharField(max_length=200, unique=True)
+
+    def __str__(self):
+        return self.radio_version
+
+class RadioVersionDaily(_DailyVersionStats):
+    version = models.ForeignKey(RadioVersion, db_index=True, related_name='daily_stats',
             on_delete=models.CASCADE)
