@@ -116,6 +116,7 @@ class HeartbeatListTestCase(APITestCase):
             'app_version': 2,
             'uptime': "2 Hours",
             'build_fingerprint': "models.CharField(max_length=200)",
+            'radio_version': 'XXXX.X-FP2-X-XX',
             'date': str(datetime.datetime(year=2016, month=1, day=1))
         }
 
@@ -222,6 +223,7 @@ def create_crashreport(uuid="not set"):
         'app_version': 2,
         'uptime': "2 Hours",
         'build_fingerprint': "models.CharField(max_length=200)",
+        'radio_version': 'XXXX.X-FP2-X-XX',
         'boot_reason': "models.CharField(max_length=200)",
         'power_on_reason': "models.CharField(max_length=200)",
         'power_off_reason': "models.CharField(max_length=200)",
