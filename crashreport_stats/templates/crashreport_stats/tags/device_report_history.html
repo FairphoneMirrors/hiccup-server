@@ -39,19 +39,20 @@ function drawChartReportPerDay(element) {
         return ret;
     });
     dates_sorted = arrayColumn(reformated_array,0).sort(function(a,b){
-      // Turn your strings into dates, and then subtract them
-      // to get a value that is either negative, positive, or zero.
-      return new Date(b.date) - new Date(a.date);
+      return a - b;
     });
-    start_date = dates_sorted[0];
-    var hiccup_introduction_date = "2016-08-01";
-    if (start_date - new Date(hiccup_introduction_date) < 0) {
-      start_date = new Date(hiccup_introduction_date);
-    }
-    end_date = dates_sorted[dates_sorted.length - 3];
-    console.log(dates_sorted);
 
-    console.log(end_date);
+    // Define the start and end of the range of dates we should look at.
+    var hiccup_introduction_date = new Date("2016-08-01");
+    var start_date = hiccup_introduction_date;
+    for (let date_sorted of dates_sorted) {
+      if (date_sorted >= hiccup_introduction_date) {
+        start_date = date_sorted;
+        break;
+      }
+    }
+    var end_date = dates_sorted[dates_sorted.length - 1];
+
     data.addColumn('date', 'Date');
     data.addColumn('number', 'Heartbeats');
     data.addColumn('number', 'prob. Crashes');
