@@ -116,6 +116,7 @@ class HeartbeatListTestCase(APITestCase):
             'app_version': 2,
             'uptime': "2 Hours",
             'build_fingerprint': "models.CharField(max_length=200)",
+            'radio_version': 'XXXX.X-FP2-X-XX',
             'date': str(datetime.datetime(year=2016, month=1, day=1))
         }
 
@@ -214,6 +215,25 @@ class HeartbeatListTestCase(APITestCase):
         request = self.user.get(self.url)
         self.assertEqual(request.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_no_radio_version(self):
+        data = self.data.copy()
+        data.pop('radio_version')
+        self.post_multiple(self.user, data, 1)
+        url = self.url_by_uuid.format(self.uuid)
+        request = self.admin.get(url)
+        self.assertEqual(request.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(request.data['results']), 1)
+        self.assertIsNone(request.data['results'][0]['radio_version'])
+
+    def test_radio_version_field(self):
+        self.post_multiple(self.user, self.data, 1)
+        url = self.url_by_uuid.format(self.uuid)
+        request = self.admin.get(url)
+        self.assertEqual(request.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(request.data['results']), 1)
+        self.assertEqual(request.data['results'][0]['radio_version'],
+                self.data['radio_version'])
+
 
 def create_crashreport(uuid="not set"):
     return {
@@ -222,6 +242,7 @@ def create_crashreport(uuid="not set"):
         'app_version': 2,
         'uptime': "2 Hours",
         'build_fingerprint': "models.CharField(max_length=200)",
+        'radio_version': 'XXXX.X-FP2-X-XX',
         'boot_reason': "models.CharField(max_length=200)",
         'power_on_reason': "models.CharField(max_length=200)",
         'power_off_reason': "models.CharField(max_length=200)",

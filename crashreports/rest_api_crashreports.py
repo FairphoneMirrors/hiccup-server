@@ -12,7 +12,7 @@ class ListCreateView(generics.ListCreateAPIView):
     paginate_by = 20
     permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
     serializer_class = CrashReportSerializer
-    filter_fields = ('device','build_fingerprint')
+    filter_fields = ('device', 'build_fingerprint', 'radio_version')
 
     pass
 
