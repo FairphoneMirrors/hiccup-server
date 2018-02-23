@@ -1,11 +1,18 @@
+"""Register models for admin site"""
 from django.contrib import admin
-from crashreport_stats.models import *
+from crashreport_stats.models import (
+    Version,
+    VersionDaily,
+    RadioVersion,
+    RadioVersionDaily
+)
 
-@admin.register(Version)
-class VersionAdmin(admin.ModelAdmin):
-    pass
 
-@admin.register(VersionDaily)
-class VersionDailyAdmin(admin.ModelAdmin):
-    list_display=('version','date')
-    pass
+admin.site.register(Version)
+admin.site.register(RadioVersion)
+
+
+@admin.register(VersionDaily, RadioVersionDaily)
+class DailyVersionStatsAdmin(admin.ModelAdmin):
+    """Admin for daily version stats."""
+    list_display = ('version', 'date')
