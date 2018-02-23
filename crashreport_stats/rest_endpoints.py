@@ -91,47 +91,75 @@ class LogFileDownload(APIView):
             fo = zf.open(f)
             ret[f.filename] = fo.read()
         return Response(ret)
-        
 
-class VersionFilter(filters.FilterSet):
+
+class _VersionStatsFilter(filters.FilterSet):
     first_seen_before = django_filters.DateFilter(name="first_seen_on", lookup_expr='lte')
-    first_seen_after   = django_filters.DateFilter(name="first_seen_on", lookup_expr='gte')
+    first_seen_after = django_filters.DateFilter(name="first_seen_on", lookup_expr='gte')
     released_before = django_filters.DateFilter(name="released_on", lookup_expr='lte')
-    released_after   = django_filters.DateFilter(name="released_on", lookup_expr='gte')
-    class Meta:
-        model = Version
+    released_after = django_filters.DateFilter(name="released_on", lookup_expr='gte')
 
-class VersionSerializer(serializers.ModelSerializer):
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
-    class Meta:
-        model = Version
+class _VersionStatsSerializer(serializers.ModelSerializer):
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
 
-class VersionListView(generics.ListAPIView):
-    queryset = Version.objects.all().order_by('-heartbeats')
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
-    serializer_class = VersionSerializer
+class _VersionStatsListView(generics.ListAPIView):
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
     filter_backends = (filters.DjangoFilterBackend,)
-    filter_class = (VersionFilter)
 
-class VersionDailyFilter(filters.FilterSet):
+class _DailyVersionStatsFilter(filters.FilterSet):
     date_start = django_filters.DateFilter(name="date", lookup_expr='gte')
-    date_end   = django_filters.DateFilter(name="date", lookup_expr='lte')
+    date_end = django_filters.DateFilter(name="date", lookup_expr='lte')
+
+class _DailyVersionStatsSerializer(serializers.ModelSerializer):
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
+
+class _DailyVersionStatsListView(generics.ListAPIView):
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
+    filter_backends = (filters.DjangoFilterBackend,)
+
+
+class VersionSerializer(_VersionStatsSerializer):
+    class Meta:
+        model = Version
+        fields = '__all__'
+
+class VersionFilter(_VersionStatsFilter):
+    class Meta:
+        model = Version
+        fields = '__all__'
+
+class VersionListView(_VersionStatsListView):
+    queryset = Version.objects.all().order_by('-heartbeats')
+    filter_class = VersionFilter
+    serializer_class = VersionSerializer
+
+class VersionDailyFilter(_DailyVersionStatsFilter):
     version__build_fingerprint = django_filters.CharFilter()
     version__is_official_release = django_filters.BooleanFilter()
     version__is_beta_release = django_filters.BooleanFilter()
+
     class Meta:
         model = VersionDaily
+        fields = '__all__'
 
-class VersionDailySerializer(serializers.ModelSerializer):
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
-    build_fingerprint  = serializers.CharField()
+class VersionDailySerializer(_DailyVersionStatsSerializer):
+    build_fingerprint = serializers.CharField()
+
     class Meta:
         model = VersionDaily
+        fields = '__all__'
 
-class VersionDailyListView(generics.ListAPIView):
-    queryset = VersionDaily.objects.annotate(build_fingerprint=F('version__build_fingerprint')).all().order_by('date')
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
-    filter_backends = (filters.DjangoFilterBackend,)
+class VersionDailyListView(_DailyVersionStatsListView):
+    queryset = (
+        VersionDaily.objects
+            .annotate(build_fingerprint=F('version__build_fingerprint'))
+            .all()
+            .order_by('date')
+    )
+    filter_class = VersionDailyFilter
+    filter_fields = (
+        'version__build_fingerprint',
+        'version__is_official_release',
+        'version__is_beta_release',
+    )
     serializer_class = VersionDailySerializer
-    filter_class = (VersionDailyFilter)
-    filter_fields = ('version__build_fingerprint','version__is_official_release','version__is_beta_release',)
