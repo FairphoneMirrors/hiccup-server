@@ -32,12 +32,18 @@ urlpatterns = [
     url(r'^api/v1/logfile_download/(?P<id>[0-9]+)/$',
         rest_endpoints.LogFileDownload.as_view(),
         name='hiccup_stats_api_v1_logfile_download'),
-        
+
     url(r'^api/v1/versions/$',
         rest_endpoints.VersionListView.as_view(),
         name='hiccup_stats_api_v1_versions'),
-    
     url(r'^api/v1/version_daily/$',
         rest_endpoints.VersionDailyListView.as_view(),
         name='hiccup_stats_api_v1_version_daily'),
+
+    url(r'^api/v1/radio_versions/$',
+        rest_endpoints.RadioVersionListView.as_view(),
+        name='hiccup_stats_api_v1_radio_versions'),
+    url(r'^api/v1/radio_version_daily/$',
+        rest_endpoints.RadioVersionDailyListView.as_view(),
+        name='hiccup_stats_api_v1_radio_version_daily'),
 ]

@@ -163,3 +163,50 @@ class VersionDailyListView(_DailyVersionStatsListView):
         'version__is_beta_release',
     )
     serializer_class = VersionDailySerializer
+
+
+class RadioVersionSerializer(_VersionStatsSerializer):
+    class Meta:
+        model = RadioVersion
+        fields = '__all__'
+
+class RadioVersionFilter(_VersionStatsFilter):
+    class Meta:
+        model = RadioVersion
+        fields = '__all__'
+
+class RadioVersionListView(_VersionStatsListView):
+    queryset = RadioVersion.objects.all().order_by('-heartbeats')
+    serializer_class = RadioVersionSerializer
+    filter_class = RadioVersionFilter
+
+class RadioVersionDailyFilter(_DailyVersionStatsFilter):
+    version__radio_version = django_filters.CharFilter()
+    version__is_official_release = django_filters.BooleanFilter()
+    version__is_beta_release = django_filters.BooleanFilter()
+
+    class Meta:
+        model = RadioVersionDaily
+        fields = '__all__'
+
+class RadioVersionDailySerializer(_DailyVersionStatsSerializer):
+    radio_version = serializers.CharField()
+
+    class Meta:
+        model = RadioVersionDaily
+        fields = '__all__'
+
+class RadioVersionDailyListView(_DailyVersionStatsListView):
+    queryset = (
+        RadioVersionDaily.objects
+            .annotate(radio_version=F('version__radio_version'))
+            .all()
+            .order_by('date')
+    )
+    filter_class = RadioVersionDailyFilter
+    filter_fields = (
+        'version__radio_version',
+        'version__is_official_release',
+        'version__is_beta_release',
+    )
+    serializer_class = RadioVersionDailySerializer
