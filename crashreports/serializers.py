@@ -82,3 +82,14 @@ class DeviceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Device
+
+
+class DeviceCreateSerializer(DeviceSerializer):
+
+    class Meta:
+        model = Device
+        fields = ('board_date', 'chipset')
+        extra_kwargs = {
+            'board_date': {'required': True},
+            'chipset': {'required': True},
+        }

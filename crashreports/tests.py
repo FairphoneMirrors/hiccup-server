@@ -11,13 +11,36 @@ import tempfile
 class DeviceTestCase(APITestCase):
 
     def setUp(self):
-        pass
+        self.url = "/hiccup/api/v1/devices/register/"
 
     def test(self):
-        request = self.client.post("/hiccup/api/v1/devices/register/", device_register_data)
+        request = self.client.post(self.url, device_register_data)
         self.assertTrue("token" in request.data)
         self.assertTrue("uuid" in request.data)
         self.assertEqual(request.status_code, status.HTTP_200_OK)
+
+    def test_create_missing_fields(self):
+        request = self.client.post(self.url)
+        self.assertEqual(request.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_missing_board_date(self):
+        request = self.client.post(self.url, {
+            "board_date": device_register_data["board_date"]
+        })
+        self.assertEqual(request.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_missing_chipset(self):
+        request = self.client.post(self.url, {
+            "chipset": device_register_data["chipset"]
+        })
+        self.assertEqual(request.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_invalid_board_date(self):
+        request = self.client.post(self.url, {
+            "board_date": "not_a_valid_date"
+        })
+        self.assertEqual(request.status_code, status.HTTP_400_BAD_REQUEST)
+
 
 # Create your tests here.
 
