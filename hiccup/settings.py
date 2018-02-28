@@ -183,6 +183,29 @@ STATIC_URL = '/static/'
 
 STATIC_ROOT = "/home/hiccup/static/static"
 
+
+# Logging
+# https://docs.djangoproject.com/en/2.0/topics/logging/#examples
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/home/hiccup/log/debug.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+
 try:
     from local_settings import *
 except ImportError as e:

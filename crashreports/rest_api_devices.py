@@ -1,6 +1,6 @@
 from crashreports.models import *
 from crashreports.permissions import HasRightsOrIsDeviceOwnerDeviceCreation
-from crashreports.serializers import DeviceSerializer
+from crashreports.serializers import DeviceSerializer, DeviceCreateSerializer
 from django.contrib.auth.models import Permission
 from rest_framework import generics
 from rest_framework.authtoken.models import Token
@@ -36,13 +36,16 @@ def register_device(request):
     a token.
     We generate the uuid here as this makes it easier to deal with collisions.
     """
+    # Return status '400 Bad Request' if data is not well-formed.
+    serializer = DeviceCreateSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
     device = Device()
     user = User.objects.create_user("device_" + str(device.uuid), '', None)
     permission = Permission.objects.get(name='Can add crashreport')
     user.user_permissions.add(permission)
     user.save()
-    device.board_date = request.data['board_date']
-    device.chipset = request.data['chipset']
+    device.board_date = serializer.validated_data['board_date']
+    device.chipset = serializer.validated_data['chipset']
     device.user = user
     device.token = Token.objects.create(user=user).key
     device.save()
