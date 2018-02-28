@@ -201,42 +201,49 @@ class HeartbeatListTestCase(APITestCase):
         self.assertEqual(request.status_code, status.HTTP_200_OK)
         self.assertTrue(len(request.data['results']) == count)
 
-    def test_retrieve_single(self, user=None,
-                             expected_result=status.HTTP_200_OK):
+    def retrieve_single(self, user):
         count = 5
-        if user is None:
-            user = self.admin
         self.post_multiple(self.user, self.data, count)
         url = "{}1/".format(self.url)
         request = user.get(url)
-        self.assertEqual(request.status_code, expected_result)
+        return request.status_code
+
+    def test_retrieve_single_admin(self):
+        self.assertEqual(
+            self.retrieve_single(self.admin),
+            status.HTTP_200_OK)
 
     def test_retrieve_single_noauth(self):
-        self.test_retrieve_single(user=self.user,
-                                  expected_result=status.HTTP_403_FORBIDDEN)
+        self.assertEqual(
+            self.retrieve_single(self.user),
+            status.HTTP_403_FORBIDDEN)
 
     def test_retrieve_single_device_owner(self):
-        self.test_retrieve_single(self.noauth_client,
-                                  status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            self.retrieve_single(self.noauth_client),
+            status.HTTP_401_UNAUTHORIZED)
 
-    def test_retrieve_single_by_device(self, user=None,
-                                       expected_result=status.HTTP_200_OK):
+    def retrieve_single_by_device(self, user):
         count = 5
-        if user is None:
-            user = self.admin
         self.post_multiple(self.user, self.data, count)
         url = "{}1/".format(self.url_by_uuid.format(self.uuid))
         request = user.get(url)
-        self.assertEqual(request.status_code, expected_result)
+        return request.status_code
+
+    def test_retreive_single_by_device_admin(self):
+        self.assertEqual(
+            self.retrieve_single_by_device(self.admin),
+            status.HTTP_200_OK)
 
     def test_retrieve_single_by_device_noauth(self):
-        self.test_retrieve_single_by_device(
-            user=self.user,
-            expected_result=status.HTTP_403_FORBIDDEN)
+        self.assertEqual(
+            self.retrieve_single_by_device(self.user),
+            status.HTTP_403_FORBIDDEN)
 
     def test_retrieve_single_by_device_device_owner(self):
-        self.test_retrieve_single_by_device(
-            self.noauth_client, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            self.retrieve_single_by_device(self.noauth_client),
+            status.HTTP_401_UNAUTHORIZED)
 
     def test_list_by_uuid(self):
         count = 5
