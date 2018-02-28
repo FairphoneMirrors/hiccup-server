@@ -87,7 +87,7 @@ class ListDevicesTestCase(APITestCase):
 
     def test_device_list(self):
         client = APIClient()
-        client.login(username='myuser', password='test')
+        client.force_authenticate(self.admin)
         request = client.get("/hiccup/api/v1/devices/", {})
         self.assertTrue(request.data['results'][1]['uuid'] is not '')
         self.assertTrue(len(request.data['results']) >= 3)
@@ -101,7 +101,7 @@ class ListDevicesTestCase(APITestCase):
 
     def test_retrieve_device_auth(self):
         client = APIClient()
-        client.login(username='myuser', password='test')
+        client.force_authenticate(self.admin)
         request = client.get(
             "/hiccup/api/v1/devices/{}/".format(self.uuid_to_retrieve), {})
         self.assertEqual(request.status_code, status.HTTP_200_OK)
@@ -117,7 +117,7 @@ class ListDevicesTestCase(APITestCase):
 
     def test_delete_device_auth(self):
         client = APIClient()
-        client.login(username='myuser', password='test')
+        client.force_authenticate(self.admin)
         url = "/hiccup/api/v1/devices/{}/".format(self.uuid_to_delete)
         request = client.delete(
             url.format(self.uuid_to_delete), {})
@@ -144,10 +144,10 @@ class HeartbeatListTestCase(APITestCase):
         request = self.client.post("/hiccup/api/v1/devices/register/", device_register_data)
         self.other_uuid = request.data['uuid']
         self.other_token = request.data['token']
-        self.admin = User.objects.create_superuser(
+        self.admin_user = User.objects.create_superuser(
             'myuser', 'myemail@test.com', self.password)
         self.admin = APIClient()
-        self.admin.login(username='myuser', password='test')
+        self.admin.force_authenticate(self.admin_user)
         self.user = APIClient()
         self.other_user = APIClient()
         self.user.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
