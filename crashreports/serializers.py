@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from crashreports.models import Crashreport
@@ -31,6 +32,7 @@ class CrashReportSerializer(serializers.ModelSerializer):
     uuid = serializers.CharField(max_length=64)
     id = PrivateField()
     device_local_id = serializers.IntegerField(required=False)
+    date = serializers.DateTimeField(default_timezone=timezone.UTC())
 
     class Meta:
         model = Crashreport
@@ -53,6 +55,7 @@ class HeartBeatSerializer(serializers.ModelSerializer):
     uuid = serializers.CharField(max_length=64)
     id = PrivateField()
     device_local_id = serializers.IntegerField(required=False)
+    date = serializers.DateTimeField(default_timezone=timezone.UTC())
 
     class Meta:
         model = HeartBeat
@@ -79,6 +82,8 @@ class LogFileSerializer(serializers.ModelSerializer):
 
 class DeviceSerializer(serializers.ModelSerializer):
     permission_classes = (permissions.IsAdminUser,)
+    board_date = serializers.DateTimeField(default_timezone=timezone.UTC())
+    last_heartbeat = serializers.DateTimeField(default_timezone=timezone.UTC())
 
     class Meta:
         model = Device
