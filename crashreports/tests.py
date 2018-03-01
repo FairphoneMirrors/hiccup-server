@@ -41,6 +41,28 @@ class DeviceTestCase(APITestCase):
         })
         self.assertEqual(request.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_create_non_existent_time_board_date(self):
+        """
+        Test the resolution of a naive date-time in which the Europe/Amsterdam daylight saving
+        time transition moved the time "forward".
+        """
+        data = device_register_data.copy()
+        # In 2017, the Netherlands changed from CET to CEST on March, 26 at 02:00
+        data['board_date'] = '2017-03-26 02:34:56'
+        request = self.client.post(self.url, data)
+        self.assertEqual(request.status_code, status.HTTP_200_OK)
+
+    def test_create_ambiguous_time_board_date(self):
+        """
+        Test the resolution of a naive date-time in which the Europe/Amsterdam daylight saving
+        time transition moved the time "backward".
+        """
+        data = device_register_data.copy()
+        # In 2017, the Netherlands changed from CEST to CET on October, 29 at 03:00
+        data['board_date'] = '2017-10-29 02:34:56'
+        request = self.client.post(self.url, data)
+        self.assertEqual(request.status_code, status.HTTP_200_OK)
+
 
 # Create your tests here.
 
@@ -256,6 +278,28 @@ class HeartbeatListTestCase(APITestCase):
         self.assertEqual(len(request.data['results']), 1)
         self.assertEqual(request.data['results'][0]['radio_version'],
                 self.data['radio_version'])
+
+    def test_send_non_existent_time(self):
+        """
+        Test the resolution of a naive date-time in which the Europe/Amsterdam daylight saving
+        time transition moved the time "forward".
+        """
+        data = self.data.copy()
+        # In 2017, the Netherlands changed from CET to CEST on March, 26 at 02:00
+        data['date'] = '2017-03-26 02:34:56'
+        request = self.user.post(self.url, data)
+        self.assertEqual(request.status_code, status.HTTP_201_CREATED)
+
+    def test_send_ambiguous_time(self):
+        """
+        Test the resolution of a naive date-time in which the Europe/Amsterdam daylight saving
+        time transition moved the time "backward".
+        """
+        data = self.data.copy()
+        # In 2017, the Netherlands changed from CEST to CET on October, 29 at 03:00
+        data['date'] = '2017-10-29 02:34:56'
+        request = self.user.post(self.url, data)
+        self.assertEqual(request.status_code, status.HTTP_201_CREATED)
 
 
 def create_crashreport(uuid="not set"):

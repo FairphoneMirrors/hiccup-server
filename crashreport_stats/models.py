@@ -2,52 +2,7 @@ from django.db import models
 from crashreports.models import *
 from django.db.models import F
 from django.db.models.signals import post_save
-from django.dispatch import receiver
 import datetime
-
-
-@receiver(post_save, sender=Crashreport)
-def on_crashreport_create(sender, **kwargs):
-    crashreport = kwargs.get('instance')
-    v, _ = Version.objects.get_or_create(build_fingerprint=crashreport.build_fingerprint)
-    vd, _ = VersionDaily.objects.get_or_create(version=v, date=crashreport.date)
-    stats = [v, vd]
-
-    if crashreport.radio_version:
-        rv, _ = RadioVersion.objects.get_or_create(radio_version=crashreport.radio_version)
-        rvd, _ = RadioVersionDaily.objects.get_or_create(version=rv, date=crashreport.date)
-        stats += [rv, rvd]
-
-    if crashreport.boot_reason == "RTC alarm":
-        for element in stats:
-            element.smpl = F('smpl') + 1
-    elif crashreport.boot_reason in ["UNKNOWN", "keyboard power on"]:
-        for element in stats:
-            element.prob_crashes = F('prob_crashes') + 1
-    else:
-        for element in stats:
-            element.other = F('other') + 1
-
-    for element in stats:
-        element.save()
-
-
-@receiver(post_save, sender=HeartBeat)
-def on_heartbeat_create(sender, **kwargs):
-    hb = kwargs.get('instance')
-
-    v, _ = Version.objects.get_or_create(build_fingerprint=hb.build_fingerprint)
-    vd, _ = VersionDaily.objects.get_or_create(version=v, date=hb.date)
-    stats = [v, vd]
-
-    if hb.radio_version:
-        rv, _ = RadioVersion.objects.get_or_create(radio_version=hb.radio_version)
-        rvd, _ = RadioVersionDaily.objects.get_or_create(version=rv, date=hb.date)
-        stats += [rv, rvd]
-
-    for element in stats:
-        element.heartbeats = F('heartbeats') + 1
-        element.save()
 
 
 class _VersionStats(models.Model):
