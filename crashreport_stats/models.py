@@ -31,8 +31,8 @@ class _VersionStats(models.Model):
 
     is_official_release = models.BooleanField(default=False)
     is_beta_release = models.BooleanField(default=False)
-    first_seen_on = models.DateField(auto_now_add=True)
-    released_on = models.DateField(auto_now_add=True)
+    first_seen_on = models.DateField()
+    released_on = models.DateField()
     heartbeats = models.IntegerField(default=0)
     prob_crashes = models.IntegerField(default=0)
     smpl = models.IntegerField(default=0)
@@ -61,7 +61,7 @@ class _DailyVersionStats(models.Model):
 
     """
 
-    date = models.DateField(auto_now_add=True)
+    date = models.DateField()
     heartbeats = models.IntegerField(default=0)
     prob_crashes = models.IntegerField(default=0)
     smpl = models.IntegerField(default=0)
@@ -127,3 +127,15 @@ class RadioVersionDaily(_DailyVersionStats):
     version = models.ForeignKey(
         RadioVersion, db_index=True, related_name='daily_stats',
         on_delete=models.CASCADE)
+
+
+class StatsMetadata(models.Model):
+    """The stats metadata.
+
+    Attributes:
+        updated_at (models.DateTimeField): The last time the stats were
+            updated.
+
+    """
+
+    updated_at = models.DateTimeField()
