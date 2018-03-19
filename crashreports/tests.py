@@ -222,10 +222,10 @@ class HeartbeatListTestCase(DeviceRegisterAPITestCase):
 
     def _retrieve_single(self, user):
         count = 5
-        requests = self._post_multiple(self.user, self.data, count)
+        requests = self._post_multiple(self.admin, self.data, count)
         self.assertEqual(len(requests), count)
         self.assertEqual(requests[0].status_code, status.HTTP_201_CREATED)
-        url = "{}1/".format(self.url)
+        url = "{url}{id}/".format(url=self.url, id=requests[0].data['id'])
         request = user.get(url)
         return request.status_code
 
@@ -234,7 +234,9 @@ class HeartbeatListTestCase(DeviceRegisterAPITestCase):
         requests = self._post_multiple(self.user, self.data, count)
         self.assertEqual(len(requests), count)
         self.assertEqual(requests[0].status_code, status.HTTP_201_CREATED)
-        url = "{}1/".format(self.url_by_uuid.format(self.uuid))
+        url = "{url}{id}/".format(
+            url=self.url_by_uuid.format(self.uuid),
+            id=requests[0].data['device_local_id'])
         request = user.get(url)
         return request.status_code
 
