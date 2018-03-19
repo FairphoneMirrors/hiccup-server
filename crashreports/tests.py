@@ -7,6 +7,25 @@ from rest_framework.test import APITestCase
 from rest_framework.test import APIClient
 from rest_framework import status
 
+from crashreports.models import Crashreport
+
+
+class InvalidCrashTypeError(BaseException):
+    """Invalid crash type encountered
+
+    The valid crash type values (strings) are:
+      - 'crash';
+      - 'smpl';
+      - 'other'.
+
+    Args:
+      - crash_type: The invalid crash type.
+    """
+
+    def __init__(self, crash_type):
+        super(InvalidCrashTypeError, self).__init__(
+            '{} is not a valid crash type'.format(crash_type))
+
 
 class Dummy(object):
     DEFAULT_DUMMY_DEVICE_REGISTER_VALUES = {
@@ -34,6 +53,12 @@ class Dummy(object):
         'power_on_reason': 'it was powered on',
         'power_off_reason': 'something happened and it went off',
     })
+
+    CRASH_TYPE_TO_BOOT_REASON_MAP = {
+        'crash': Crashreport.BOOT_REASON_KEYBOARD_POWER_ON,
+        'smpl': Crashreport.BOOT_REASON_RTC_ALARM,
+        'other': 'whatever',
+    }
 
     @staticmethod
     def _update_copy(original, update):
@@ -64,15 +89,27 @@ class Dummy(object):
         return Dummy._update_copy(Dummy.DEFAULT_DUMMY_HEARTBEAT_VALUES, kwargs)
 
     @staticmethod
-    def crashreport_data(**kwargs):
+    def crashreport_data(report_type=None, **kwargs):
         """
             Return the data required to create a crashreport.
 
             Use the values passed as keyword arguments or default to
             the ones from `Dummy.DEFAULT_DUMMY_CRASHREPORTS_VALUES`.
+
+            Args:
+                report_type (str, optional): A valid value from
+                    `Dummy.CRASH_TYPE_TO_BOOT_REASON_MAP.keys()` that will
+                    define the boot reason if not explicitly defined in the
+                    keyword arguments already.
         """
-        return Dummy._update_copy(
+        data = Dummy._update_copy(
             Dummy.DEFAULT_DUMMY_CRASHREPORTS_VALUES, kwargs)
+        if report_type and 'boot_reason' not in kwargs:
+            if report_type not in Dummy.CRASH_TYPE_TO_BOOT_REASON_MAP:
+                raise InvalidCrashTypeError(report_type)
+            data['boot_reason'] = Dummy.CRASH_TYPE_TO_BOOT_REASON_MAP.get(
+                report_type)
+        return data
 
 
 class DeviceTestCase(APITestCase):
