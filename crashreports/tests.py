@@ -1,8 +1,10 @@
 from django.contrib.auth.models import User
+from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework.test import APIClient
 from rest_framework import status
 import tempfile
+import os
 
 
 class Dummy(object):
@@ -75,7 +77,7 @@ class Dummy(object):
 class DeviceTestCase(APITestCase):
 
     def setUp(self):
-        self.url = "/hiccup/api/v1/devices/register/"
+        self.url = reverse("api_v1_register_device")
 
     def test(self):
         request = self.client.post(self.url, Dummy.device_register_data())
@@ -136,6 +138,8 @@ class DeviceRegisterAPITestCase(APITestCase):
             database.
     """
 
+    REGISTER_DEVICE_URL = "api_v1_register_device"
+
     def setUp(self):
         self.number_of_devices_created = 0
 
@@ -171,7 +175,7 @@ class DeviceRegisterAPITestCase(APITestCase):
             the server in return.
         """
         data = Dummy.device_register_data(**kwargs)
-        response = self.client.post("/hiccup/api/v1/devices/register/", data)
+        response = self.client.post(reverse(self.REGISTER_DEVICE_URL), data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.number_of_devices_created += 1
 
@@ -180,31 +184,34 @@ class DeviceRegisterAPITestCase(APITestCase):
 
 class ListDevicesTestCase(DeviceRegisterAPITestCase):
 
+    LIST_CREATE_URL = "api_v1_list_devices"
+    RETRIEVE_URL = "api_v1_retrieve_device"
+
     def test_device_list(self):
-        request = self.admin.get("/hiccup/api/v1/devices/", {})
+        request = self.admin.get(reverse(self.LIST_CREATE_URL), {})
         self.assertIsNot(request.data['results'][1]['uuid'], '')
         self.assertEqual(
             len(request.data['results']), self.number_of_devices_created)
         self.assertEqual(request.status_code, status.HTTP_200_OK)
 
     def test_device_list_unauth(self):
-        request = self.client.get("/hiccup/api/v1/devices/", {})
+        request = self.client.get(reverse(self.LIST_CREATE_URL), {})
         self.assertEqual(request.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_retrieve_device_auth(self):
         request = self.admin.get(
-            "/hiccup/api/v1/devices/{}/".format(self.uuid), {})
+            reverse(self.RETRIEVE_URL, args=[self.uuid]), {})
         self.assertEqual(request.status_code, status.HTTP_200_OK)
         self.assertEqual(request.data['uuid'], str(self.uuid))
         self.assertEqual(request.data['token'], self.token)
 
     def test_retrieve_device_unauth(self):
         request = self.client.get(
-            "/hiccup/api/v1/devices/{}/".format(self.uuid), {})
+            reverse(self.RETRIEVE_URL, args=[self.uuid]), {})
         self.assertEqual(request.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_delete_device_auth(self):
-        url = "/hiccup/api/v1/devices/{}/".format(self.other_uuid)
+        url = reverse(self.RETRIEVE_URL, args=[self.other_uuid])
         request = self.admin.delete(url, {})
         self.assertEqual(request.status_code, status.HTTP_204_NO_CONTENT)
         request = self.admin.delete(url, {})
@@ -213,19 +220,26 @@ class ListDevicesTestCase(DeviceRegisterAPITestCase):
 
 class HeartbeatListTestCase(DeviceRegisterAPITestCase):
 
+    LIST_CREATE_URL = "api_v1_heartbeats"
+    RETRIEVE_URL = "api_v1_heartbeat"
+    LIST_CREATE_BY_UUID_URL = "api_v1_heartbeats_by_uuid"
+    RETRIEVE_BY_UUID_URL = "api_v1_heartbeat_by_uuid"
+
     @staticmethod
     def _create_dummy_data(**kwargs):
         return Dummy.heartbeat_data(**kwargs)
 
     def _post_multiple(self, client, data, count):
-        return [client.post(self.url, data) for _ in range(count)]
+        return [
+            client.post(reverse(self.LIST_CREATE_URL), data)
+            for _ in range(count)]
 
     def _retrieve_single(self, user):
         count = 5
         requests = self._post_multiple(self.admin, self.data, count)
         self.assertEqual(len(requests), count)
         self.assertEqual(requests[0].status_code, status.HTTP_201_CREATED)
-        url = "{url}{id}/".format(url=self.url, id=requests[0].data['id'])
+        url = reverse(self.RETRIEVE_URL, args=[requests[0].data['id']])
         request = user.get(url)
         return request.status_code
 
@@ -234,46 +248,47 @@ class HeartbeatListTestCase(DeviceRegisterAPITestCase):
         requests = self._post_multiple(self.user, self.data, count)
         self.assertEqual(len(requests), count)
         self.assertEqual(requests[0].status_code, status.HTTP_201_CREATED)
-        url = "{url}{id}/".format(
-            url=self.url_by_uuid.format(self.uuid),
-            id=requests[0].data['device_local_id'])
+        url = reverse(self.RETRIEVE_BY_UUID_URL, args=[
+            self.uuid, requests[0].data['device_local_id']])
         request = user.get(url)
         return request.status_code
 
     def setUp(self):
         super(HeartbeatListTestCase, self).setUp()
         self.data = self._create_dummy_data(uuid=self.uuid)
-        self.url = "/hiccup/api/v1/heartbeats/"
-        self.url_by_uuid = "/hiccup/api/v1/devices/{}/heartbeats/"
 
     def test_create_no_auth(self):
-        request = self.noauth_client.post(self.url, self.data)
+        request = self.noauth_client.post(
+            reverse(self.LIST_CREATE_URL), self.data)
         self.assertEqual(request.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_create_as_admin(self):
-        request = self.admin.post(self.url, self.data)
+        request = self.admin.post(reverse(self.LIST_CREATE_URL), self.data)
         self.assertEqual(request.status_code, status.HTTP_201_CREATED)
         self.assertTrue(request.data['id'] > 0)
 
     def test_create_as_admin_not_existing_device(self):
-        request = self.admin.post(self.url, self._create_dummy_data())
+        request = self.admin.post(
+            reverse(self.LIST_CREATE_URL), self._create_dummy_data())
         self.assertEqual(request.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_create_as_uuid_owner(self):
         request = self.user.post(
-            self.url, self._create_dummy_data(uuid=self.uuid))
+            reverse(self.LIST_CREATE_URL),
+            self._create_dummy_data(uuid=self.uuid))
         self.assertEqual(request.status_code, status.HTTP_201_CREATED)
         self.assertEqual(request.data['id'], -1)
 
     def test_create_as_uuid_not_owner(self):
         request = self.user.post(
-            self.url, self._create_dummy_data(uuid=self.other_uuid))
+            reverse(self.LIST_CREATE_URL),
+            self._create_dummy_data(uuid=self.other_uuid))
         self.assertEqual(request.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_list(self):
         count = 5
         self._post_multiple(self.user, self.data, count)
-        request = self.admin.get(self.url)
+        request = self.admin.get(reverse(self.LIST_CREATE_URL))
         self.assertEqual(request.status_code, status.HTTP_200_OK)
         self.assertEqual(len(request.data['results']), count)
 
@@ -309,7 +324,7 @@ class HeartbeatListTestCase(DeviceRegisterAPITestCase):
         self._post_multiple(self.user, self.data, count)
         self._post_multiple(
             self.admin, self._create_dummy_data(uuid=self.other_uuid), count)
-        url = self.url_by_uuid.format(self.uuid)
+        url = reverse(self.LIST_CREATE_BY_UUID_URL, args=[self.uuid])
         request = self.admin.get(url)
         self.assertEqual(request.status_code, status.HTTP_200_OK)
         self.assertEqual(len(request.data['results']), count)
@@ -317,30 +332,30 @@ class HeartbeatListTestCase(DeviceRegisterAPITestCase):
     def test_list_noauth(self):
         count = 5
         self._post_multiple(self.user, self.data, count)
-        request = self.noauth_client.get(self.url)
+        request = self.noauth_client.get(reverse(self.LIST_CREATE_URL))
         self.assertEqual(request.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_list_device_owner(self):
         count = 5
         self._post_multiple(self.user, self.data, count)
-        request = self.user.get(self.url)
+        request = self.user.get(reverse(self.LIST_CREATE_URL))
         self.assertEqual(request.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_no_radio_version(self):
         data = self._create_dummy_data(uuid=self.uuid)
         data.pop('radio_version')
-        request = self.user.post(self.url, data)
+        request = self.user.post(reverse(self.LIST_CREATE_URL), data)
         self.assertEqual(request.status_code, status.HTTP_201_CREATED)
-        url = self.url_by_uuid.format(self.uuid)
+        url = reverse(self.LIST_CREATE_BY_UUID_URL, args=[self.uuid])
         request = self.admin.get(url)
         self.assertEqual(request.status_code, status.HTTP_200_OK)
         self.assertEqual(len(request.data['results']), 1)
         self.assertIsNone(request.data['results'][0]['radio_version'])
 
     def test_radio_version_field(self):
-        request = self.user.post(self.url, self.data)
+        request = self.user.post(reverse(self.LIST_CREATE_URL), self.data)
         self.assertEqual(request.status_code, status.HTTP_201_CREATED)
-        url = self.url_by_uuid.format(self.uuid)
+        url = reverse(self.LIST_CREATE_BY_UUID_URL, args=[self.uuid])
         request = self.admin.get(url)
         self.assertEqual(request.status_code, status.HTTP_200_OK)
         self.assertEqual(len(request.data['results']), 1)
@@ -355,7 +370,7 @@ class HeartbeatListTestCase(DeviceRegisterAPITestCase):
         data = self._create_dummy_data(uuid=self.uuid)
         # In 2017, the Netherlands changed from CET to CEST on March, 26 at 02:00
         data['date'] = '2017-03-26 02:34:56'
-        request = self.user.post(self.url, data)
+        request = self.user.post(reverse(self.LIST_CREATE_URL), data)
         self.assertEqual(request.status_code, status.HTTP_201_CREATED)
 
     def test_send_ambiguous_time(self):
@@ -366,16 +381,16 @@ class HeartbeatListTestCase(DeviceRegisterAPITestCase):
         data = self._create_dummy_data(uuid=self.uuid)
         # In 2017, the Netherlands changed from CEST to CET on October, 29 at 03:00
         data['date'] = '2017-10-29 02:34:56'
-        request = self.user.post(self.url, data)
+        request = self.user.post(reverse(self.LIST_CREATE_URL), data)
         self.assertEqual(request.status_code, status.HTTP_201_CREATED)
 
 
 class CrashreportListTestCase(HeartbeatListTestCase):
 
-    def setUp(self):
-        super(CrashreportListTestCase, self).setUp()
-        self.url = "/hiccup/api/v1/crashreports/"
-        self.url_by_uuid = "/hiccup/api/v1/devices/{}/crashreports/"
+    LIST_CREATE_URL = "api_v1_crashreports"
+    RETRIEVE_URL = "api_v1_crashreport"
+    LIST_CREATE_BY_UUID_URL = "api_v1_crashreports_by_uuid"
+    RETRIEVE_BY_UUID_URL = "api_v1_crashreport_by_uuid"
 
     @staticmethod
     def _create_dummy_data(**kwargs):
@@ -384,22 +399,24 @@ class CrashreportListTestCase(HeartbeatListTestCase):
 
 class LogfileUploadTest(DeviceRegisterAPITestCase):
 
+    LIST_CREATE_URL = "api_v1_crashreports"
+    PUT_LOGFILE_URL = "api_v1_putlogfile_for_device_id"
+
     def setUp(self):
         super(LogfileUploadTest, self).setUp()
 
+        url = reverse(self.LIST_CREATE_URL)
         for uuid in [self.uuid, self.other_uuid]:
             data = Dummy.crashreport_data(uuid=uuid)
             for _ in range(2):
-                self.user.post("/hiccup/api/v1/crashreports/", data)
-
-    def get_url(self, uuid, report_id, filename):
-        return ("/hiccup/api/v1/devices/{}/crashreports/{}/logfile_put/{}/".
-                format(uuid, report_id, "test.log"))
+                self.user.post(url, data)
 
     def test_Logfile_upload_as_admin(self):
         f = tempfile.NamedTemporaryFile('w+', suffix=".log", delete=True)
         f.write(u"blihblahblub")
         request = self.admin.post(
-            self.get_url(self.uuid, 1, f.name),
+            reverse(self.PUT_LOGFILE_URL, args=[
+                self.uuid, 1, os.path.basename(f.name)
+            ]),
             {'file': f}, format="multipart")
         self.assertEqual(status.HTTP_201_CREATED, request.status_code)
