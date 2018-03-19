@@ -1,7 +1,9 @@
 """Test crashreport_stats models and the 'stats' command."""
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import pytz
 
+from django.core.management import call_command
+from django.test import TestCase
 from django.urls import reverse
 from django.utils.http import urlencode
 
@@ -12,7 +14,7 @@ from crashreport_stats.models import (
     Version, VersionDaily, RadioVersion, RadioVersionDaily
 )
 
-from crashreports.models import User, Device
+from crashreports.models import User, Device, Crashreport, HeartBeat
 
 
 class Dummy():
@@ -66,6 +68,24 @@ class Dummy():
         'username': 'testuser'
     }
 
+    DEFAULT_DUMMY_HEARTBEAT_VALUES = {
+        'app_version': 10100,
+        'uptime': (
+            'up time: 16 days, 21:49:56, idle time: 5 days, 20:55:04, '
+            'sleep time: 10 days, 20:46:27'),
+        'build_fingerprint': BUILD_FINGERPRINTS[0],
+        'radio_version': RADIO_VERSIONS[0],
+        'date': datetime(2018, 3, 19, tzinfo=pytz.utc),
+    }
+
+    DEFAULT_DUMMY_CRASHREPORT_VALUES = DEFAULT_DUMMY_HEARTBEAT_VALUES.copy()
+    DEFAULT_DUMMY_CRASHREPORT_VALUES.update({
+        'is_fake_report': 0,
+        'boot_reason': Crashreport.BOOT_REASON_UNKOWN,
+        'power_on_reason': 'it was powered on',
+        'power_off_reason': 'something happened and it went off',
+    })
+
     @staticmethod
     def update_copy(original, update):
         """Merge fields of update into a copy of original."""
@@ -105,6 +125,33 @@ class Dummy():
         """
         entity = Device(user=user, **Dummy.update_copy(
             Dummy.DEFAULT_DUMMY_DEVICE_VALUES, kwargs))
+        entity.save()
+        return entity
+
+    @staticmethod
+    def create_dummy_report(report_type, device, **kwargs):
+        """Create a dummy report instance of the given report class type.
+
+        The dummy instance is created and saved to the database.
+        Args:
+            report_type: The class of the report type to be created.
+            user: The device instance that the heartbeat should relate to
+            **kwargs:
+                Optional arguments to extend/overwrite the default values.
+
+        Returns: The created report instance.
+
+        """
+        if report_type == HeartBeat:
+            entity = HeartBeat(device=device, **Dummy.update_copy(
+                Dummy.DEFAULT_DUMMY_HEARTBEAT_VALUES, kwargs))
+        elif report_type == Crashreport:
+            entity = Crashreport(device=device, **Dummy.update_copy(
+                Dummy.DEFAULT_DUMMY_CRASHREPORT_VALUES, kwargs))
+        else:
+            raise RuntimeError(
+                'No dummy report instance can be created for {}'.format(
+                    report_type.__name__))
         entity.save()
         return entity
 
@@ -438,3 +485,182 @@ class RadioVersionDailyTestCase(VersionDailyTestCase):
     @staticmethod
     def _create_dummy_daily_version(version, **kwargs):
         return Dummy.create_dummy_daily_radio_version(version, **kwargs)
+
+
+class StatsCommandVersionsTestCase(TestCase):
+    """Test the generation of Version stats with the stats command."""
+
+    # FIXME: Test for false duplicates: same timestamps
+    # FIXME: Test for false duplicates: same timestamps but different UUIDs
+    # FIXME: Test that the 'released_on' field changes or not once an older
+    #   report has been sent depending on whether the field has been manually
+    #   changed
+    # FIXME: Test that tests the daily version stats
+    # FIXME: Test creating stats from reports of different devices/users.
+
+    # The class of the version type to be tested
+    version_class = Version
+    # The attribute name characterising the unicity of a stats entry (the
+    # named identifier)
+    unique_entry_name = 'build_fingerprint'
+    # The collection of unique entries to post
+    unique_entries = Dummy.BUILD_FINGERPRINTS
+
+    def _create_reports(self, report_type, unique_entry_name, device,
+                        number, **kwargs):
+        # Create reports with distinct timestamps
+        now = datetime.now(pytz.utc)
+        for i in range(number):
+            report_date = now - timedelta(milliseconds=i)
+            report_attributes = {
+                self.unique_entry_name: unique_entry_name,
+                'device': device,
+                'date': report_date
+            }
+            report_attributes.update(**kwargs)
+            Dummy.create_dummy_report(report_type, **report_attributes)
+
+    def test_stats_calculation(self):
+        """Test generation of a Version instance."""
+        user = Dummy.create_dummy_user()
+        device = Dummy.create_dummy_device(user=user)
+        heartbeat = Dummy.create_dummy_report(HeartBeat, device=device)
+
+        # Expect that we do not have the Version before updating the stats
+        get_params = {
+            self.unique_entry_name: getattr(heartbeat, self.unique_entry_name)
+        }
+        self.assertRaises(self.version_class.DoesNotExist,
+                          self.version_class.objects.get, **get_params)
+
+        # Run the command to update the database
+        call_command('stats', 'update')
+
+        # Assume that a corresponding Version instance has been created
+        version = self.version_class.objects.get(**get_params)
+        self.assertIsNotNone(version)
+
+    def _assert_older_report_updates_version_date(self, report_type):
+        """Validate that older reports sent later affect the version date."""
+        user = Dummy.create_dummy_user()
+        device = Dummy.create_dummy_device(user=user)
+        report = Dummy.create_dummy_report(report_type, device=device)
+
+        # Run the command to update the database
+        call_command('stats', 'update')
+
+        get_params = {
+            self.unique_entry_name: getattr(report, self.unique_entry_name)
+        }
+        version = self.version_class.objects.get(**get_params)
+
+        self.assertEqual(report.date.date(), version.first_seen_on)
+
+        # Create a new report from an earlier point in time
+        report_time_2 = report.date - timedelta(weeks=1)
+        Dummy.create_dummy_report(report_type, device=device,
+                                  date=report_time_2)
+
+        # Run the command to update the database
+        call_command('stats', 'update')
+
+        # Get the same version object from before
+        version = self.version_class.objects.get(**get_params)
+
+        # Validate that the date matches the report recently sent
+        self.assertEqual(report_time_2.date(), version.first_seen_on)
+
+    def test_older_heartbeat_updates_version_date(self):
+        """Validate updating version date with older heartbeats."""
+        self._assert_older_report_updates_version_date(HeartBeat)
+
+    def test_older_crash_report_updates_version_date(self):
+        """Validate updating version date with older crash reports."""
+        self._assert_older_report_updates_version_date(Crashreport)
+
+    def test_entries_are_unique(self):
+        """Validate the entries' unicity and value."""
+        # Create some reports
+        user = Dummy.create_dummy_user()
+        device = Dummy.create_dummy_device(user=user)
+        for unique_entry in self.unique_entries:
+            self._create_reports(HeartBeat, unique_entry, device, 10)
+
+        # Run the command to update the database
+        call_command('stats', 'update')
+
+        # Check whether the correct amount of distinct versions have been
+        # created
+        versions = self.version_class.objects.all()
+        for version in versions:
+            self.assertIn(getattr(version, self.unique_entry_name),
+                          self.unique_entries)
+        self.assertEqual(len(versions), len(self.unique_entries))
+
+    def _assert_counter_distribution_is_correct(self, report_type, numbers,
+                                                counter_attribute_name,
+                                                **kwargs):
+        """Validate a counter distribution in the database."""
+        if len(numbers) != len(self.unique_entries):
+            raise ValueError('The length of the numbers list must match the '
+                             'length of self.unique_entries in the test class'
+                             '({} != {})'.format(len(numbers),
+                                                 len(self.unique_entries)))
+        # Create some reports
+        user = Dummy.create_dummy_user()
+        device = Dummy.create_dummy_device(user=user)
+        for unique_entry, num in zip(self.unique_entries, numbers):
+            self._create_reports(report_type, unique_entry, device, num,
+                                 **kwargs)
+
+        # Run the command to update the database
+        call_command('stats', 'update')
+
+        # Check whether the numbers of reports match
+        for version in self.version_class.objects.all():
+            unique_entry_name = getattr(version, self.unique_entry_name)
+            num = numbers[self.unique_entries.index(unique_entry_name)]
+            self.assertEqual(num, getattr(version, counter_attribute_name))
+
+    def test_heartbeats_counter(self):
+        """Test the calculation of the heartbeats counter."""
+        numbers = [10, 7, 8, 5]
+        counter_attribute_name = 'heartbeats'
+        self._assert_counter_distribution_is_correct(HeartBeat, numbers,
+                                                     counter_attribute_name)
+
+    def test_crash_reports_counter(self):
+        """Test the calculation of the crashreports counter."""
+        numbers = [2, 5, 0, 3]
+        counter_attribute_name = 'prob_crashes'
+        boot_reason_param = {'boot_reason': Crashreport.BOOT_REASON_UNKOWN}
+        self._assert_counter_distribution_is_correct(Crashreport, numbers,
+                                                     counter_attribute_name,
+                                                     **boot_reason_param)
+
+    def test_smpl_reports_counter(self):
+        """Test the calculation of the smpl reports counter."""
+        numbers = [1, 3, 4, 0]
+        counter_attribute_name = 'smpl'
+        boot_reason_param = {'boot_reason': Crashreport.BOOT_REASON_RTC_ALARM}
+        self._assert_counter_distribution_is_correct(Crashreport, numbers,
+                                                     counter_attribute_name,
+                                                     **boot_reason_param)
+
+    def test_other_reports_counter(self):
+        """Test the calculation of the other reports counter."""
+        numbers = [0, 2, 1, 2]
+        counter_attribute_name = 'other'
+        boot_reason_param = {'boot_reason': "random boot reason"}
+        self._assert_counter_distribution_is_correct(Crashreport, numbers,
+                                                     counter_attribute_name,
+                                                     **boot_reason_param)
+
+
+# pylint: disable=too-many-ancestors
+class StatsCommandRadioVersionsTestCase(StatsCommandVersionsTestCase):
+    """Test the generation of RadioVersion stats with the stats command."""
+
+    version_class = RadioVersion
+    unique_entry_name = 'radio_version'
+    unique_entries = Dummy.RADIO_VERSIONS
