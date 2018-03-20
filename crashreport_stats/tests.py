@@ -490,7 +490,6 @@ class RadioVersionDailyTestCase(VersionDailyTestCase):
 class StatsCommandVersionsTestCase(TestCase):
     """Test the generation of Version stats with the stats command."""
 
-    # FIXME: Test for false duplicates: same timestamps
     # FIXME: Test for false duplicates: same timestamps but different UUIDs
     # FIXME: Test that the 'released_on' field changes or not once an older
     #   report has been sent depending on whether the field has been manually
@@ -655,6 +654,68 @@ class StatsCommandVersionsTestCase(TestCase):
         self._assert_counter_distribution_is_correct(Crashreport, numbers,
                                                      counter_attribute_name,
                                                      **boot_reason_param)
+
+    def _assert_duplicates_are_ignored(self, report_type, device,
+                                       counter_attribute_name, **kwargs):
+        """Validate that reports with duplicate timestamps are ignored."""
+        # Create a report
+        report = Dummy.create_dummy_report(report_type, device=device,
+                                           **kwargs)
+
+        # Create a second report with the same timestamp
+        Dummy.create_dummy_report(report_type, device=device,
+                                  date=report.date, **kwargs)
+
+        # Run the command to update the database
+        call_command('stats', 'update')
+
+        # Get the corresponding version instance from the database
+        get_params = {
+            self.unique_entry_name: getattr(report, self.unique_entry_name)
+        }
+        version = self.version_class.objects.get(**get_params)
+
+        # Assert that the report with the duplicate timestamp is not
+        # counted, i.e. only 1 report is counted.
+        self.assertEqual(getattr(version, counter_attribute_name), 1)
+
+    def test_heartbeat_duplicates_are_ignored(self):
+        """Validate that heartbeat duplicates are ignored."""
+        counter_attribute_name = 'heartbeats'
+        device = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
+        self._assert_duplicates_are_ignored(HeartBeat, device,
+                                            counter_attribute_name)
+
+    def test_crash_report_duplicates_are_ignored(self):
+        """Validate that crash report duplicates are ignored."""
+        counter_attribute_name = 'prob_crashes'
+        device = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
+        for i, boot_reason in enumerate(Crashreport.CRASH_BOOT_REASONS):
+            params = {'boot_reason': boot_reason,
+                      self.unique_entry_name: self.unique_entries[i]}
+            self._assert_duplicates_are_ignored(Crashreport, device,
+                                                counter_attribute_name,
+                                                **params)
+
+    def test_smpl_report_duplicates_are_ignored(self):
+        """Validate that smpl report duplicates are ignored."""
+        counter_attribute_name = 'smpl'
+        device = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
+        for i, boot_reason in enumerate(Crashreport.SMPL_BOOT_REASONS):
+            params = {'boot_reason': boot_reason,
+                      self.unique_entry_name: self.unique_entries[i]}
+            self._assert_duplicates_are_ignored(Crashreport, device,
+                                                counter_attribute_name,
+                                                **params)
+
+    def test_other_report_duplicates_are_ignored(self):
+        """Validate that other report duplicates are ignored."""
+        counter_attribute_name = 'other'
+        params = {'boot_reason': 'random boot reason'}
+        device = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
+        self._assert_duplicates_are_ignored(Crashreport, device,
+                                            counter_attribute_name,
+                                            **params)
 
 
 # pylint: disable=too-many-ancestors
