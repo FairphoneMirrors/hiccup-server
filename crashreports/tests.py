@@ -1,10 +1,11 @@
+import os
+import tempfile
+
 from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework.test import APIClient
 from rest_framework import status
-import tempfile
-import os
 
 
 class Dummy(object):
