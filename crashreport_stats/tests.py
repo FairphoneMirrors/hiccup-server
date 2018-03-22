@@ -1,4 +1,5 @@
 """Test crashreport_stats models and the 'stats' command."""
+from io import StringIO
 from datetime import datetime, date, timedelta
 import pytz
 
@@ -11,7 +12,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
 from crashreport_stats.models import (
-    Version, VersionDaily, RadioVersion, RadioVersionDaily
+    Version, VersionDaily, RadioVersion, RadioVersionDaily, StatsMetadata
 )
 
 from crashreports.models import User, Device, Crashreport, HeartBeat
@@ -725,3 +726,58 @@ class StatsCommandRadioVersionsTestCase(StatsCommandVersionsTestCase):
     version_class = RadioVersion
     unique_entry_name = 'radio_version'
     unique_entries = Dummy.RADIO_VERSIONS
+
+
+class CommandDebugOutputTestCase(TestCase):
+    """Test the reset and update commands debug output."""
+
+    # Additional positional arguments to pass to the commands
+    _CMD_ARGS = [
+        '--no-color',
+        '-v 2',
+    ]
+
+    # The stats models
+    _STATS_MODELS = [Version, VersionDaily, RadioVersion, RadioVersionDaily]
+    # The models that will generate an output
+    _ALL_MODELS = _STATS_MODELS + [StatsMetadata]
+    _COUNTER_NAMES = ['heartbeats', 'crashes', 'smpl', 'other']
+    _COUNTER_ACTIONS = ['created', 'updated']
+
+    def _assert_command_output_matches(self, command, facts, models):
+        """Validate the debug output of a command.
+
+        The debug output is matched against the facts and models given in
+        the parameters.
+        """
+        buffer = StringIO()
+        call_command('stats', command, *self._CMD_ARGS, stdout=buffer)
+        output = buffer.getvalue().splitlines()
+
+        expected_output = '0 {model} {fact}'
+        for model in models:
+            for fact in facts:
+                self.assertIn(
+                    expected_output.format(model=model.__name__, fact=fact),
+                    output)
+
+    def test_reset_command_on_empty_db(self):
+        """Test the reset command on an empty database.
+
+        The reset command should yield nothing on an empty database.
+        """
+        self._assert_command_output_matches('reset', ['deleted'],
+                                            self._ALL_MODELS)
+
+    def test_update_command_on_empty_db(self):
+        """Test the update command on an empty database.
+
+        The update command should yield nothing on an empty database.
+        """
+        pattern = '{action} for counter {counter}'
+        facts = [
+            pattern.format(action=counter_action, counter=counter_name)
+            for counter_action in self._COUNTER_ACTIONS
+            for counter_name in self._COUNTER_NAMES]
+        self._assert_command_output_matches('update', facts,
+                                            self._STATS_MODELS)
