@@ -13,24 +13,28 @@ def user_owns_uuid(user, uuid):
 
 
 def user_is_hiccup_staff(user):
-    return (user.has_perm('crashreports.add_crashreport')
-            and user.has_perm('crashreports.change_crashreport')
-            and user.has_perm('crashreports.del_crashreport')
-            and user.has_perm('heartbeat.add_crashreport')
-            and user.has_perm('heartbeat.change_crashreport')
-            and user.has_perm('heartbeat.del_crashreport')
-            and user.has_perm('heartbeat.add_logfile')
-            and user.has_perm('heartbeat.change_logfile')
-            and user.has_perm('heartbeat.del_logfile'))
+    if (user.groups.filter(name='FairphoneSoftwareTeam').exists()):
+        return True
+    else:
+        return user.has_perms([
+            # Crashreports
+            'crashreports.add_crashreport', 'crashreports.change_crashreport',
+            'crashreports.del_crashreport',
+            # Heartbeats
+            'heartbeat.add_crashreport', 'heartbeat.change_crashreport',
+            'heartbeat.del_crashreport',
+            # Logfiles
+            'heartbeat.add_logfile', 'heartbeat.change_logfile',
+            'heartbeat.del_logfile',
+            ])
 
+class HasStatsAccess(BasePermission):
+    def has_permission(self, request, view):
+        return user_is_hiccup_staff(request.user)
 
 class HasRightsOrIsDeviceOwnerDeviceCreation(BasePermission):
     def has_permission(self, request, view):
-        # if user has all permissions for crashreport return true
         if (user_is_hiccup_staff(request.user)):
-            return True
-
-        if (request.user.groups.filter(name='FairphoneSoftwareTeam').exists()):
             return True
 
         # special case:

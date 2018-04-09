@@ -2,7 +2,8 @@ from rest_framework import generics
 from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from crashreports.permissions import HasRightsOrIsDeviceOwnerDeviceCreation
+from crashreports.permissions import (
+    HasRightsOrIsDeviceOwnerDeviceCreation, HasStatsAccess)
 from django.db import connection
 from . import raw_querys
 from crashreport_stats.models import *
@@ -45,7 +46,7 @@ class DeviceReportHistory(APIView):
         return Response(res)
 
 class Status(APIView):
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+    permission_classes = (HasStatsAccess,)
     def get(self, request, format=None, ):
         num_devices = Device.objects.count()
         num_crashreports = Crashreport.objects.count()
@@ -100,10 +101,10 @@ class _VersionStatsFilter(filters.FilterSet):
     released_after = django_filters.DateFilter(name="released_on", lookup_expr='gte')
 
 class _VersionStatsSerializer(serializers.ModelSerializer):
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
+    permission_classes = (HasStatsAccess,)
 
 class _VersionStatsListView(generics.ListAPIView):
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
+    permission_classes = (HasStatsAccess,)
     filter_backends = (filters.DjangoFilterBackend,)
 
 class _DailyVersionStatsFilter(filters.FilterSet):
@@ -111,10 +112,10 @@ class _DailyVersionStatsFilter(filters.FilterSet):
     date_end = django_filters.DateFilter(name="date", lookup_expr='lte')
 
 class _DailyVersionStatsSerializer(serializers.ModelSerializer):
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
+    permission_classes = (HasStatsAccess,)
 
 class _DailyVersionStatsListView(generics.ListAPIView):
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
+    permission_classes = (HasStatsAccess,)
     filter_backends = (filters.DjangoFilterBackend,)
 
 
