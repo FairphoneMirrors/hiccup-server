@@ -63,9 +63,9 @@ class DeviceStat(APIView):
         device          = Device.objects.filter(uuid=uuid)
         last_active     = HeartBeat.objects.filter(device=device).order_by('-date')[0].date
         heartbeats      = HeartBeat.objects.filter(device=device).count()
-        crashreports    = Crashreport.objects.filter(device=device).filter(boot_reason__in=["UNKNOWN", "keyboard power on"]).count()
+        crashreports    = Crashreport.objects.filter(device=device).filter(boot_reason__in=Crashreport.CRASH_BOOT_REASONS).count()
         crashes_per_day = crashreports*1.0/heartbeats if heartbeats > 0 else 0
-        smpls           = Crashreport.objects.filter(device=device).filter(boot_reason__in=["RTC alarm"]).count()
+        smpls           = Crashreport.objects.filter(device=device).filter(boot_reason__in=Crashreport.SMPL_BOOT_REASONS).count()
         smpl_per_day    = smpls*1.0/heartbeats if heartbeats > 0 else 0
         return Response(
             {

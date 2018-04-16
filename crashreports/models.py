@@ -51,6 +51,17 @@ def crashreport_file_name(instance, filename):
 
 
 class Crashreport(models.Model):
+    BOOT_REASON_UNKOWN = 'UNKNOWN'
+    BOOT_REASON_KEYBOARD_POWER_ON = 'keyboard power on'
+    BOOT_REASON_RTC_ALARM = 'RTC alarm'
+    CRASH_BOOT_REASONS = [
+        BOOT_REASON_UNKOWN,
+        BOOT_REASON_KEYBOARD_POWER_ON,
+    ]
+    SMPL_BOOT_REASONS = [
+        BOOT_REASON_RTC_ALARM,
+    ]
+
     device = models.ForeignKey(Device, db_index=True, related_name='crashreports', on_delete=models.CASCADE)
     is_fake_report = models.BooleanField(default=False)
     app_version = models.IntegerField()
