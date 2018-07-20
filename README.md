@@ -7,16 +7,16 @@ front-end and some endpoints to access statics.
 
 ## Setup
 
-Make sure you have installed python3 and libffi-dev:
+Make sure you have installed `python3`, `virtualenv` and `libffi-dev`.
 
-    $ sudo apt install python3 libffi-dev
+    $ sudo apt install python3 virtualenv libffi-dev
 
 Clone Hiccup server and install it locally:
 
     $ git clone ssh://$USER@review.fairphone.software:29418/tools/hiccup/hiccup-server
     $ cd hiccup-server
-    $ virtualenv -p python3 hiccupenv
-    $ source hiccupenv/bin/activate
+    $ virtualenv -p python3 .venv/hiccupenv
+    $ source .venv/hiccupenv/bin/activate
     (hiccupenv) $ pip install -r requirements.txt
 
 By default Django will use a SQLite3 database (`db.sqlite3` in the base directory).
