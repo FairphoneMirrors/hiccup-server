@@ -181,7 +181,7 @@ SOCIALACCOUNT_PROVIDERS = {
 
 STATIC_URL = '/static/'
 
-STATIC_ROOT = "/home/hiccup/static/static"
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 
 # Logging
@@ -194,7 +194,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': '/home/hiccup/log/debug.log',
+            'filename': os.path.join(BASE_DIR, 'debug.log'),
         },
     },
     'loggers': {
