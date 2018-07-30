@@ -1,29 +1,58 @@
+"""REST API for accessing the crashreports statistics."""
+import zipfile
+
 from rest_framework import generics
 from rest_framework import serializers
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from crashreports.permissions import (
-    HasRightsOrIsDeviceOwnerDeviceCreation, HasStatsAccess)
+
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import connection
-from . import raw_querys
-from crashreport_stats.models import *
-import zipfile
-from crashreports.models import *
 from django.db.models.expressions import F
-import django_filters
-from rest_framework import filters
+
+from django_filters.rest_framework import (
+    DjangoFilterBackend, DateFilter,
+    FilterSet, CharFilter, BooleanFilter
+)
+
+from crashreport_stats.models import (
+    Version, VersionDaily, RadioVersion, RadioVersionDaily
+)
+from crashreports.models import (
+    Device, Crashreport, HeartBeat, LogFile
+)
+from crashreports.permissions import (
+    HasRightsOrIsDeviceOwnerDeviceCreation, HasStatsAccess
+)
+from . import raw_querys
+
 
 def dictfetchall(cursor):
-    "Returns all rows from a cursor as a dict"
+    """Return all rows from a cursor as a dict."""
     desc = cursor.description
     return [
         dict(zip([col[0] for col in desc], row))
         for row in cursor.fetchall()
     ]
 
+
 class DeviceUpdateHistory(APIView):
+    """View the update history of a specific device."""
+
     permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+
     def get(self, request, uuid, format=None):
+        """Get the update history of a device.
+
+        Args:
+            request: Http request
+            uuid: The UUID of the device
+            format: Optional response format parameter
+
+        Returns: The update history of the requested device.
+
+        """
         cursor = connection.cursor()
         raw_querys.execute_device_update_history_query(
             cursor,
@@ -33,9 +62,23 @@ class DeviceUpdateHistory(APIView):
         res = dictfetchall(cursor)
         return Response(res)
 
+
 class DeviceReportHistory(APIView):
+    """View the report history of a specific device."""
+
     permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+
     def get(self, request, uuid, format=None):
+        """Get the report history of a device.
+
+        Args:
+            request: Http request
+            uuid: The UUID of the device
+            format: Optional response format parameter
+
+        Returns: The report history of the requested device.
+
+        """
         cursor = connection.cursor()
         raw_querys.execute_device_report_history(
             cursor,
@@ -45,117 +88,186 @@ class DeviceReportHistory(APIView):
         res = dictfetchall(cursor)
         return Response(res)
 
+
 class Status(APIView):
+    """View the number of devices, crashreports and heartbeats."""
+
     permission_classes = (HasStatsAccess,)
+
     def get(self, request, format=None, ):
+        """Get the number of devices, crashreports and heartbeats.
+
+        Args:
+            request: Http request
+            format: Optional response format parameter
+
+        Returns: The number of devices, crashreports and heartbeats.
+
+        """
         num_devices = Device.objects.count()
         num_crashreports = Crashreport.objects.count()
         num_heartbeats = HeartBeat.objects.count()
-        return Response( {
-                'devices': num_devices,
-                'crashreports': num_crashreports,
-                'heartbeats': num_heartbeats
+        return Response({
+            'devices': num_devices,
+            'crashreports': num_crashreports,
+            'heartbeats': num_heartbeats
         })
 
+
 class DeviceStat(APIView):
+    """View an overview of the statistics of a device."""
+
     permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+
     def get(self, request, uuid, format=None, ):
-        device          = Device.objects.filter(uuid=uuid)
-        last_active     = HeartBeat.objects.filter(device=device).order_by('-date')[0].date
-        heartbeats      = HeartBeat.objects.filter(device=device).count()
-        crashreports    = Crashreport.objects.filter(device=device).filter(boot_reason__in=Crashreport.CRASH_BOOT_REASONS).count()
+        """Get some general statistics for a device.
+
+        Args:
+            request: Http request
+            uuid:  The UUID of the device
+            format: Optional response format parameter
+
+        Returns: Some general information of the device in a dictionary.
+
+        """
+        device = Device.objects.filter(uuid=uuid)
+        last_active = HeartBeat.objects.filter(device=device).order_by(
+            '-date')[0].date
+        heartbeats = HeartBeat.objects.filter(device=device).count()
+        crashreports = Crashreport.objects.filter(device=device).filter(
+            boot_reason__in=Crashreport.CRASH_BOOT_REASONS).count()
         crashes_per_day = crashreports*1.0/heartbeats if heartbeats > 0 else 0
-        smpls           = Crashreport.objects.filter(device=device).filter(boot_reason__in=Crashreport.SMPL_BOOT_REASONS).count()
-        smpl_per_day    = smpls*1.0/heartbeats if heartbeats > 0 else 0
+        smpls = Crashreport.objects.filter(device=device).filter(
+            boot_reason__in=Crashreport.SMPL_BOOT_REASONS).count()
+        smpl_per_day = smpls*1.0/heartbeats if heartbeats > 0 else 0
         return Response(
             {
-                'uuid'            : uuid,
-                'last_active'     : last_active,
-                'heartbeats'      : heartbeats,
-                'crashreports'    : crashreports,
-                'crashes_per_day' : crashes_per_day,
-                'smpls'           : smpls,
-                'smpl_per_day'    : smpl_per_day,
-                'board_date'      : device[0].board_date,
+                'uuid': uuid,
+                'last_active': last_active,
+                'heartbeats': heartbeats,
+                'crashreports': crashreports,
+                'crashes_per_day': crashes_per_day,
+                'smpls': smpls,
+                'smpl_per_day': smpl_per_day,
+                'board_date': device[0].board_date,
             })
 
+
 class LogFileDownload(APIView):
+    """View for downloading log files."""
+
     permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
-    def get(self, request, id, format=None):
+
+    def get(self, request, id_logfile, format=None):
+        """Get a logfile.
+
+        Args:
+            request: Http request
+            id_logfile: The id of the log file
+            format: Optional response format parameter
+
+        Returns: The log file with the corresponding id.
+
+        """
         try:
-            logfile = LogFile.objects.get(id=id)
-        except:
+            logfile = LogFile.objects.get(id=id_logfile)
+        except ObjectDoesNotExist:
             raise NotFound(detail="Logfile does not exist.")
-        zf = zipfile.ZipFile(logfile.logfile.path)
+        zip_file = zipfile.ZipFile(logfile.logfile.path)
         ret = {}
-        for f in zf.filelist:
-            fo = zf.open(f)
-            ret[f.filename] = fo.read()
+        for file in zip_file.filelist:
+            file_open = zip_file.open(file)
+            ret[file.filename] = file_open.read()
         return Response(ret)
 
 
-class _VersionStatsFilter(filters.FilterSet):
-    first_seen_before = django_filters.DateFilter(name="first_seen_on", lookup_expr='lte')
-    first_seen_after = django_filters.DateFilter(name="first_seen_on", lookup_expr='gte')
-    released_before = django_filters.DateFilter(name="released_on", lookup_expr='lte')
-    released_after = django_filters.DateFilter(name="released_on", lookup_expr='gte')
+class _VersionStatsFilter(FilterSet):
+    first_seen_before = DateFilter(field_name="first_seen_on",
+                                   lookup_expr='lte')
+    first_seen_after = DateFilter(field_name="first_seen_on",
+                                  lookup_expr='gte')
+    released_before = DateFilter(field_name="released_on", lookup_expr='lte')
+    released_after = DateFilter(field_name="released_on", lookup_expr='gte')
+
 
 class _VersionStatsSerializer(serializers.ModelSerializer):
     permission_classes = (HasStatsAccess,)
 
+
 class _VersionStatsListView(generics.ListAPIView):
     permission_classes = (HasStatsAccess,)
-    filter_backends = (filters.DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend,)
 
-class _DailyVersionStatsFilter(filters.FilterSet):
-    date_start = django_filters.DateFilter(name="date", lookup_expr='gte')
-    date_end = django_filters.DateFilter(name="date", lookup_expr='lte')
+
+class _DailyVersionStatsFilter(FilterSet):
+    date_start = DateFilter(field_name="date", lookup_expr='gte')
+    date_end = DateFilter(field_name="date", lookup_expr='lte')
+
 
 class _DailyVersionStatsSerializer(serializers.ModelSerializer):
     permission_classes = (HasStatsAccess,)
 
+
 class _DailyVersionStatsListView(generics.ListAPIView):
     permission_classes = (HasStatsAccess,)
-    filter_backends = (filters.DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend,)
 
 
 class VersionSerializer(_VersionStatsSerializer):
-    class Meta:
+    """Serializer for the Version class."""
+
+    class Meta:  # noqa: D106
         model = Version
         fields = '__all__'
+
 
 class VersionFilter(_VersionStatsFilter):
-    class Meta:
+    """Filter for Version instances."""
+
+    class Meta:  # noqa: D106
         model = Version
         fields = '__all__'
 
+
 class VersionListView(_VersionStatsListView):
+    """View for listing versions."""
+
     queryset = Version.objects.all().order_by('-heartbeats')
     filter_class = VersionFilter
     serializer_class = VersionSerializer
 
-class VersionDailyFilter(_DailyVersionStatsFilter):
-    version__build_fingerprint = django_filters.CharFilter()
-    version__is_official_release = django_filters.BooleanFilter()
-    version__is_beta_release = django_filters.BooleanFilter()
 
-    class Meta:
+class VersionDailyFilter(_DailyVersionStatsFilter):
+    """Filter for VersionDaily instances."""
+
+    version__build_fingerprint = CharFilter()
+    version__is_official_release = BooleanFilter()
+    version__is_beta_release = BooleanFilter()
+
+    class Meta:  # noqa: D106
         model = VersionDaily
         fields = '__all__'
+
 
 class VersionDailySerializer(_DailyVersionStatsSerializer):
+    """Serializer for VersionDaily instances."""
+
     build_fingerprint = serializers.CharField()
 
-    class Meta:
+    class Meta:  # noqa: D106
         model = VersionDaily
         fields = '__all__'
 
+
 class VersionDailyListView(_DailyVersionStatsListView):
+    """View for listing VersionDaily instances."""
+
     queryset = (
-        VersionDaily.objects
-            .annotate(build_fingerprint=F('version__build_fingerprint'))
-            .all()
-            .order_by('date')
+        VersionDaily
+        .objects
+        .annotate(build_fingerprint=F('version__build_fingerprint'))
+        .all()
+        .order_by('date')
     )
     filter_class = VersionDailyFilter
     filter_fields = (
@@ -167,42 +279,59 @@ class VersionDailyListView(_DailyVersionStatsListView):
 
 
 class RadioVersionSerializer(_VersionStatsSerializer):
-    class Meta:
+    """Serializer for RadioVersion instances."""
+
+    class Meta:  # noqa: D106
         model = RadioVersion
         fields = '__all__'
+
 
 class RadioVersionFilter(_VersionStatsFilter):
-    class Meta:
+    """Filter for RadioVersion instances."""
+
+    class Meta:  # noqa: D106
         model = RadioVersion
         fields = '__all__'
 
+
 class RadioVersionListView(_VersionStatsListView):
+    """View for listing RadioVersion instances."""
+
     queryset = RadioVersion.objects.all().order_by('-heartbeats')
     serializer_class = RadioVersionSerializer
     filter_class = RadioVersionFilter
 
-class RadioVersionDailyFilter(_DailyVersionStatsFilter):
-    version__radio_version = django_filters.CharFilter()
-    version__is_official_release = django_filters.BooleanFilter()
-    version__is_beta_release = django_filters.BooleanFilter()
 
-    class Meta:
+class RadioVersionDailyFilter(_DailyVersionStatsFilter):
+    """Filter for RadioVersionDaily instances."""
+
+    version__radio_version = CharFilter()
+    version__is_official_release = BooleanFilter()
+    version__is_beta_release = BooleanFilter()
+
+    class Meta:  # noqa: D106
         model = RadioVersionDaily
         fields = '__all__'
+
 
 class RadioVersionDailySerializer(_DailyVersionStatsSerializer):
+    """Serializer for RadioVersionDaily instances."""
+
     radio_version = serializers.CharField()
 
-    class Meta:
+    class Meta:  # noqa: D106
         model = RadioVersionDaily
         fields = '__all__'
 
+
 class RadioVersionDailyListView(_DailyVersionStatsListView):
+    """View for listing RadioVersionDaily instances."""
+
     queryset = (
-        RadioVersionDaily.objects
-            .annotate(radio_version=F('version__radio_version'))
-            .all()
-            .order_by('date')
+        RadioVersionDaily.objects.annotate(
+            radio_version=F('version__radio_version'))
+        .all()
+        .order_by('date')
     )
     filter_class = RadioVersionDailyFilter
     filter_fields = (

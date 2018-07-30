@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'bootstrap3',
     'bootstrapform',
     'django_extensions',
+    'django_filters',
     'djfrontend',
     'djfrontend.skeleton',
     'allauth',
@@ -71,13 +72,12 @@ ROOT_URLCONF = 'hiccup.urls'
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
 )
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR,'hiccup', 'templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'hiccup', 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -100,7 +100,7 @@ AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend',
 )
 
-#WSGI_APPLICATION = 'hiccup_server.wsgi.application'
+# WSGI_APPLICATION = 'hiccup_server.wsgi.application'
 
 
 # Database
@@ -119,16 +119,20 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': 'django.contrib.auth.password_validation'
+                '.UserAttributeSimilarityValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': 'django.contrib.auth.password_validation'
+                '.MinimumLengthValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': 'django.contrib.auth.password_validation'
+                '.CommonPasswordValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME': 'django.contrib.auth.password_validation'
+                '.NumericPasswordValidator',
     },
 ]
 
@@ -150,19 +154,21 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
-    'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.DjangoFilterBackend',),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'DEFAULT_FILTER_BACKENDS':
+        ('django_filters.rest_framework.DjangoFilterBackend',),
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 100
 }
 
 SITE_ID = 1
 
-SOCIALACCOUNT_ADAPTER ="hiccup.allauth_adapters.FairphoneAccountAdapter"
-LOGIN_REDIRECT_URL="/hiccup_stats/"
+SOCIALACCOUNT_ADAPTER = "hiccup.allauth_adapters.FairphoneAccountAdapter"
+LOGIN_REDIRECT_URL = "/hiccup_stats/"
 # disable form signups
-ACCOUNT_ADAPTER ="hiccup.allauth_adapters.FormAccountAdapter"
-ACCOUNT_EMAIL_REQUIRED=True
-ACCOUNT_LOGOUT_REDIRECT_URL="/accounts/login/"
+ACCOUNT_ADAPTER = "hiccup.allauth_adapters.FormAccountAdapter"
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
@@ -207,6 +213,6 @@ LOGGING = {
 }
 
 try:
-    from local_settings import *
+    from local_settings import *  # noqa: F403, F401
 except ImportError as e:
     pass
