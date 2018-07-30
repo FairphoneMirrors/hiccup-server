@@ -89,6 +89,13 @@ ENV/
 # Rope project settings
 .ropeproject
 
+# Jar for generating documentation
+swagger2markup-cli-*.jar
+
+# Generated openapi documentation artifacts
+documentation/hiccup-api.json
+documentation/api-endpoints.adoc
+documentation/api-endpoints.html
 
 saved_crashredports
 

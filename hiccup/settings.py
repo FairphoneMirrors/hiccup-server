@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    'drf_yasg'
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -210,6 +211,14 @@ LOGGING = {
             'propagate': True,
         },
     },
+}
+
+
+# Automatic documentation generation
+# https://drf-yasg.readthedocs.io/en/stable/index.html
+
+SWAGGER_SETTINGS = {
+   'DEFAULT_INFO': 'hiccup.urls.api_info',
 }
 
 try:

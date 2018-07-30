@@ -1,7 +1,13 @@
+"""Define all Hiccup REST API URLs."""
+
 from django.conf.urls import include, url
 from django.contrib import admin
-from django.views.generic.base import RedirectView
-from django.contrib.auth import views as auth_views
+from drf_yasg import openapi
+
+api_info = openapi.Info(
+    title="Hiccup API",
+    default_version='v1',
+)
 
 urlpatterns = [
     url(r'^hiccup/admin/', admin.site.urls),

@@ -103,6 +103,31 @@ Run the following command or perform the manual steps below:
 * Go back to the user list at `http://localhost:8000/hiccup/admin/auth/user/` and add your
   super-user to the new group.
 
+## API Documentation
+
+The Hiccup REST API documentation is created automatically using
+[drf_yasg](https://github.com/axnsan12/drf-yasg) and
+[swagger2markup](https://github.com/Swagger2Markup/swagger2markup).
+
+It can be generated using tox:
+
+    (hiccupenv) $ tox -e docs
+
+The generated documentation file can be found under
+`documentation/api-endpoints.md`.
+
+It is also possible to create an HTML version of the docs. Make sure you
+have asciidoctor installed:
+
+    (hiccupenv) $ sudo apt install asciidoctor
+
+Then generate the html docs using tox:
+
+    (hiccupenv) $ tox -e docs-html
+
+The generated documentation file can be found under
+`documentation/api-endpoints.html`.
+
 
 ## Development
 
