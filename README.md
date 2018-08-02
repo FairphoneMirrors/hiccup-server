@@ -41,7 +41,7 @@ Copy the following to `local_settings.py` (create the file if it did not exist b
 PostgreSQL database instread of SQLite:
 
     import os
-    
+
     DATABASES = {
       'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -96,6 +96,33 @@ identify with should belong to the group `FairphoneSoftwareTeam`:
 
 
 ## Development
+
+### Setup
+
+We use tox to both test and validate the code quality:
+
+    (hiccupenv) $ pip install -r requirements-dev.txt
+
+Simply run `tox` to test your changes in the supported environments:
+
+    (hiccupenv) $ tox
+
+Before committing a patchset, you are kindly asked to run the linting tools.
+The flake8 tool can be run automatically for you with a (strict) git
+pre-commit hook:
+
+    (hiccupenv) $ flake8 --install-hook git
+    (hiccupenv) $ git config --bool flake8.strict true
+
+Also, running flake8 on only the diff with upstream:
+
+    (hiccupenv) $ git diff origin/master ./**/*py | flake8 --diff
+
+There is also a lint check included with tox (`tox -e linters`) but it is very
+noisy at the moment since the codebase is not clean yet. Since you are already
+validating the changes you are making with the git pre-commit hook, you are
+all set to submit your change.
+
 
 ### Branching structure
 
