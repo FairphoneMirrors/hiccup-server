@@ -59,6 +59,10 @@ class Dummy():
         'date': DATES[1]
     }
 
+    DEFAULT_DUMMY_STATSMETADATA_VALUES = {
+        'updated_at': datetime(2018, 6, 15, 2, 12, 24, tzinfo=pytz.utc),
+    }
+
     DEFAULT_DUMMY_DEVICE_VALUES = {
         'board_date': datetime(2015, 12, 15, 1, 23, 45, tzinfo=pytz.utc),
         'chipset': 'Qualcomm MSM8974PRO-AA',
@@ -221,6 +225,23 @@ class Dummy():
         """
         entity = RadioVersionDaily(version=version, **Dummy.update_copy(
             Dummy.DEFAULT_DUMMY_RADIO_VERSION_DAILY_VALUES, kwargs))
+        entity.save()
+        return entity
+
+    @staticmethod
+    def create_dummy_stats_metadata(**kwargs):
+        """Create a dummy stats metadata instance.
+
+        The dummy instance is created and saved to the database.
+        Args:
+            **kwargs:
+                Optional arguments to extend/overwrite the default values.
+
+        Returns: The created stats metadata instance.
+
+        """
+        entity = StatsMetadata(**Dummy.update_copy(
+            Dummy.DEFAULT_DUMMY_STATSMETADATA_VALUES, kwargs))
         entity.save()
         return entity
 
@@ -744,7 +765,7 @@ class CommandDebugOutputTestCase(TestCase):
     _COUNTER_NAMES = ['heartbeats', 'crashes', 'smpl', 'other']
     _COUNTER_ACTIONS = ['created', 'updated']
 
-    def _assert_command_output_matches(self, command, facts, models):
+    def _assert_command_output_matches(self, command, number, facts, models):
         """Validate the debug output of a command.
 
         The debug output is matched against the facts and models given in
@@ -754,11 +775,13 @@ class CommandDebugOutputTestCase(TestCase):
         call_command('stats', command, *self._CMD_ARGS, stdout=buffer)
         output = buffer.getvalue().splitlines()
 
-        expected_output = '0 {model} {fact}'
+        expected_output = '{number} {model} {fact}'
         for model in models:
             for fact in facts:
                 self.assertIn(
-                    expected_output.format(model=model.__name__, fact=fact),
+                    expected_output.format(number=number,
+                                           model=model.__name__,
+                                           fact=fact),
                     output)
 
     def test_reset_command_on_empty_db(self):
@@ -766,7 +789,7 @@ class CommandDebugOutputTestCase(TestCase):
 
         The reset command should yield nothing on an empty database.
         """
-        self._assert_command_output_matches('reset', ['deleted'],
+        self._assert_command_output_matches('reset', 0, ['deleted'],
                                             self._ALL_MODELS)
 
     def test_update_command_on_empty_db(self):
@@ -779,5 +802,23 @@ class CommandDebugOutputTestCase(TestCase):
             pattern.format(action=counter_action, counter=counter_name)
             for counter_action in self._COUNTER_ACTIONS
             for counter_name in self._COUNTER_NAMES]
-        self._assert_command_output_matches('update', facts,
+        self._assert_command_output_matches('update', 0, facts,
                                             self._STATS_MODELS)
+
+    def test_reset_command_deletion_of_instances(self):
+        """Test the deletion of stats model instances with the reset command.
+
+        This test validates that model instances get deleted when the
+        reset command is called on a database that only contains a single
+        model instance for each class.
+        """
+        # Create dummy version instances
+        version = Dummy.create_dummy_version()
+        radio_version = Dummy.create_dummy_radio_version()
+        Dummy.create_dummy_daily_version(version)
+        Dummy.create_dummy_daily_radio_version(radio_version)
+        Dummy.create_dummy_stats_metadata()
+
+        # We expect that the model instances get deleted
+        self._assert_command_output_matches('reset', 1, ['deleted'],
+                                            self._ALL_MODELS)

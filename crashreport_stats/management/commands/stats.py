@@ -422,11 +422,12 @@ class Command(BaseCommand):
                     # Default the count of deleted models to 0 if missing
                     if not counts_per_model:
                         counts_per_model = {
-                            engine.stats_model: 0,
-                            engine.daily_stats_model: 0}
+                            engine.stats_model._meta.label: 0,
+                            engine.daily_stats_model._meta.label: 0}
                     for model, count in counts_per_model.items():
+                        name = model.split('.')[-1]
                         self._success(
-                            '{} {} deleted'.format(count, model.__name__))
+                            '{} {} deleted'.format(count, name))
 
             # Reset the metadata
             count, _ = StatsMetadata.objects.all().delete()
