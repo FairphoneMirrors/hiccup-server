@@ -131,6 +131,11 @@ The generated documentation file can be found under
 
 ## Development
 
+### Coding Style
+
+We follow the
+[Google Python Style Guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md).
+
 ### Setup
 
 We use tox to both test and validate the code quality:
