@@ -30,6 +30,10 @@
 <a name="hiccup_api_v1_crashreports_create"></a>
 ### POST /hiccup/api/v1/crashreports/
 
+#### Description
+Create a crash report
+
+
 #### Body parameter
 *Name* : data  
 *Flags* : required  
@@ -38,9 +42,11 @@
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**201**|[CrashReport](#crashreport)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**201**|The crash report has been successfully created.|[CreateCrashreportResponseSchema](#createcrashreportresponseschema)|
+|**400**|Invalid input.|No Content|
+|**404**|No device with the given uuid could be found.|No Content|
 
 
 #### Tags
@@ -83,27 +89,17 @@
 ##### Response 201
 ```json
 {
-  "id" : "string",
-  "logfiles" : [ "string" ],
-  "uuid" : "string",
-  "device_local_id" : 0,
-  "date" : "string",
-  "is_fake_report" : true,
-  "app_version" : 0,
-  "uptime" : "string",
-  "build_fingerprint" : "string",
-  "radio_version" : "string",
-  "boot_reason" : "string",
-  "power_on_reason" : "string",
-  "power_off_reason" : "string",
-  "next_logfile_key" : 0,
-  "created_at" : "string"
+  "device_local_id" : 0
 }
 ```
 
 
 <a name="hiccup_api_v1_crashreports_list"></a>
 ### GET /hiccup/api/v1/crashreports/
+
+#### Description
+List crash reports
+
 
 #### Parameters
 
@@ -157,6 +153,10 @@
 <a name="hiccup_api_v1_crashreports_read"></a>
 ### GET /hiccup/api/v1/crashreports/{id}/
 
+#### Description
+Get a crash report
+
+
 #### Parameters
 
 |Type|Name|Description|Schema|
@@ -166,9 +166,10 @@
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|[CrashReport](#crashreport)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**||[CrashReport](#crashreport)|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -211,6 +212,10 @@
 <a name="hiccup_api_v1_crashreports_update"></a>
 ### PUT /hiccup/api/v1/crashreports/{id}/
 
+#### Description
+Update a crash report
+
+
 #### Parameters
 
 |Type|Name|Description|Schema|
@@ -226,9 +231,11 @@
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|[CrashReport](#crashreport)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**||[CrashReport](#crashreport)|
+|**400**|Invalid input.|No Content|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -293,6 +300,10 @@
 <a name="hiccup_api_v1_crashreports_delete"></a>
 ### DELETE /hiccup/api/v1/crashreports/{id}/
 
+#### Description
+Delete a crash report
+
+
 #### Parameters
 
 |Type|Name|Description|Schema|
@@ -302,9 +313,10 @@
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**204**|No Content|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**204**||No Content|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -323,6 +335,10 @@
 <a name="hiccup_api_v1_crashreports_partial_update"></a>
 ### PATCH /hiccup/api/v1/crashreports/{id}/
 
+#### Description
+Partially update a crash report
+
+
 #### Parameters
 
 |Type|Name|Description|Schema|
@@ -338,9 +354,11 @@
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|[CrashReport](#crashreport)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**||[CrashReport](#crashreport)|
+|**400**|Invalid input.|No Content|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -589,6 +607,10 @@ We generate the uuid here as this makes it easier to deal with collisions.
 <a name="hiccup_api_v1_devices_crashreports_read"></a>
 ### GET /hiccup/api/v1/devices/{device__uuid}/crashreports/{device_local_id}/
 
+#### Description
+Get a crash report
+
+
 #### Parameters
 
 |Type|Name|Schema|
@@ -599,9 +621,10 @@ We generate the uuid here as this makes it easier to deal with collisions.
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|[CrashReport](#crashreport)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**||[CrashReport](#crashreport)|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -644,6 +667,10 @@ We generate the uuid here as this makes it easier to deal with collisions.
 <a name="hiccup_api_v1_devices_crashreports_update"></a>
 ### PUT /hiccup/api/v1/devices/{device__uuid}/crashreports/{device_local_id}/
 
+#### Description
+Update a crash report
+
+
 #### Parameters
 
 |Type|Name|Schema|
@@ -660,9 +687,11 @@ We generate the uuid here as this makes it easier to deal with collisions.
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|[CrashReport](#crashreport)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**||[CrashReport](#crashreport)|
+|**400**|Invalid input.|No Content|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -727,6 +756,10 @@ We generate the uuid here as this makes it easier to deal with collisions.
 <a name="hiccup_api_v1_devices_crashreports_delete"></a>
 ### DELETE /hiccup/api/v1/devices/{device__uuid}/crashreports/{device_local_id}/
 
+#### Description
+Delete a crash report
+
+
 #### Parameters
 
 |Type|Name|Schema|
@@ -737,9 +770,10 @@ We generate the uuid here as this makes it easier to deal with collisions.
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**204**|No Content|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**204**||No Content|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -758,6 +792,10 @@ We generate the uuid here as this makes it easier to deal with collisions.
 <a name="hiccup_api_v1_devices_crashreports_partial_update"></a>
 ### PATCH /hiccup/api/v1/devices/{device__uuid}/crashreports/{device_local_id}/
 
+#### Description
+Partially update a crash report
+
+
 #### Parameters
 
 |Type|Name|Schema|
@@ -774,9 +812,11 @@ We generate the uuid here as this makes it easier to deal with collisions.
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|[CrashReport](#crashreport)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**||[CrashReport](#crashreport)|
+|**400**|Invalid input.|No Content|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -1086,6 +1126,10 @@ Make a partial update for a device
 <a name="hiccup_api_v1_devices_crashreports_create"></a>
 ### POST /hiccup/api/v1/devices/{uuid}/crashreports/
 
+#### Description
+Create a crash report
+
+
 #### Parameters
 
 |Type|Name|Schema|
@@ -1101,9 +1145,11 @@ Make a partial update for a device
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**201**|[CrashReport](#crashreport)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**201**|The crash report has been successfully created.|[CreateCrashreportResponseSchema](#createcrashreportresponseschema)|
+|**400**|Invalid input.|No Content|
+|**404**|No device with the given uuid could be found.|No Content|
 
 
 #### Tags
@@ -1146,27 +1192,17 @@ Make a partial update for a device
 ##### Response 201
 ```json
 {
-  "id" : "string",
-  "logfiles" : [ "string" ],
-  "uuid" : "string",
-  "device_local_id" : 0,
-  "date" : "string",
-  "is_fake_report" : true,
-  "app_version" : 0,
-  "uptime" : "string",
-  "build_fingerprint" : "string",
-  "radio_version" : "string",
-  "boot_reason" : "string",
-  "power_on_reason" : "string",
-  "power_off_reason" : "string",
-  "next_logfile_key" : 0,
-  "created_at" : "string"
+  "device_local_id" : 0
 }
 ```
 
 
 <a name="hiccup_api_v1_devices_crashreports_list"></a>
 ### GET /hiccup/api/v1/devices/{uuid}/crashreports/
+
+#### Description
+List crash reports
+
 
 #### Parameters
 
@@ -1221,6 +1257,10 @@ Make a partial update for a device
 <a name="hiccup_api_v1_devices_crashreports_logfile_put_create"></a>
 ### POST /hiccup/api/v1/devices/{uuid}/crashreports/{device_local_id}/logfile_put/{filename}/
 
+#### Description
+Upload a log file for a crash report.
+
+
 #### Parameters
 
 |Type|Name|Schema|
@@ -1230,11 +1270,19 @@ Make a partial update for a device
 |**Path**|**uuid**  <br>*required*|string|
 
 
+#### Body parameter
+*Name* : data  
+*Flags* : required  
+*Type* : [LogFile](#logfile)
+
+
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**201**|No Content|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**201**|Created|No Content|
+|**400**|Invalid input.|No Content|
+|**404**|Crashreport does not exist.|No Content|
 
 
 #### Consumes
@@ -1255,8 +1303,25 @@ Make a partial update for a device
 ```
 
 
+##### Request body
+```json
+{
+  "id" : 0,
+  "logfile_type" : "string",
+  "logfile" : "string",
+  "crashreport_local_id" : 0,
+  "created_at" : "string",
+  "crashreport" : 0
+}
+```
+
+
 <a name="hiccup_api_v1_devices_heartbeats_create"></a>
 ### POST /hiccup/api/v1/devices/{uuid}/heartbeats/
+
+#### Description
+Create a heartbeat
+
 
 #### Parameters
 
@@ -1273,9 +1338,11 @@ Make a partial update for a device
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**201**|[HeartBeat](#heartbeat)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**201**||[HeartBeat](#heartbeat)|
+|**400**|Invalid input.|No Content|
+|**404**|No device with the given uuid could be found.|No Content|
 
 
 #### Tags
@@ -1327,6 +1394,10 @@ Make a partial update for a device
 
 <a name="hiccup_api_v1_devices_heartbeats_list"></a>
 ### GET /hiccup/api/v1/devices/{uuid}/heartbeats/
+
+#### Description
+List heartbeats
+
 
 #### Parameters
 
@@ -1381,6 +1452,10 @@ Make a partial update for a device
 <a name="hiccup_api_v1_devices_heartbeats_read"></a>
 ### GET /hiccup/api/v1/devices/{uuid}/heartbeats/{device_local_id}/
 
+#### Description
+Get a heartbeat
+
+
 #### Parameters
 
 |Type|Name|Schema|
@@ -1391,9 +1466,10 @@ Make a partial update for a device
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|[HeartBeat](#heartbeat)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**||[HeartBeat](#heartbeat)|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -1430,6 +1506,10 @@ Make a partial update for a device
 <a name="hiccup_api_v1_devices_heartbeats_update"></a>
 ### PUT /hiccup/api/v1/devices/{uuid}/heartbeats/{device_local_id}/
 
+#### Description
+Update a heartbeat
+
+
 #### Parameters
 
 |Type|Name|Schema|
@@ -1446,9 +1526,11 @@ Make a partial update for a device
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|[HeartBeat](#heartbeat)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**||[HeartBeat](#heartbeat)|
+|**400**|Invalid input.|No Content|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -1501,6 +1583,10 @@ Make a partial update for a device
 <a name="hiccup_api_v1_devices_heartbeats_delete"></a>
 ### DELETE /hiccup/api/v1/devices/{uuid}/heartbeats/{device_local_id}/
 
+#### Description
+Delete a heartbeat
+
+
 #### Parameters
 
 |Type|Name|Schema|
@@ -1511,9 +1597,10 @@ Make a partial update for a device
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**204**|No Content|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**204**||No Content|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -1532,6 +1619,10 @@ Make a partial update for a device
 <a name="hiccup_api_v1_devices_heartbeats_partial_update"></a>
 ### PATCH /hiccup/api/v1/devices/{uuid}/heartbeats/{device_local_id}/
 
+#### Description
+Partially update a heartbeat
+
+
 #### Parameters
 
 |Type|Name|Schema|
@@ -1548,9 +1639,11 @@ Make a partial update for a device
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|[HeartBeat](#heartbeat)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**||[HeartBeat](#heartbeat)|
+|**400**|Invalid input.|No Content|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -1603,6 +1696,10 @@ Make a partial update for a device
 <a name="hiccup_api_v1_heartbeats_create"></a>
 ### POST /hiccup/api/v1/heartbeats/
 
+#### Description
+Create a heartbeat
+
+
 #### Body parameter
 *Name* : data  
 *Flags* : required  
@@ -1611,9 +1708,11 @@ Make a partial update for a device
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**201**|[HeartBeat](#heartbeat)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**201**||[HeartBeat](#heartbeat)|
+|**400**|Invalid input.|No Content|
+|**404**|No device with the given uuid could be found.|No Content|
 
 
 #### Tags
@@ -1665,6 +1764,10 @@ Make a partial update for a device
 
 <a name="hiccup_api_v1_heartbeats_list"></a>
 ### GET /hiccup/api/v1/heartbeats/
+
+#### Description
+List heartbeats
+
 
 #### Parameters
 
@@ -1718,6 +1821,10 @@ Make a partial update for a device
 <a name="hiccup_api_v1_heartbeats_read"></a>
 ### GET /hiccup/api/v1/heartbeats/{id}/
 
+#### Description
+Get a heartbeat
+
+
 #### Parameters
 
 |Type|Name|Description|Schema|
@@ -1727,9 +1834,10 @@ Make a partial update for a device
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|[HeartBeat](#heartbeat)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**||[HeartBeat](#heartbeat)|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -1766,6 +1874,10 @@ Make a partial update for a device
 <a name="hiccup_api_v1_heartbeats_update"></a>
 ### PUT /hiccup/api/v1/heartbeats/{id}/
 
+#### Description
+Update a heartbeat
+
+
 #### Parameters
 
 |Type|Name|Description|Schema|
@@ -1781,9 +1893,11 @@ Make a partial update for a device
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|[HeartBeat](#heartbeat)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**||[HeartBeat](#heartbeat)|
+|**400**|Invalid input.|No Content|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -1836,6 +1950,10 @@ Make a partial update for a device
 <a name="hiccup_api_v1_heartbeats_delete"></a>
 ### DELETE /hiccup/api/v1/heartbeats/{id}/
 
+#### Description
+Delete a heartbeat
+
+
 #### Parameters
 
 |Type|Name|Description|Schema|
@@ -1845,9 +1963,10 @@ Make a partial update for a device
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**204**|No Content|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**204**||No Content|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -1866,6 +1985,10 @@ Make a partial update for a device
 <a name="hiccup_api_v1_heartbeats_partial_update"></a>
 ### PATCH /hiccup/api/v1/heartbeats/{id}/
 
+#### Description
+Partially update a heartbeat
+
+
 #### Parameters
 
 |Type|Name|Description|Schema|
@@ -1881,9 +2004,11 @@ Make a partial update for a device
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|[HeartBeat](#heartbeat)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**||[HeartBeat](#heartbeat)|
+|**400**|Invalid input.|No Content|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -1936,6 +2061,10 @@ Make a partial update for a device
 <a name="hiccup_api_v1_logfiles_list"></a>
 ### GET /hiccup/api/v1/logfiles/
 
+#### Description
+List log files
+
+
 #### Parameters
 
 |Type|Name|Description|Schema|
@@ -1985,6 +2114,10 @@ Make a partial update for a device
 <a name="hiccup_api_v1_logfiles_read"></a>
 ### GET /hiccup/api/v1/logfiles/{id}/
 
+#### Description
+Get a log file
+
+
 #### Parameters
 
 |Type|Name|Description|Schema|
@@ -1994,9 +2127,10 @@ Make a partial update for a device
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|[LogFile](#logfile)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**||[LogFile](#logfile)|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -2030,6 +2164,10 @@ Make a partial update for a device
 <a name="hiccup_api_v1_logfiles_update"></a>
 ### PUT /hiccup/api/v1/logfiles/{id}/
 
+#### Description
+Update a log file
+
+
 #### Parameters
 
 |Type|Name|Description|Schema|
@@ -2045,9 +2183,11 @@ Make a partial update for a device
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|[LogFile](#logfile)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**||[LogFile](#logfile)|
+|**400**|Invalid input.|No Content|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -2094,6 +2234,10 @@ Make a partial update for a device
 <a name="hiccup_api_v1_logfiles_delete"></a>
 ### DELETE /hiccup/api/v1/logfiles/{id}/
 
+#### Description
+Delete a log file
+
+
 #### Parameters
 
 |Type|Name|Description|Schema|
@@ -2103,9 +2247,10 @@ Make a partial update for a device
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**204**|No Content|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**204**||No Content|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -2124,6 +2269,10 @@ Make a partial update for a device
 <a name="hiccup_api_v1_logfiles_partial_update"></a>
 ### PATCH /hiccup/api/v1/logfiles/{id}/
 
+#### Description
+Partially update a log file
+
+
 #### Parameters
 
 |Type|Name|Description|Schema|
@@ -2139,9 +2288,11 @@ Make a partial update for a device
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|[LogFile](#logfile)|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**||[LogFile](#logfile)|
+|**400**|Invalid input.|No Content|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -2667,6 +2818,14 @@ View for listing versions.
 |**radio_version**  <br>*optional*|**Length** : `1 - 200`  <br>**Example** : `"string"`|string|
 |**uptime**  <br>*required*|**Length** : `1 - 200`  <br>**Example** : `"string"`|string|
 |**uuid**  <br>*required*|**Length** : `1 - 64`  <br>**Example** : `"string"`|string|
+
+
+<a name="createcrashreportresponseschema"></a>
+### CreateCrashreportResponseSchema
+
+|Name|Description|Schema|
+|---|---|---|
+|**device_local_id**  <br>*optional*|**Example** : `0`|integer|
 
 
 <a name="device"></a>
