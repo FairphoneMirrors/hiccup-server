@@ -175,10 +175,12 @@ To run the formatter over all python files run:
     (hiccupenv) $ git ls-files '*.py' | xargs black
 
 Before committing a patchset, you are kindly asked to run the linting tools
-and format the code. For both linter and formatter, a git pre-commit hook
-can be set up. To activate, copy the pre-commit script that calls the tox
-command for the pre-commit hooks to the `.git/hooks` folder and make it
-executable:
+([flake8](http://flake8.pycqa.org/en/latest/) and
+[pylint](https://pylint.readthedocs.io/en/latest/))
+and format the code. For both linters and formatter, git pre-commit hooks
+can be set up. To activate, copy the pre-commit script that calls all
+scripts in `tools/hooks/pre-commit.d` to the `.git/hooks`
+folder and make it executable:
 
     (hiccupenv) $ cp tools/hooks/pre-commit .git/hooks/pre-commit
     (hiccupenv) $ chmod +x .git/hooks/pre-commit
