@@ -1,0 +1,5 @@
+# Configuration for Black (https://github.com/ambv/black)
+
+[tool.black]
+line-length = 80
+

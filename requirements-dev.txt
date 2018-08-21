@@ -1,3 +1,4 @@
 -rrequirements-dev-flake8.txt
 -rrequirements-dev-pylint.txt
 tox
+black

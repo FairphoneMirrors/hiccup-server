@@ -7,6 +7,11 @@ front-end and some endpoints to access statics.
 
 ## Setup
 
+Python 3.6 is the only supported python version for the server code. Use this
+version for development. It is the default version in Ubuntu 18.04, if you
+run another OS, it is still possible to get python 3.6 (see for example
+https://askubuntu.com/a/865569).
+
 Make sure you have installed `python3`, `virtualenv` and `libffi-dev`.
 
     $ sudo apt install python3 virtualenv libffi-dev
@@ -15,9 +20,19 @@ Clone Hiccup server and install it locally:
 
     $ git clone ssh://$USER@review.fairphone.software:29418/tools/hiccup/hiccup-server
     $ cd hiccup-server
-    $ virtualenv -p python3 .venv/hiccupenv
+    $ virtualenv -p python3.6 .venv/hiccupenv
     $ source .venv/hiccupenv/bin/activate
     (hiccupenv) $ pip install -r requirements.txt
+
+When using a virtualenv with pyenv (e.g. to get python3.6 on Ubuntu 16.04),
+the python executable needs to be explicitly named to make tox work (see
+https://github.com/pyenv/pyenv-virtualenv/issues/202#issuecomment-284728205).
+
+    pyenv virtualenv -p python3.6 <installed-python-version> hiccupenv
+
+i.e., because I have compiled python 3.6.6:
+
+    pyenv virtualenv -p python3.6 3.6.6 hiccupenv
 
 By default Django will use a SQLite3 database (`db.sqlite3` in the base directory).
 
@@ -146,16 +161,32 @@ Simply run `tox` to test your changes in the supported environments:
 
     (hiccupenv) $ tox
 
-Before committing a patchset, you are kindly asked to run the linting tools.
-The flake8 tool can be run automatically for you with a (strict) git
-pre-commit hook:
-
-    (hiccupenv) $ flake8 --install-hook git
-    (hiccupenv) $ git config --bool flake8.strict true
-
-Also, running flake8 on only the diff with upstream:
+To run flake8 on only the diff with upstream:
 
     (hiccupenv) $ git diff origin/master ./**/*py | flake8 --diff
+
+We use the [black formatter](https://github.com/ambv/black) to check the
+format of the code. To format a single file in place run:
+
+    (hiccupenv) $ black file.py
+
+To run the formatter over all python files run:
+
+    (hiccupenv) $ git ls-files '*.py' | xargs black
+
+Before committing a patchset, you are kindly asked to run the linting tools
+and format the code. For both linter and formatter, a git pre-commit hook
+can be set up. To activate, copy the pre-commit script that calls the tox
+command for the pre-commit hooks to the `.git/hooks` folder and make it
+executable:
+
+    (hiccupenv) $ cp tools/hooks/pre-commit .git/hooks/pre-commit
+    (hiccupenv) $ chmod +x .git/hooks/pre-commit
+
+To prevent commits when the flake8 check fails the *strict* option can be
+set to true:
+
+    (hiccupenv) $ git config --bool flake8.strict true
 
 There is also a lint check included with tox (`tox -e linters`) but it is very
 noisy at the moment since the codebase is not clean yet. Since you are already
