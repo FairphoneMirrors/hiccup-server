@@ -1,6 +1,7 @@
 """Test the API for crashreports, devices, heartbeats and logfiles."""
 import os
 import tempfile
+from typing import Optional
 
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -101,14 +102,14 @@ class Dummy:
         return Dummy._update_copy(Dummy.DEFAULT_DUMMY_HEARTBEAT_VALUES, kwargs)
 
     @staticmethod
-    def crashreport_data(report_type=None, **kwargs):
+    def crashreport_data(report_type: Optional[str] = None, **kwargs):
         """Return the data required to create a crashreport.
 
         Use the values passed as keyword arguments or default to the ones
         from `Dummy.DEFAULT_DUMMY_CRASHREPORTS_VALUES`.
 
         Args:
-            report_type (str, optional): A valid value from
+            report_type: A valid value from
                 `Dummy.CRASH_TYPE_TO_BOOT_REASON_MAP.keys()` that will
                 define the boot reason if not explicitly defined in the
                 keyword arguments already.

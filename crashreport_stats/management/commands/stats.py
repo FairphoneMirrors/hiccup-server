@@ -4,10 +4,11 @@ This module provides a command to compute statistics of
 heartbeats, crashes, and versions sent from Hiccup clients.
 """
 import datetime
+from typing import Dict, List, Optional
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import Count, F, Q
+from django.db.models import Count, F, Model, Q, QuerySet
 from django.db.models.functions import TruncDate
 import pytz
 
@@ -17,6 +18,8 @@ from crashreport_stats.models import (
     StatsMetadata,
     Version,
     VersionDaily,
+    _VersionStats,
+    _DailyVersionStats,
 )
 from crashreports.models import Crashreport, HeartBeat
 
@@ -29,34 +32,35 @@ class _ReportCounterFilter:
     """Filter reports matching a report counter requirements.
 
     Attributes:
-        model (django.db.model): The report model.
-        name (str): The human-readable report counter name.
-        field_name (str): The counter name as defined in the stats model where
-            it is a field.
+        model: The report model.
+        name: The human-readable report counter name.
+        field_name:
+            The counter name as defined in the stats model where it is a field.
 
     """
 
-    def __init__(self, model, name, field_name):
+    def __init__(self, model: Model, name: str, field_name: str) -> None:
         """Initialise the filter.
 
         Args:
-            model (django.db.model): The report model.
-            name (str): The human-readable report counter name.
-            field_name (str): The counter name as defined in the stats model
-                where it is a field.
+            model: The report model.
+            name: The human-readable report counter name.
+            field_name:
+                The counter name as defined in the stats model where it is a
+                field.
 
         """
         self.model = model
         self.name = name
         self.field_name = field_name
 
-    def filter(self, query_objects):
+    def filter(self, query_objects: QuerySet) -> QuerySet:
         """Filter the reports.
 
         Args:
-            query_objects (QuerySet): The reports to filter.
+            query_objects: The reports to filter.
         Returns:
-            QuerySet: The reports matching this report counter requirements.
+            The reports matching this report counter requirements.
 
         """
         # pylint: disable=no-self-use
@@ -78,38 +82,41 @@ class CrashreportCounterFilter(_ReportCounterFilter):
     """The crashreports counter filter.
 
     Attributes:
-        include_boot_reasons (list(str)): The boot reasons assumed to
-            characterise this crashreport ("OR"ed).
-        exclude_boot_reasons (list(str)): The boot reasons assumed to *not*
-            characterise this crashreport ("AND"ed).
-        inclusive_filter (Q): The boot reasons filter for filtering reports
-            that should be included.
-        exclusive_filter (Q): The boot reasons filter for filtering reports
-            that should *not* be included.
+        include_boot_reasons:
+            The boot reasons assumed to characterise this crashreport ("OR"ed).
+        exclude_boot_reasons:
+            The boot reasons assumed to *not* characterise this crashreport (
+            "AND"ed).
+        inclusive_filter:
+            The boot reasons filter for filtering reports that should be
+            included.
+        exclusive_filter:
+            The boot reasons filter for filtering reports that should *not*
+            be included.
 
     """
 
     def __init__(
         self,
-        name,
-        field_name,
-        include_boot_reasons=None,
-        exclude_boot_reasons=None,
-    ):
+        name: str,
+        field_name: str,
+        include_boot_reasons: Optional[List[str]] = None,
+        exclude_boot_reasons: Optional[List[str]] = None,
+    ) -> None:
         """Initialise the filter.
 
         One or both of `include_boot_reasons` and `exclude_boot_reasons` must
         be specified.
 
         Args:
-            name (str): The human-readable report counter name.
-            field_name (str):
+            name: The human-readable report counter name.
+            field_name:
                 The counter name as defined in the stats model where it is a
                 field.
-            include_boot_reasons (list(str), optional):
+            include_boot_reasons:
                 The boot reasons assumed to characterise this crashreport
                 ("OR"ed).
-            exclude_boot_reasons (list(str), optional):
+            exclude_boot_reasons:
                 The boot reasons assumed to *not* characterise this
                 crashreport ("AND"ed).
         Raises:
@@ -137,14 +144,14 @@ class CrashreportCounterFilter(_ReportCounterFilter):
         self.exclusive_filter = self._create_query_filter(exclude_boot_reasons)
 
     @staticmethod
-    def _create_query_filter(reasons):
+    def _create_query_filter(reasons: Optional[List[str]]) -> Q:
         """Combine boot reasons into one filter.
 
         Args:
-            reasons (list(str)): List of boot reasons to include in filter.
+            reasons: List of boot reasons to include in filter.
         Returns:
-            django.db.models.query_utils.Q: Query that matches either of
-                reasons as boot_reason if list is not empty, otherwise None.
+            Query that matches either of reasons as boot_reason if list is
+            not empty, otherwise None.
 
         """
         if not reasons:
@@ -155,13 +162,13 @@ class CrashreportCounterFilter(_ReportCounterFilter):
             query = query | Q(boot_reason=reason)
         return query
 
-    def filter(self, query_objects):
+    def filter(self, query_objects: QuerySet) -> QuerySet:
         """Filter the reports according to the inclusive and exclusive fitlers.
 
         Args:
-            query_objects (QuerySet): The reports to filter.
+            query_objects: The reports to filter.
         Returns:
-            QuerySet: The reports matching this report counter requirements.
+            The reports matching this report counter requirements.
 
         """
         if self.inclusive_filter:
@@ -179,34 +186,42 @@ class _StatsModelsEngine:
     counterparts (_DailyVersionStats).
     """
 
-    def __init__(self, stats_model, daily_stats_model, version_field_name):
+    def __init__(
+        self,
+        stats_model: _VersionStats,
+        daily_stats_model: _DailyVersionStats,
+        version_field_name: str,
+    ) -> None:
         """Initialise the engine.
 
         Args:
-            stats_model (_VersionStats): The _VersionStats model to update
-                stats for.
-            daily_stats_model (_DailyVersionStats): The _DailyVersionStats
-                model to update stats for.
-            version_field_name (str): The version field name as specified in
-                the stats models.
+            stats_model: The _VersionStats model to update stats for.
+            daily_stats_model: The _DailyVersionStats model to update stats for.
+            version_field_name:
+                The version field name as specified in the stats models.
 
         """
         self.stats_model = stats_model
         self.daily_stats_model = daily_stats_model
         self.version_field_name = version_field_name
 
-    def _valid_objects(self, query_objects):
+    def _valid_objects(self, query_objects: QuerySet) -> QuerySet:
         """Filter out invalid reports.
 
         Returns:
-            QuerySet: All the valid reports.
+            All the valid reports.
 
         """
         # pylint: disable=no-self-use
         # self is potentially used by subclasses.
         return query_objects
 
-    def _objects_within_period(self, query_objects, up_to, starting_from=None):
+    def _objects_within_period(
+        self,
+        query_objects: QuerySet,
+        up_to: datetime.datetime,
+        starting_from: Optional[datetime.datetime] = None,
+    ) -> QuerySet:
         """Retrieve the reports within a specific period of time.
 
         The objects are filtered considering a specific period of time to allow
@@ -215,12 +230,11 @@ class _StatsModelsEngine:
         bound must be specified to avoid race conditions.
 
         Args:
-            query_objects (QuerySet): The reports to filter.
-            up_to (datetime): The maximum timestamp to consider (inclusive).
-            starting_from (datetime, optional): The minimum timestamp to
-                consider (exclusive).
+            query_objects: The reports to filter.
+            up_to: The maximum timestamp to consider (inclusive).
+            starting_from: The minimum timestamp to consider (exclusive).
         Returns:
-            QuerySet: The reports received within a specific period of time.
+            The reports received within a specific period of time.
 
         """
         # pylint: disable=no-self-use
@@ -231,13 +245,12 @@ class _StatsModelsEngine:
 
         return query_objects
 
-    def _unique_objects_per_day(self, query_objects):
+    def _unique_objects_per_day(self, query_objects: QuerySet) -> QuerySet:
         """Count the unique reports per version per day.
 
         Args:
-            query_objects (QuerySet): The reports to count.
-        Returns:
-            QuerySet: The unique reports grouped per version per day.
+            query_objects: The reports to count.
+        Returns: The unique reports grouped per version per day.
 
         """
         return (
@@ -248,11 +261,10 @@ class _StatsModelsEngine:
             .annotate(count=Count("date", distinct=True))
         )
 
-    def delete_stats(self):
+    def delete_stats(self) -> Dict[str, int]:
         """Delete the general and daily stats instances.
 
-        Returns:
-            dict(str, int): The count of deleted entries per model name.
+        Returns: The count of deleted entries per model name.
 
         """
         # Clear the general stats, the daily stats will be deleted by cascading
@@ -260,7 +272,12 @@ class _StatsModelsEngine:
         _, count_per_model = self.stats_model.objects.all().delete()
         return count_per_model
 
-    def update_stats(self, report_counter, up_to, starting_from=None):
+    def update_stats(
+        self,
+        report_counter: _ReportCounterFilter,
+        up_to: datetime.datetime,
+        starting_from: Optional[datetime.datetime] = None,
+    ) -> Dict[Model, Dict[str, int]]:
         """Update the statistics of the general and daily stats entries.
 
         The algorithm works as follow:
@@ -275,15 +292,13 @@ class _StatsModelsEngine:
             while the sum of them per version updates the general stats.
 
         Args:
-            report_counter (_ReportCounterEngine): The report counter to
-                update the stats with.
-            up_to (datetime): The maximum timestamp to consider (inclusive).
-            starting_from (datetime, optional): The minimum timestamp to
-                consider (exclusive).
+            report_counter: The report counter to update the stats with.
+            up_to: The maximum timestamp to consider (inclusive).
+            starting_from: The minimum timestamp to consider (exclusive).
         Returns:
-            dict(str, dict(str, int)): The number of added entries and the
-                number of updated entries bundled in a dict, respectively
-                hashed with the keys 'created' and 'updated', per model name.
+            The number of added entries and the number of updated entries
+            bundled in a dict, respectively hashed with the keys 'created'
+            and 'updated', per model name.
 
         """
         counts_per_model = {
