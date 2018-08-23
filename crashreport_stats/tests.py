@@ -28,7 +28,8 @@ class Dummy:
     # Valid unique entries
     BUILD_FINGERPRINTS = [
         (
-            "Fairphone/FP2/FP2:5.1/FP2/r4275.1_FP2_gms76_1.13.0:user/release-keys"
+            "Fairphone/FP2/FP2:5.1/FP2/r4275.1_FP2_gms76_1.13.0"
+            ":user/release-keys"
         ),
         (
             "Fairphone/FP2/FP2:5.1.1/FP2-gms75.1.13.0/FP2-gms75.1.13.0"
@@ -38,7 +39,7 @@ class Dummy:
             "Fairphone/FP2/FP2:6.0.1/FP2-gms-18.04.1/FP2-gms-18.04.1"
             ":user/release-keys"
         ),
-        ("Fairphone/FP2/FP2:7.1.2/18.07.2/gms-7480c31d" ":user/release-keys"),
+        ("Fairphone/FP2/FP2:7.1.2/18.07.2/gms-7480c31d:user/release-keys"),
     ]
     RADIO_VERSIONS = [
         "4437.1-FP2-0-07",
