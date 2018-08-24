@@ -1,7 +1,10 @@
 """REST API for accessing the crashreports statistics."""
 import zipfile
+from collections import OrderedDict
 
-from rest_framework import generics
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import generics, status
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
@@ -30,7 +33,11 @@ from crashreports.permissions import (
     HasRightsOrIsDeviceOwnerDeviceCreation,
     HasStatsAccess,
 )
+from crashreports.response_descriptions import default_desc
+
 from . import raw_querys
+
+_RESPONSE_STATUS_200_DESCRIPTION = "OK"
 
 
 def dictfetchall(cursor):
@@ -41,11 +48,46 @@ def dictfetchall(cursor):
     ]
 
 
+_DEVICE_UPDATE_HISTORY_SCHEMA = openapi.Schema(
+    type=openapi.TYPE_ARRAY,
+    items=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        title="DeviceUpdateHistoryEntry",
+        properties=OrderedDict(
+            [
+                ("build_fingerprint", openapi.Schema(type=openapi.TYPE_STRING)),
+                ("heartbeats", openapi.Schema(type=openapi.TYPE_INTEGER)),
+                ("max", openapi.Schema(type=openapi.TYPE_INTEGER)),
+                ("other", openapi.Schema(type=openapi.TYPE_INTEGER)),
+                ("prob_crashes", openapi.Schema(type=openapi.TYPE_INTEGER)),
+                ("smpl", openapi.Schema(type=openapi.TYPE_INTEGER)),
+                ("update_date", openapi.Schema(type=openapi.TYPE_STRING)),
+            ]
+        ),
+    ),
+)
+
+
 class DeviceUpdateHistory(APIView):
     """View the update history of a specific device."""
 
     permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
 
+    @swagger_auto_schema(
+        operation_description="Get the update history of a device",
+        responses=dict(
+            [
+                default_desc(NotFound),
+                (
+                    status.HTTP_200_OK,
+                    openapi.Response(
+                        _RESPONSE_STATUS_200_DESCRIPTION,
+                        _DEVICE_UPDATE_HISTORY_SCHEMA,
+                    ),
+                ),
+            ]
+        ),
+    )
     def get(self, request, uuid, format=None):
         """Get the update history of a device.
 
@@ -63,11 +105,44 @@ class DeviceUpdateHistory(APIView):
         return Response(res)
 
 
+_DEVICE_REPORT_HISTORY_SCHEMA = openapi.Schema(
+    type=openapi.TYPE_ARRAY,
+    items=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        title="DeviceReportHistoryEntry",
+        properties=OrderedDict(
+            [
+                ("date", openapi.Schema(type=openapi.TYPE_STRING)),
+                ("heartbeats", openapi.Schema(type=openapi.TYPE_INTEGER)),
+                ("other", openapi.Schema(type=openapi.TYPE_INTEGER)),
+                ("prob_crashes", openapi.Schema(type=openapi.TYPE_INTEGER)),
+                ("smpl", openapi.Schema(type=openapi.TYPE_INTEGER)),
+            ]
+        ),
+    ),
+)
+
+
 class DeviceReportHistory(APIView):
     """View the report history of a specific device."""
 
     permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
 
+    @swagger_auto_schema(
+        operation_description="Get the report history of a device",
+        responses=dict(
+            [
+                default_desc(NotFound),
+                (
+                    status.HTTP_200_OK,
+                    openapi.Response(
+                        _RESPONSE_STATUS_200_DESCRIPTION,
+                        _DEVICE_REPORT_HISTORY_SCHEMA,
+                    ),
+                ),
+            ]
+        ),
+    )
     def get(self, request, uuid, format=None):
         """Get the report history of a device.
 
@@ -85,11 +160,39 @@ class DeviceReportHistory(APIView):
         return Response(res)
 
 
+_STATUS_RESPONSE_SCHEMA = openapi.Schema(
+    title="Status",
+    type=openapi.TYPE_OBJECT,
+    properties=OrderedDict(
+        [
+            ("devices", openapi.Schema(type=openapi.TYPE_INTEGER)),
+            ("crashreports", openapi.Schema(type=openapi.TYPE_INTEGER)),
+            ("heartbeats", openapi.Schema(type=openapi.TYPE_INTEGER)),
+        ]
+    ),
+)
+
+
 class Status(APIView):
     """View the number of devices, crashreports and heartbeats."""
 
     permission_classes = (HasStatsAccess,)
 
+    @swagger_auto_schema(
+        operation_description="Get the number of devices, crashreports and "
+        "heartbeats",
+        responses=dict(
+            [
+                (
+                    status.HTTP_200_OK,
+                    openapi.Response(
+                        _RESPONSE_STATUS_200_DESCRIPTION,
+                        _STATUS_RESPONSE_SCHEMA,
+                    ),
+                )
+            ]
+        ),
+    )
     def get(self, request, format=None):
         """Get the number of devices, crashreports and heartbeats.
 
@@ -112,11 +215,44 @@ class Status(APIView):
         )
 
 
+_DEVICE_STAT_OVERVIEW_SCHEMA = openapi.Schema(
+    title="DeviceStatOverview",
+    type=openapi.TYPE_OBJECT,
+    properties=OrderedDict(
+        [
+            ("board_date", openapi.Schema(type=openapi.TYPE_STRING)),
+            ("crashes_per_day", openapi.Schema(type=openapi.TYPE_NUMBER)),
+            ("crashreports", openapi.Schema(type=openapi.TYPE_INTEGER)),
+            ("heartbeats", openapi.Schema(type=openapi.TYPE_INTEGER)),
+            ("last_active", openapi.Schema(type=openapi.TYPE_STRING)),
+            ("smpl_per_day", openapi.Schema(type=openapi.TYPE_NUMBER)),
+            ("smpls", openapi.Schema(type=openapi.TYPE_INTEGER)),
+            ("uuid", openapi.Schema(type=openapi.TYPE_STRING)),
+        ]
+    ),
+)
+
+
 class DeviceStat(APIView):
     """View an overview of the statistics of a device."""
 
     permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
 
+    @swagger_auto_schema(
+        operation_description="Get some general statistics for a device.",
+        responses=dict(
+            [
+                default_desc(NotFound),
+                (
+                    status.HTTP_200_OK,
+                    openapi.Response(
+                        _RESPONSE_STATUS_200_DESCRIPTION,
+                        _DEVICE_STAT_OVERVIEW_SCHEMA,
+                    ),
+                ),
+            ]
+        ),
+    )
     def get(self, request, uuid, format=None):
         """Get some general statistics for a device.
 
@@ -161,11 +297,28 @@ class DeviceStat(APIView):
         )
 
 
+_LOG_FILE_SCHEMA = openapi.Schema(title="LogFile", type=openapi.TYPE_FILE)
+
+
 class LogFileDownload(APIView):
     """View for downloading log files."""
 
     permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
 
+    @swagger_auto_schema(
+        operation_description="Get a log file.",
+        responses=dict(
+            [
+                default_desc(NotFound),
+                (
+                    status.HTTP_200_OK,
+                    openapi.Response(
+                        _RESPONSE_STATUS_200_DESCRIPTION, _LOG_FILE_SCHEMA
+                    ),
+                ),
+            ]
+        ),
+    )
     def get(self, request, id_logfile, format=None):
         """Get a logfile.
 

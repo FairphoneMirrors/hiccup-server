@@ -2342,13 +2342,6 @@ Partially update a log file
 #### Description
 Get some general statistics for a device.
 
-Args:
-    request: Http request
-    uuid:  The UUID of the device
-    format: Optional response format parameter
-
-Returns: Some general information of the device in a dictionary.
-
 
 #### Parameters
 
@@ -2359,9 +2352,24 @@ Returns: Some general information of the device in a dictionary.
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|No Content|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**|OK|[DeviceStatOverview](#devicestatoverview)|
+|**404**|Not found.|No Content|
+
+<a name="devicestatoverview"></a>
+**DeviceStatOverview**
+
+|Name|Description|Schema|
+|---|---|---|
+|**board_date**  <br>*optional*|**Example** : `"string"`|string|
+|**crashes_per_day**  <br>*optional*|**Example** : `0.0`|number|
+|**crashreports**  <br>*optional*|**Example** : `0`|integer|
+|**heartbeats**  <br>*optional*|**Example** : `0`|integer|
+|**last_active**  <br>*optional*|**Example** : `"string"`|string|
+|**smpl_per_day**  <br>*optional*|**Example** : `0.0`|number|
+|**smpls**  <br>*optional*|**Example** : `0`|integer|
+|**uuid**  <br>*optional*|**Example** : `"string"`|string|
 
 
 #### Tags
@@ -2377,18 +2385,19 @@ Returns: Some general information of the device in a dictionary.
 ```
 
 
+#### Example HTTP response
+
+##### Response 200
+```json
+"object"
+```
+
+
 <a name="hiccup_stats_api_v1_device_report_history_read"></a>
 ### GET /hiccup_stats/api/v1/device_report_history/{uuid}/
 
 #### Description
-Get the report history of a device.
-
-Args:
-    request: Http request
-    uuid: The UUID of the device
-    format: Optional response format parameter
-
-Returns: The report history of the requested device.
+Get the report history of a device
 
 
 #### Parameters
@@ -2400,9 +2409,21 @@ Returns: The report history of the requested device.
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|No Content|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**|OK|< [DeviceReportHistoryEntry](#devicereporthistoryentry) > array|
+|**404**|Not found.|No Content|
+
+<a name="devicereporthistoryentry"></a>
+**DeviceReportHistoryEntry**
+
+|Name|Description|Schema|
+|---|---|---|
+|**date**  <br>*optional*|**Example** : `"string"`|string|
+|**heartbeats**  <br>*optional*|**Example** : `0`|integer|
+|**other**  <br>*optional*|**Example** : `0`|integer|
+|**prob_crashes**  <br>*optional*|**Example** : `0`|integer|
+|**smpl**  <br>*optional*|**Example** : `0`|integer|
 
 
 #### Tags
@@ -2418,18 +2439,19 @@ Returns: The report history of the requested device.
 ```
 
 
+#### Example HTTP response
+
+##### Response 200
+```json
+[ "object" ]
+```
+
+
 <a name="hiccup_stats_api_v1_device_update_history_read"></a>
 ### GET /hiccup_stats/api/v1/device_update_history/{uuid}/
 
 #### Description
-Get the update history of a device.
-
-Args:
-    request: Http request
-    uuid: The UUID of the device
-    format: Optional response format parameter
-
-Returns: The update history of the requested device.
+Get the update history of a device
 
 
 #### Parameters
@@ -2441,9 +2463,23 @@ Returns: The update history of the requested device.
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|No Content|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**|OK|< [DeviceUpdateHistoryEntry](#deviceupdatehistoryentry) > array|
+|**404**|Not found.|No Content|
+
+<a name="deviceupdatehistoryentry"></a>
+**DeviceUpdateHistoryEntry**
+
+|Name|Description|Schema|
+|---|---|---|
+|**build_fingerprint**  <br>*optional*|**Example** : `"string"`|string|
+|**heartbeats**  <br>*optional*|**Example** : `0`|integer|
+|**max**  <br>*optional*|**Example** : `0`|integer|
+|**other**  <br>*optional*|**Example** : `0`|integer|
+|**prob_crashes**  <br>*optional*|**Example** : `0`|integer|
+|**smpl**  <br>*optional*|**Example** : `0`|integer|
+|**update_date**  <br>*optional*|**Example** : `"string"`|string|
 
 
 #### Tags
@@ -2459,18 +2495,19 @@ Returns: The update history of the requested device.
 ```
 
 
+#### Example HTTP response
+
+##### Response 200
+```json
+[ "object" ]
+```
+
+
 <a name="hiccup_stats_api_v1_logfile_download_read"></a>
 ### GET /hiccup_stats/api/v1/logfile_download/{id}/
 
 #### Description
-Get a logfile.
-
-Args:
-    request: Http request
-    id_logfile: The id of the log file
-    format: Optional response format parameter
-
-Returns: The log file with the corresponding id.
+Get a log file.
 
 
 #### Parameters
@@ -2482,9 +2519,10 @@ Returns: The log file with the corresponding id.
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|No Content|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**|OK|file|
+|**404**|Not found.|No Content|
 
 
 #### Tags
@@ -2497,6 +2535,14 @@ Returns: The log file with the corresponding id.
 ##### Request path
 ```
 /hiccup_stats/api/v1/logfile_download/string/
+```
+
+
+#### Example HTTP response
+
+##### Response 200
+```json
+"file"
 ```
 
 
@@ -2634,20 +2680,23 @@ View for listing RadioVersion instances.
 ### GET /hiccup_stats/api/v1/status/
 
 #### Description
-Get the number of devices, crashreports and heartbeats.
-
-Args:
-    request: Http request
-    format: Optional response format parameter
-
-Returns: The number of devices, crashreports and heartbeats.
+Get the number of devices, crashreports and heartbeats
 
 
 #### Responses
 
-|HTTP Code|Schema|
-|---|---|
-|**200**|No Content|
+|HTTP Code|Description|Schema|
+|---|---|---|
+|**200**|OK|[Status](#status)|
+
+<a name="status"></a>
+**Status**
+
+|Name|Description|Schema|
+|---|---|---|
+|**crashreports**  <br>*optional*|**Example** : `0`|integer|
+|**devices**  <br>*optional*|**Example** : `0`|integer|
+|**heartbeats**  <br>*optional*|**Example** : `0`|integer|
 
 
 #### Tags
@@ -2660,6 +2709,14 @@ Returns: The number of devices, crashreports and heartbeats.
 ##### Request path
 ```
 /hiccup_stats/api/v1/status/
+```
+
+
+#### Example HTTP response
+
+##### Response 200
+```json
+"object"
 ```
 
 
