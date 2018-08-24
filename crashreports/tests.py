@@ -30,42 +30,47 @@ class InvalidCrashTypeError(BaseException):
             crash_type: The invalid crash type.
         """
         super(InvalidCrashTypeError, self).__init__(
-            '{} is not a valid crash type'.format(crash_type))
+            "{} is not a valid crash type".format(crash_type)
+        )
 
 
-class Dummy():
+class Dummy:
     """Dummy values for devices, heartbeats and crashreports."""
 
     DEFAULT_DUMMY_DEVICE_REGISTER_VALUES = {
-        'board_date': '2015-12-15T01:23:45Z',
-        'chipset': 'Qualcomm MSM8974PRO-AA',
+        "board_date": "2015-12-15T01:23:45Z",
+        "chipset": "Qualcomm MSM8974PRO-AA",
     }
 
     DEFAULT_DUMMY_HEARTBEAT_VALUES = {
-        'uuid': None,
-        'app_version': 10100,
-        'uptime': (
-            'up time: 16 days, 21:49:56, idle time: 5 days, 20:55:04, '
-            'sleep time: 10 days, 20:46:27'),
-        'build_fingerprint': (
-            'Fairphone/FP2/FP2:6.0.1/FP2-gms-18.03.1/FP2-gms-18.03.1:user/'
-            'release-keys'),
-        'radio_version': '4437.1-FP2-0-08',
-        'date': '2018-03-19T09:58:30.386Z',
+        "uuid": None,
+        "app_version": 10100,
+        "uptime": (
+            "up time: 16 days, 21:49:56, idle time: 5 days, 20:55:04, "
+            "sleep time: 10 days, 20:46:27"
+        ),
+        "build_fingerprint": (
+            "Fairphone/FP2/FP2:6.0.1/FP2-gms-18.03.1/FP2-gms-18.03.1:user/"
+            "release-keys"
+        ),
+        "radio_version": "4437.1-FP2-0-08",
+        "date": "2018-03-19T09:58:30.386Z",
     }
 
     DEFAULT_DUMMY_CRASHREPORTS_VALUES = DEFAULT_DUMMY_HEARTBEAT_VALUES.copy()
-    DEFAULT_DUMMY_CRASHREPORTS_VALUES.update({
-        'is_fake_report': 0,
-        'boot_reason': 'why?',
-        'power_on_reason': 'it was powered on',
-        'power_off_reason': 'something happened and it went off',
-    })
+    DEFAULT_DUMMY_CRASHREPORTS_VALUES.update(
+        {
+            "is_fake_report": 0,
+            "boot_reason": "why?",
+            "power_on_reason": "it was powered on",
+            "power_off_reason": "something happened and it went off",
+        }
+    )
 
     CRASH_TYPE_TO_BOOT_REASON_MAP = {
-        'crash': Crashreport.BOOT_REASON_KEYBOARD_POWER_ON,
-        'smpl': Crashreport.BOOT_REASON_RTC_ALARM,
-        'other': 'whatever',
+        "crash": Crashreport.BOOT_REASON_KEYBOARD_POWER_ON,
+        "smpl": Crashreport.BOOT_REASON_RTC_ALARM,
+        "other": "whatever",
     }
 
     @staticmethod
@@ -83,7 +88,8 @@ class Dummy():
         from `Dummy.DEFAULT_DUMMY_DEVICE_REGISTER_VALUES`.
         """
         return Dummy._update_copy(
-            Dummy.DEFAULT_DUMMY_DEVICE_REGISTER_VALUES, kwargs)
+            Dummy.DEFAULT_DUMMY_DEVICE_REGISTER_VALUES, kwargs
+        )
 
     @staticmethod
     def heartbeat_data(**kwargs):
@@ -108,12 +114,14 @@ class Dummy():
                 keyword arguments already.
         """
         data = Dummy._update_copy(
-            Dummy.DEFAULT_DUMMY_CRASHREPORTS_VALUES, kwargs)
-        if report_type and 'boot_reason' not in kwargs:
+            Dummy.DEFAULT_DUMMY_CRASHREPORTS_VALUES, kwargs
+        )
+        if report_type and "boot_reason" not in kwargs:
             if report_type not in Dummy.CRASH_TYPE_TO_BOOT_REASON_MAP:
                 raise InvalidCrashTypeError(report_type)
-            data['boot_reason'] = Dummy.CRASH_TYPE_TO_BOOT_REASON_MAP.get(
-                report_type)
+            data["boot_reason"] = Dummy.CRASH_TYPE_TO_BOOT_REASON_MAP.get(
+                report_type
+            )
         return data
 
 
@@ -129,7 +137,8 @@ class DeviceRegisterAPITestCase(APITestCase):
         server is stored in self.admin.
         """
         admin_user = User.objects.create_superuser(
-            'somebody', 'somebody@example.com', 'thepassword')
+            "somebody", "somebody@example.com", "thepassword"
+        )
         self.admin = APIClient()
         self.admin.force_authenticate(admin_user)
 
@@ -148,10 +157,10 @@ class DeviceRegisterAPITestCase(APITestCase):
         response = self.client.post(reverse(self.REGISTER_DEVICE_URL), data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        uuid = response.data['uuid']
-        token = response.data['token']
+        uuid = response.data["uuid"]
+        token = response.data["token"]
         user = APIClient()
-        user.credentials(HTTP_AUTHORIZATION='Token ' + token)
+        user.credentials(HTTP_AUTHORIZATION="Token " + token)
 
         return uuid, user, token
 
@@ -161,8 +170,9 @@ class DeviceTestCase(DeviceRegisterAPITestCase):
 
     def test_register(self):
         """Test registration of devices."""
-        response = self.client.post(reverse(self.REGISTER_DEVICE_URL),
-                                    Dummy.device_register_data())
+        response = self.client.post(
+            reverse(self.REGISTER_DEVICE_URL), Dummy.device_register_data()
+        )
         self.assertTrue("token" in response.data)
         self.assertTrue("uuid" in response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -175,21 +185,21 @@ class DeviceTestCase(DeviceRegisterAPITestCase):
     def test_create_missing_board_date(self):
         """Test registration with missing board date."""
         data = Dummy.device_register_data()
-        data.pop('board_date')
+        data.pop("board_date")
         response = self.client.post(reverse(self.REGISTER_DEVICE_URL), data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_missing_chipset(self):
         """Test registration with missing chipset."""
         data = Dummy.device_register_data()
-        data.pop('chipset')
+        data.pop("chipset")
         response = self.client.post(reverse(self.REGISTER_DEVICE_URL), data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_invalid_board_date(self):
         """Test registration with invalid board date."""
         data = Dummy.device_register_data()
-        data['board_date'] = 'not_a_valid_date'
+        data["board_date"] = "not_a_valid_date"
         response = self.client.post(reverse(self.REGISTER_DEVICE_URL), data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -204,7 +214,7 @@ class DeviceTestCase(DeviceRegisterAPITestCase):
         data = Dummy.device_register_data()
         # In 2017, the Netherlands changed from CET to CEST on March,
         # 26 at 02:00
-        data['board_date'] = '2017-03-26 02:34:56'
+        data["board_date"] = "2017-03-26 02:34:56"
         response = self.client.post(reverse(self.REGISTER_DEVICE_URL), data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -219,7 +229,7 @@ class DeviceTestCase(DeviceRegisterAPITestCase):
         data = Dummy.device_register_data()
         # In 2017, the Netherlands changed from CEST to CET on October,
         # 29 at 03:00
-        data['board_date'] = '2017-10-29 02:34:56'
+        data["board_date"] = "2017-10-29 02:34:56"
         response = self.client.post(reverse(self.REGISTER_DEVICE_URL), data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -234,15 +244,14 @@ class ListDevicesTestCase(DeviceRegisterAPITestCase):
         """Test registration of 2 devices."""
         number_of_devices = 2
         uuids = [
-            str(self._register_device()[0])
-            for _ in range(number_of_devices)
+            str(self._register_device()[0]) for _ in range(number_of_devices)
         ]
 
         response = self.admin.get(reverse(self.LIST_CREATE_URL), {})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), number_of_devices)
-        for result in response.data['results']:
-            self.assertIn(result['uuid'], uuids)
+        self.assertEqual(len(response.data["results"]), number_of_devices)
+        for result in response.data["results"]:
+            self.assertIn(result["uuid"], uuids)
 
     def test_device_list_unauth(self):
         """Test listing devices without authentication."""
@@ -254,8 +263,8 @@ class ListDevicesTestCase(DeviceRegisterAPITestCase):
         uuid, _, token = self._register_device()
         response = self.admin.get(reverse(self.RETRIEVE_URL, args=[uuid]), {})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['uuid'], str(uuid))
-        self.assertEqual(response.data['token'], token)
+        self.assertEqual(response.data["uuid"], str(uuid))
+        self.assertEqual(response.data["token"], token)
 
     def test_retrieve_device_unauth(self):
         """Test retrieval of devices without authentication."""
@@ -288,14 +297,15 @@ class HeartbeatListTestCase(DeviceRegisterAPITestCase):
     def _post_multiple(self, client, data, count):
         return [
             client.post(reverse(self.LIST_CREATE_URL), data)
-            for _ in range(count)]
+            for _ in range(count)
+        ]
 
     def _retrieve_single(self, user):
         count = 5
         response = self._post_multiple(self.admin, self.data, count)
         self.assertEqual(len(response), count)
         self.assertEqual(response[0].status_code, status.HTTP_201_CREATED)
-        url = reverse(self.RETRIEVE_URL, args=[response[0].data['id']])
+        url = reverse(self.RETRIEVE_URL, args=[response[0].data["id"]])
         request = user.get(url)
         return request.status_code
 
@@ -304,8 +314,10 @@ class HeartbeatListTestCase(DeviceRegisterAPITestCase):
         response = self._post_multiple(self.user, self.data, count)
         self.assertEqual(len(response), count)
         self.assertEqual(response[0].status_code, status.HTTP_201_CREATED)
-        url = reverse(self.RETRIEVE_BY_UUID_URL, args=[
-            self.uuid, response[0].data['device_local_id']])
+        url = reverse(
+            self.RETRIEVE_BY_UUID_URL,
+            args=[self.uuid, response[0].data["device_local_id"]],
+        )
         request = user.get(url)
         return request.status_code
 
@@ -318,36 +330,37 @@ class HeartbeatListTestCase(DeviceRegisterAPITestCase):
     def test_create_no_auth(self):
         """Test creation without authentication."""
         noauth_client = APIClient()
-        response = noauth_client.post(
-            reverse(self.LIST_CREATE_URL), self.data)
+        response = noauth_client.post(reverse(self.LIST_CREATE_URL), self.data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_create_as_admin(self):
         """Test creation as admin."""
         response = self.admin.post(reverse(self.LIST_CREATE_URL), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(response.data['id'] > 0)
+        self.assertTrue(response.data["id"] > 0)
 
     def test_create_as_admin_not_existing_device(self):
         """Test creation of heartbeat on non-existing device."""
         response = self.admin.post(
-            reverse(self.LIST_CREATE_URL), self._create_dummy_data())
+            reverse(self.LIST_CREATE_URL), self._create_dummy_data()
+        )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_create_as_uuid_owner(self):
         """Test creation as owner."""
         response = self.user.post(
             reverse(self.LIST_CREATE_URL),
-            self._create_dummy_data(uuid=self.uuid))
+            self._create_dummy_data(uuid=self.uuid),
+        )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['id'], -1)
+        self.assertEqual(response.data["id"], -1)
 
     def test_create_as_uuid_not_owner(self):
         """Test creation as non-owner."""
         uuid, _, _ = self._register_device()
         response = self.user.post(
-            reverse(self.LIST_CREATE_URL),
-            self._create_dummy_data(uuid=uuid))
+            reverse(self.LIST_CREATE_URL), self._create_dummy_data(uuid=uuid)
+        )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_list(self):
@@ -356,42 +369,45 @@ class HeartbeatListTestCase(DeviceRegisterAPITestCase):
         self._post_multiple(self.user, self.data, count)
         response = self.admin.get(reverse(self.LIST_CREATE_URL))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), count)
+        self.assertEqual(len(response.data["results"]), count)
 
     def test_retrieve_single_admin(self):
         """Test retrieval as admin."""
-        self.assertEqual(
-            self._retrieve_single(self.admin), status.HTTP_200_OK)
+        self.assertEqual(self._retrieve_single(self.admin), status.HTTP_200_OK)
 
     def test_retrieve_single_device_owner(self):
         """Test retrieval as device owner."""
         self.assertEqual(
-            self._retrieve_single(self.user), status.HTTP_403_FORBIDDEN)
+            self._retrieve_single(self.user), status.HTTP_403_FORBIDDEN
+        )
 
     def test_retrieve_single_noauth(self):
         """Test retrieval without authentication."""
         noauth_client = APIClient()
         self.assertEqual(
-            self._retrieve_single(noauth_client),
-            status.HTTP_401_UNAUTHORIZED)
+            self._retrieve_single(noauth_client), status.HTTP_401_UNAUTHORIZED
+        )
 
     def test_retrieve_single_by_device_admin(self):
         """Test retrieval by device as admin."""
         self.assertEqual(
-            self._retrieve_single_by_device(self.admin), status.HTTP_200_OK)
+            self._retrieve_single_by_device(self.admin), status.HTTP_200_OK
+        )
 
     def test_retrieve_single_by_device_device_owner(self):
         """Test retrieval by device as owner."""
         self.assertEqual(
             self._retrieve_single_by_device(self.user),
-            status.HTTP_403_FORBIDDEN)
+            status.HTTP_403_FORBIDDEN,
+        )
 
     def test_retrieve_single_by_device_noauth(self):
         """Test retrieval by device without authentication."""
         noauth_client = APIClient()
         self.assertEqual(
             self._retrieve_single_by_device(noauth_client),
-            status.HTTP_401_UNAUTHORIZED)
+            status.HTTP_401_UNAUTHORIZED,
+        )
 
     def test_list_by_uuid(self):
         """Test listing of devices by UUID."""
@@ -399,11 +415,12 @@ class HeartbeatListTestCase(DeviceRegisterAPITestCase):
         uuid, _, _ = self._register_device()
         self._post_multiple(self.user, self.data, count)
         self._post_multiple(
-            self.admin, self._create_dummy_data(uuid=uuid), count)
+            self.admin, self._create_dummy_data(uuid=uuid), count
+        )
         url = reverse(self.LIST_CREATE_BY_UUID_URL, args=[self.uuid])
         response = self.admin.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), count)
+        self.assertEqual(len(response.data["results"]), count)
 
     def test_list_noauth(self):
         """Test listing of devices without authentication."""
@@ -423,14 +440,14 @@ class HeartbeatListTestCase(DeviceRegisterAPITestCase):
     def test_no_radio_version(self):
         """Test creation and retrieval without radio version."""
         data = self._create_dummy_data(uuid=self.uuid)
-        data.pop('radio_version')
+        data.pop("radio_version")
         response = self.user.post(reverse(self.LIST_CREATE_URL), data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         url = reverse(self.LIST_CREATE_BY_UUID_URL, args=[self.uuid])
         response = self.admin.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), 1)
-        self.assertIsNone(response.data['results'][0]['radio_version'])
+        self.assertEqual(len(response.data["results"]), 1)
+        self.assertIsNone(response.data["results"][0]["radio_version"])
 
     def test_radio_version_field(self):
         """Test retrieval of radio version field."""
@@ -439,9 +456,11 @@ class HeartbeatListTestCase(DeviceRegisterAPITestCase):
         url = reverse(self.LIST_CREATE_BY_UUID_URL, args=[self.uuid])
         response = self.admin.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), 1)
-        self.assertEqual(response.data['results'][0]['radio_version'],
-                         self.data['radio_version'])
+        self.assertEqual(len(response.data["results"]), 1)
+        self.assertEqual(
+            response.data["results"][0]["radio_version"],
+            self.data["radio_version"],
+        )
 
     def test_send_non_existent_time(self):
         """Test sending of heartbeat with non existent time.
@@ -453,7 +472,7 @@ class HeartbeatListTestCase(DeviceRegisterAPITestCase):
         data = self._create_dummy_data(uuid=self.uuid)
         # In 2017, the Netherlands changed from CET to CEST on March,
         # 26 at 02:00
-        data['date'] = '2017-03-26 02:34:56'
+        data["date"] = "2017-03-26 02:34:56"
         response = self.user.post(reverse(self.LIST_CREATE_URL), data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -467,7 +486,7 @@ class HeartbeatListTestCase(DeviceRegisterAPITestCase):
         data = self._create_dummy_data(uuid=self.uuid)
         # In 2017, the Netherlands changed from CEST to CET on October,
         # 29 at 03:00
-        data['date'] = '2017-10-29 02:34:56'
+        data["date"] = "2017-10-29 02:34:56"
         response = self.user.post(reverse(self.LIST_CREATE_URL), data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -506,8 +525,8 @@ class LogfileUploadTest(DeviceRegisterAPITestCase):
         data = Dummy.crashreport_data(uuid=uuid)
         response = user.post(reverse(self.LIST_CREATE_URL), data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
-        self.assertTrue('device_local_id' in response.data)
-        device_local_id = response.data['device_local_id']
+        self.assertTrue("device_local_id" in response.data)
+        device_local_id = response.data["device_local_id"]
 
         return device_local_id
 
@@ -516,13 +535,16 @@ class LogfileUploadTest(DeviceRegisterAPITestCase):
         device_local_id = self._upload_crashreport(user, uuid)
 
         # Upload a logfile for the crashreport
-        logfile = tempfile.NamedTemporaryFile('w+', suffix=".log", delete=True)
+        logfile = tempfile.NamedTemporaryFile("w+", suffix=".log", delete=True)
         logfile.write(u"blihblahblub")
         response = user.post(
-            reverse(self.PUT_LOGFILE_URL, args=[
-                uuid, device_local_id, os.path.basename(logfile.name)
-            ]),
-            {'file': logfile}, format="multipart")
+            reverse(
+                self.PUT_LOGFILE_URL,
+                args=[uuid, device_local_id, os.path.basename(logfile.name)],
+            ),
+            {"file": logfile},
+            format="multipart",
+        )
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
 
     def test_logfile_upload_as_user(self):

@@ -10,31 +10,32 @@ from rest_framework.response import Response
 class ListCreateView(generics.ListCreateAPIView):
     queryset = Crashreport.objects.all()
     paginate_by = 20
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
     serializer_class = CrashReportSerializer
-    filter_fields = ('device', 'build_fingerprint', 'radio_version')
+    filter_fields = ("device", "build_fingerprint", "radio_version")
 
     pass
 
     def dispatch(self, *args, **kwargs):
-        if 'uuid' in kwargs:
+        if "uuid" in kwargs:
             self.queryset = Crashreport.objects.filter(
-                device__uuid=kwargs['uuid'])
+                device__uuid=kwargs["uuid"]
+            )
         return generics.ListCreateAPIView.dispatch(self, *args, **kwargs)
 
     def perform_create(self, serializer):
         serializer.save()
         return Response(
-            {
-                'device_local_id': serializer.data['device_local_id']
-            },  status.HTTP_200_OK)
+            {"device_local_id": serializer.data["device_local_id"]},
+            status.HTTP_200_OK,
+        )
 
 
 class RetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Crashreport.objects.all()
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
     serializer_class = CrashReportSerializer
-    multiple_lookup_fields = {'id', 'device__uuid', 'device_local_id'}
+    multiple_lookup_fields = {"id", "device__uuid", "device_local_id"}
 
     def get_object(self):
         queryset = self.get_queryset()

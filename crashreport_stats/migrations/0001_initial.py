@@ -8,39 +8,65 @@ import django.db.models.deletion
 from django.db import connection
 from datetime import date, timedelta
 
+
 class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Version',
+            name="Version",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('build_fingerprint', models.CharField(max_length=200, unique=True)),
-                ('is_official_release', models.BooleanField(default=False)),
-                ('is_beta_release', models.BooleanField(default=False)),
-                ('first_seen_on', models.DateField()),
-                ('released_on', models.DateField()),
-                ('heartbeats', models.IntegerField()),
-                ('prob_crashes', models.IntegerField()),
-                ('smpl', models.IntegerField()),
-                ('other', models.IntegerField()),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "build_fingerprint",
+                    models.CharField(max_length=200, unique=True),
+                ),
+                ("is_official_release", models.BooleanField(default=False)),
+                ("is_beta_release", models.BooleanField(default=False)),
+                ("first_seen_on", models.DateField()),
+                ("released_on", models.DateField()),
+                ("heartbeats", models.IntegerField()),
+                ("prob_crashes", models.IntegerField()),
+                ("smpl", models.IntegerField()),
+                ("other", models.IntegerField()),
             ],
         ),
         migrations.CreateModel(
-            name='VersionDaily',
+            name="VersionDaily",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date', models.DateField()),
-                ('heartbeats', models.IntegerField()),
-                ('prob_crashes', models.IntegerField()),
-                ('smpl', models.IntegerField()),
-                ('other', models.IntegerField()),
-                ('version', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='daily_stats', to='crashreport_stats.Version')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("date", models.DateField()),
+                ("heartbeats", models.IntegerField()),
+                ("prob_crashes", models.IntegerField()),
+                ("smpl", models.IntegerField()),
+                ("other", models.IntegerField()),
+                (
+                    "version",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="daily_stats",
+                        to="crashreport_stats.Version",
+                    ),
+                ),
             ],
         ),
     ]

@@ -96,8 +96,11 @@ class VersionDaily(_DailyVersionStats):
     """
 
     version = models.ForeignKey(
-        Version, db_index=True, related_name='daily_stats',
-        on_delete=models.CASCADE)
+        Version,
+        db_index=True,
+        related_name="daily_stats",
+        on_delete=models.CASCADE,
+    )
 
 
 class RadioVersion(_VersionStats):
@@ -125,8 +128,11 @@ class RadioVersionDaily(_DailyVersionStats):
     """
 
     version = models.ForeignKey(
-        RadioVersion, db_index=True, related_name='daily_stats',
-        on_delete=models.CASCADE)
+        RadioVersion,
+        db_index=True,
+        related_name="daily_stats",
+        on_delete=models.CASCADE,
+    )
 
 
 class StatsMetadata(models.Model):

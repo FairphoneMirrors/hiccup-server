@@ -10,13 +10,13 @@ class Migration(migrations.Migration):
     """Remove default None value which was added manually."""
 
     dependencies = [
-        ('crashreport_stats', '0004_statsmedata_and_no_broken_default_dates'),
+        ("crashreport_stats", "0004_statsmedata_and_no_broken_default_dates")
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='statsmetadata',
-            name='updated_at',
+            model_name="statsmetadata",
+            name="updated_at",
             field=models.DateTimeField(),
-        ),
+        )
     ]

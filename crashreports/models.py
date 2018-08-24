@@ -9,14 +9,23 @@ import uuid
 
 
 class Device(models.Model):
-    def __str__( self ):
+    def __str__(self):
         return self.uuid
+
     # for every device there is a django user
-    uuid = models.CharField( db_index=True,max_length=64, unique=True,
-                            default=uuid.uuid4, editable=False)
+    uuid = models.CharField(
+        db_index=True,
+        max_length=64,
+        unique=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
     user = models.OneToOneField(
-        User, related_name='Hiccup_Device', on_delete=models.CASCADE,
-        unique=True)
+        User,
+        related_name="Hiccup_Device",
+        on_delete=models.CASCADE,
+        unique=True,
+    )
     imei = models.CharField(max_length=32, null=True, blank=True)
     board_date = models.DateTimeField(null=True, blank=True)
     chipset = models.CharField(max_length=200, null=True, blank=True)
@@ -42,27 +51,30 @@ class Device(models.Model):
 
 
 def crashreport_file_name(instance, filename):
-    return '/'.join([
-        "crashreport_uploads",
-        instance.crashreport.device.uuid,
-        str(instance.crashreport.id),
-        str(instance.crashreport.date),
-        filename])
+    return "/".join(
+        [
+            "crashreport_uploads",
+            instance.crashreport.device.uuid,
+            str(instance.crashreport.id),
+            str(instance.crashreport.date),
+            filename,
+        ]
+    )
 
 
 class Crashreport(models.Model):
-    BOOT_REASON_UNKOWN = 'UNKNOWN'
-    BOOT_REASON_KEYBOARD_POWER_ON = 'keyboard power on'
-    BOOT_REASON_RTC_ALARM = 'RTC alarm'
-    CRASH_BOOT_REASONS = [
-        BOOT_REASON_UNKOWN,
-        BOOT_REASON_KEYBOARD_POWER_ON,
-    ]
-    SMPL_BOOT_REASONS = [
-        BOOT_REASON_RTC_ALARM,
-    ]
+    BOOT_REASON_UNKOWN = "UNKNOWN"
+    BOOT_REASON_KEYBOARD_POWER_ON = "keyboard power on"
+    BOOT_REASON_RTC_ALARM = "RTC alarm"
+    CRASH_BOOT_REASONS = [BOOT_REASON_UNKOWN, BOOT_REASON_KEYBOARD_POWER_ON]
+    SMPL_BOOT_REASONS = [BOOT_REASON_RTC_ALARM]
 
-    device = models.ForeignKey(Device, db_index=True, related_name='crashreports', on_delete=models.CASCADE)
+    device = models.ForeignKey(
+        Device,
+        db_index=True,
+        related_name="crashreports",
+        on_delete=models.CASCADE,
+    )
     is_fake_report = models.BooleanField(default=False)
     app_version = models.IntegerField()
     uptime = models.CharField(max_length=200)
@@ -92,12 +104,16 @@ class Crashreport(models.Model):
     def _get_uuid(self):
         "Returns the person's full name."
         return self.device.uuid
+
     uuid = property(_get_uuid)
 
-#TODO remove logfile_type or make it meaningful
+
+# TODO remove logfile_type or make it meaningful
 class LogFile(models.Model):
     logfile_type = models.TextField(max_length=36, default="last_kmsg")
-    crashreport = models.ForeignKey(Crashreport,related_name='logfiles', on_delete=models.CASCADE)
+    crashreport = models.ForeignKey(
+        Crashreport, related_name="logfiles", on_delete=models.CASCADE
+    )
     logfile = models.FileField(upload_to=crashreport_file_name, max_length=500)
     crashreport_local_id = models.PositiveIntegerField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -109,13 +125,15 @@ class LogFile(models.Model):
 
 
 class HeartBeat(models.Model):
-    device = models.ForeignKey(Device,
+    device = models.ForeignKey(
+        Device,
         db_index=True,
-        related_name='heartbeats',
-        on_delete=models.CASCADE)
+        related_name="heartbeats",
+        on_delete=models.CASCADE,
+    )
     app_version = models.IntegerField()
     uptime = models.CharField(max_length=200)
-    build_fingerprint = models.CharField( db_index=True, max_length=200)
+    build_fingerprint = models.CharField(db_index=True, max_length=200)
     radio_version = models.CharField(db_index=True, max_length=200, null=True)
     date = models.DateTimeField(db_index=True)
     device_local_id = models.PositiveIntegerField(blank=True)
@@ -129,4 +147,5 @@ class HeartBeat(models.Model):
     def _get_uuid(self):
         "Returns the person's full name."
         return self.device.uuid
+
     uuid = property(_get_uuid)

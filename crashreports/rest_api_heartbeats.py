@@ -11,23 +11,23 @@ from crashreports.permissions import HasRightsOrIsDeviceOwnerDeviceCreation
 class ListCreateView(generics.ListCreateAPIView):
     queryset = HeartBeat.objects.all()
     paginate_by = 20
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
     serializer_class = HeartBeatSerializer
-    filter_fields = ('device', 'build_fingerprint', 'radio_version')
-
+    filter_fields = ("device", "build_fingerprint", "radio_version")
 
     def get(self, *args, **kwargs):
-        if 'uuid' in kwargs:
+        if "uuid" in kwargs:
             self.queryset = HeartBeat.objects.filter(
-                device__uuid=kwargs['uuid'])
+                device__uuid=kwargs["uuid"]
+            )
         return generics.ListCreateAPIView.get(self, *args, **kwargs)
 
 
 class RetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = HeartBeat.objects.all()
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
     serializer_class = HeartBeatSerializer
-    multiple_lookup_fields = {'id', 'device__uuid', 'device_local_id'}
+    multiple_lookup_fields = {"id", "device__uuid", "device_local_id"}
 
     def get_object(self):
         queryset = self.get_queryset()

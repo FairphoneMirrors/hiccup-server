@@ -1,34 +1,51 @@
 from django.conf import settings
 
+
 class FormatDict(dict):
     def __missing__(self, key):
         return "{" + key + "}"
 
+
 def fill_in_build_fingerprints(query, build_fingerprints):
-    all_fingerprints_query = 'select distinct build_fingerprint from crashreports_crashreport'
-    if len(build_fingerprints) > 0 :
+    all_fingerprints_query = (
+        "select distinct build_fingerprint from crashreports_crashreport"
+    )
+    if len(build_fingerprints) > 0:
         return query.format(
-                FormatDict(fingerprint_placeholers=
-                    ','.join(["%s"] * len(build_fingerprints))))
+            FormatDict(
+                fingerprint_placeholers=",".join(
+                    ["%s"] * len(build_fingerprints)
+                )
+            )
+        )
     else:
-        return query.format(FormatDict(fingerprint_placeholers = all_fingerprints_query))
+        return query.format(
+            FormatDict(fingerprint_placeholers=all_fingerprints_query)
+        )
 
 
 def execute_device_update_history_query(cursor, params):
-    if settings.DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql_psycopg2':
+    if (
+        settings.DATABASES["default"]["ENGINE"]
+        == "django.db.backends.postgresql_psycopg2"
+    ):
         return psql_execute_device_update_history_query(cursor, params)
     else:
         return sqlite_execute_device_update_history_query(cursor, params)
 
 
 def execute_device_report_history(cursor, params):
-    if settings.DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql_psycopg2':
+    if (
+        settings.DATABASES["default"]["ENGINE"]
+        == "django.db.backends.postgresql_psycopg2"
+    ):
         return psql_execute_device_report_history(cursor, params)
     else:
         return sqlite_execute_device_report_history(cursor, params)
 
+
 def sqlite_execute_device_update_history_query(cursor, params):
-    query = '''
+    query = """
     SELECT
         min(crashreports_heartbeat.date) as update_date,
         build_fingerprint,
@@ -54,14 +71,14 @@ def sqlite_execute_device_update_history_query(cursor, params):
     where
         crashreports_device.uuid=%s
         group by build_fingerprint;
-    '''
-    uuid = params.get('uuid', '18f530d7-e9c3-4dcf-adba-3dddcd7d3155')
+    """
+    uuid = params.get("uuid", "18f530d7-e9c3-4dcf-adba-3dddcd7d3155")
     param_array = [uuid]
     cursor.execute(query, param_array)
 
 
 def psql_execute_device_update_history_query(cursor, params):
-    query = '''
+    query = """
     SELECT
         min(crashreports_heartbeat.date) as update_date,
         build_fingerprint,
@@ -88,14 +105,14 @@ def psql_execute_device_update_history_query(cursor, params):
     where
         crashreports_device.uuid=%s
         group by build_fingerprint;
-    '''
-    uuid = params.get('uuid', '18f530d7-e9c3-4dcf-adba-3dddcd7d3155')
+    """
+    uuid = params.get("uuid", "18f530d7-e9c3-4dcf-adba-3dddcd7d3155")
     param_array = [uuid]
     cursor.execute(query, param_array)
 
 
 def sqlite_execute_device_report_history(cursor, params):
-    query = '''
+    query = """
     SELECT
       strftime("%%Y-%%m-%%d",crashreports_heartbeat.date) as date,
       count(crashreports_heartbeat.id) as heartbeats,
@@ -126,14 +143,14 @@ def sqlite_execute_device_report_history(cursor, params):
     where
       crashreports_device.uuid = %s
     group by date;
-    '''
-    uuid = params.get('uuid', '18f530d7-e9c3-4dcf-adba-3dddcd7d3155')
+    """
+    uuid = params.get("uuid", "18f530d7-e9c3-4dcf-adba-3dddcd7d3155")
     param_array = [uuid]
     cursor.execute(query, param_array)
 
 
 def psql_execute_device_report_history(cursor, params):
-    query = '''
+    query = """
     SELECT
       crashreports_heartbeat.date::date as date,
       count(crashreports_heartbeat.id) as heartbeats,
@@ -145,7 +162,7 @@ def psql_execute_device_report_history(cursor, params):
     left join crashreports_crashreport on crashreports_device.id = crashreports_crashreport.device_id and  crashreports_heartbeat.date::date = crashreports_crashreport.date::date
     where
       crashreports_device.uuid = %s group by crashreports_heartbeat.date, crashreports_device.id;
-    '''
-    uuid = params.get('uuid', '18f530d7-e9c3-4dcf-adba-3dddcd7d3155')
+    """
+    uuid = params.get("uuid", "18f530d7-e9c3-4dcf-adba-3dddcd7d3155")
     param_array = [uuid]
     cursor.execute(query, param_array)

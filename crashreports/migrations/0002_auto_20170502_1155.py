@@ -9,64 +9,80 @@ import uuid
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('crashreports', '0001_initial'),
-    ]
+    dependencies = [("crashreports", "0001_initial")]
 
     operations = [
         migrations.AlterField(
-            model_name='crashreport',
-            name='boot_reason',
+            model_name="crashreport",
+            name="boot_reason",
             field=models.CharField(db_index=True, max_length=200),
         ),
         migrations.AlterField(
-            model_name='crashreport',
-            name='build_fingerprint',
+            model_name="crashreport",
+            name="build_fingerprint",
             field=models.CharField(db_index=True, max_length=200),
         ),
         migrations.AlterField(
-            model_name='crashreport',
-            name='date',
+            model_name="crashreport",
+            name="date",
             field=models.DateTimeField(db_index=True),
         ),
         migrations.AlterField(
-            model_name='crashreport',
-            name='device',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='crashreports', to='crashreports.Device'),
+            model_name="crashreport",
+            name="device",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="crashreports",
+                to="crashreports.Device",
+            ),
         ),
         migrations.AlterField(
-            model_name='crashreport',
-            name='power_off_reason',
+            model_name="crashreport",
+            name="power_off_reason",
             field=models.CharField(db_index=True, max_length=200),
         ),
         migrations.AlterField(
-            model_name='crashreport',
-            name='power_on_reason',
+            model_name="crashreport",
+            name="power_on_reason",
             field=models.CharField(db_index=True, max_length=200),
         ),
         migrations.AlterField(
-            model_name='device',
-            name='uuid',
-            field=models.CharField(db_index=True, default=uuid.uuid4, editable=False, max_length=64, unique=True),
+            model_name="device",
+            name="uuid",
+            field=models.CharField(
+                db_index=True,
+                default=uuid.uuid4,
+                editable=False,
+                max_length=64,
+                unique=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='heartbeat',
-            name='build_fingerprint',
+            model_name="heartbeat",
+            name="build_fingerprint",
             field=models.CharField(db_index=True, max_length=200),
         ),
         migrations.AlterField(
-            model_name='heartbeat',
-            name='date',
+            model_name="heartbeat",
+            name="date",
             field=models.DateTimeField(db_index=True),
         ),
         migrations.AlterField(
-            model_name='heartbeat',
-            name='device',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='heartbeats', to='crashreports.Device'),
+            model_name="heartbeat",
+            name="device",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="heartbeats",
+                to="crashreports.Device",
+            ),
         ),
         migrations.AlterField(
-            model_name='logfile',
-            name='crashreport',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='logfiles', to='crashreports.Crashreport'),
+            model_name="logfile",
+            name="crashreport",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="logfiles",
+                to="crashreports.Crashreport",
+            ),
         ),
     ]

@@ -12,9 +12,11 @@ from django.db.models.functions import TruncDate
 import pytz
 
 from crashreport_stats.models import (
-    RadioVersion, RadioVersionDaily,
+    RadioVersion,
+    RadioVersionDaily,
     StatsMetadata,
-    Version, VersionDaily,
+    Version,
+    VersionDaily,
 )
 from crashreports.models import Crashreport, HeartBeat
 
@@ -23,7 +25,7 @@ from crashreports.models import Crashreport, HeartBeat
 # Classes in this file inherit from each other and are not method containers.
 
 
-class _ReportCounterFilter():
+class _ReportCounterFilter:
     """Filter reports matching a report counter requirements.
 
     Attributes:
@@ -68,7 +70,8 @@ class HeartBeatCounterFilter(_ReportCounterFilter):
     def __init__(self):
         """Initialise the filter."""
         super(HeartBeatCounterFilter, self).__init__(
-            model=HeartBeat, name='heartbeats', field_name='heartbeats')
+            model=HeartBeat, name="heartbeats", field_name="heartbeats"
+        )
 
 
 class CrashreportCounterFilter(_ReportCounterFilter):
@@ -87,8 +90,12 @@ class CrashreportCounterFilter(_ReportCounterFilter):
     """
 
     def __init__(
-            self, name, field_name, include_boot_reasons=None,
-            exclude_boot_reasons=None):
+        self,
+        name,
+        field_name,
+        include_boot_reasons=None,
+        exclude_boot_reasons=None,
+    ):
         """Initialise the filter.
 
         One or both of `include_boot_reasons` and `exclude_boot_reasons` must
@@ -113,11 +120,13 @@ class CrashreportCounterFilter(_ReportCounterFilter):
         """
         if not include_boot_reasons and not exclude_boot_reasons:
             raise ValueError(
-                'One or both of `include_boot_reasons` and '
-                '`exclude_boot_reasons` must be specified.')
+                "One or both of `include_boot_reasons` and "
+                "`exclude_boot_reasons` must be specified."
+            )
 
         super(CrashreportCounterFilter, self).__init__(
-            model=Crashreport, name=name, field_name=field_name)
+            model=Crashreport, name=name, field_name=field_name
+        )
 
         # Cache the boot reasons inclusive filter
         self.include_boot_reasons = include_boot_reasons
@@ -163,7 +172,7 @@ class CrashreportCounterFilter(_ReportCounterFilter):
         return query_objects
 
 
-class _StatsModelsEngine():
+class _StatsModelsEngine:
     """Stats models engine.
 
     An engine to update general stats (_VersionStats) and their daily
@@ -232,11 +241,12 @@ class _StatsModelsEngine():
 
         """
         return (
-            query_objects
-            .annotate(_report_day=TruncDate('date'))
-            .values(self.version_field_name, '_report_day')
+            query_objects.annotate(_report_day=TruncDate("date")).values(
+                self.version_field_name, "_report_day"
+            )
             # FIXME Agressively drop duplicates
-            .annotate(count=Count('date', distinct=True)))
+            .annotate(count=Count("date", distinct=True))
+        )
 
     def delete_stats(self):
         """Delete the general and daily stats instances.
@@ -277,13 +287,15 @@ class _StatsModelsEngine():
 
         """
         counts_per_model = {
-            self.stats_model: {'created': 0, 'updated': 0},
-            self.daily_stats_model: {'created': 0, 'updated': 0}}
+            self.stats_model: {"created": 0, "updated": 0},
+            self.daily_stats_model: {"created": 0, "updated": 0},
+        }
 
         query_objects = self._valid_objects(report_counter.model.objects.all())
         # Only include reports from the interesting period of time
         query_objects = self._objects_within_period(
-            query_objects, up_to, starting_from)
+            query_objects, up_to, starting_from
+        )
         # Apply the report counter requirements
         query_objects = report_counter.filter(query_objects)
         # Chain our own filters
@@ -292,17 +304,22 @@ class _StatsModelsEngine():
         # Explicitly use the iterator() method to avoid caching as we will
         # not re-use the QuerySet
         for query_object in query_objects.iterator():
-            report_day = query_object['_report_day']
+            report_day = query_object["_report_day"]
             # Use a dict to be able to dereference the field name
-            stats, created = self.stats_model.objects.get_or_create(**{
-                self.version_field_name: query_object[self.version_field_name],
-                'defaults': {
-                    'first_seen_on': report_day,
-                    'released_on': report_day,
+            stats, created = self.stats_model.objects.get_or_create(
+                **{
+                    self.version_field_name: query_object[
+                        self.version_field_name
+                    ],
+                    "defaults": {
+                        "first_seen_on": report_day,
+                        "released_on": report_day,
+                    },
                 }
-            })
-            counts_per_model[self.stats_model][(
-                'created' if created else 'updated')] += 1
+            )
+            counts_per_model[self.stats_model][
+                ("created" if created else "updated")
+            ] += 1
 
             # Reports are coming in an unordered manner, a late report can
             # be older (device time wise). Make sure that the current reports
@@ -315,18 +332,23 @@ class _StatsModelsEngine():
                     stats.released_on = report_day
                 stats.first_seen_on = report_day
 
-            daily_stats, created = (
-                self.daily_stats_model.objects.get_or_create(
-                    version=stats, date=report_day))
-            counts_per_model[self.daily_stats_model][(
-                'created' if created else 'updated')] += 1
+            daily_stats, created = self.daily_stats_model.objects.get_or_create(
+                version=stats, date=report_day
+            )
+            counts_per_model[self.daily_stats_model][
+                ("created" if created else "updated")
+            ] += 1
 
             setattr(
-                stats, report_counter.field_name,
-                F(report_counter.field_name) + query_object['count'])
+                stats,
+                report_counter.field_name,
+                F(report_counter.field_name) + query_object["count"],
+            )
             setattr(
-                daily_stats, report_counter.field_name,
-                F(report_counter.field_name) + query_object['count'])
+                daily_stats,
+                report_counter.field_name,
+                F(report_counter.field_name) + query_object["count"],
+            )
 
             stats.save()
             daily_stats.save()
@@ -344,8 +366,10 @@ class VersionStatsEngine(_StatsModelsEngine):
     def __init__(self):
         """Initialise the engine."""
         super(VersionStatsEngine, self).__init__(
-            stats_model=Version, daily_stats_model=VersionDaily,
-            version_field_name='build_fingerprint')
+            stats_model=Version,
+            daily_stats_model=VersionDaily,
+            version_field_name="build_fingerprint",
+        )
 
 
 class RadioVersionStatsEngine(_StatsModelsEngine):
@@ -358,8 +382,10 @@ class RadioVersionStatsEngine(_StatsModelsEngine):
     def __init__(self):
         """Initialise the engine."""
         super(RadioVersionStatsEngine, self).__init__(
-            stats_model=RadioVersion, daily_stats_model=RadioVersionDaily,
-            version_field_name='radio_version')
+            stats_model=RadioVersion,
+            daily_stats_model=RadioVersionDaily,
+            version_field_name="radio_version",
+        )
 
     def _valid_objects(self, query_objects):
         # For legacy reasons, the version field might be null
@@ -369,43 +395,46 @@ class RadioVersionStatsEngine(_StatsModelsEngine):
 class Command(BaseCommand):
     """Management command to compute Hiccup statistics."""
 
-    _STATS_MODELS_ENGINES = [
-        VersionStatsEngine(),
-        RadioVersionStatsEngine(),
-    ]
+    _STATS_MODELS_ENGINES = [VersionStatsEngine(), RadioVersionStatsEngine()]
 
     # All the report counters that are listed in the stats models
     _REPORT_COUNTER_FILTERS = [
         HeartBeatCounterFilter(),
         CrashreportCounterFilter(
-            name='crashes', field_name='prob_crashes',
-            include_boot_reasons=Crashreport.CRASH_BOOT_REASONS),
+            name="crashes",
+            field_name="prob_crashes",
+            include_boot_reasons=Crashreport.CRASH_BOOT_REASONS,
+        ),
         CrashreportCounterFilter(
-            name='smpl', field_name='smpl',
-            include_boot_reasons=Crashreport.SMPL_BOOT_REASONS),
+            name="smpl",
+            field_name="smpl",
+            include_boot_reasons=Crashreport.SMPL_BOOT_REASONS,
+        ),
         CrashreportCounterFilter(
-            name='other', field_name='other',
+            name="other",
+            field_name="other",
             exclude_boot_reasons=(
-                Crashreport.SMPL_BOOT_REASONS
-                + Crashreport.CRASH_BOOT_REASONS)),
+                Crashreport.SMPL_BOOT_REASONS + Crashreport.CRASH_BOOT_REASONS
+            ),
+        ),
     ]
 
     help = __doc__
 
     def add_arguments(self, parser):
         """Add custom arguments to the command."""
-        parser.add_argument('action', choices=['reset', 'update'])
+        parser.add_argument("action", choices=["reset", "update"])
 
     def handle(self, *args, **options):
         """Carry out the command executive logic."""
         # pylint: disable=attribute-defined-outside-init
         # self.debug is only ever read through calls of handle().
-        self.debug = int(options['verbosity']) >= 2
+        self.debug = int(options["verbosity"]) >= 2
 
-        if options['action'] == 'reset':
+        if options["action"] == "reset":
             self.delete_all_stats()
             self.update_all_stats()
-        elif options['action'] == 'update':
+        elif options["action"] == "update":
             self.update_all_stats()
 
     def _success(self, msg, *args, **kwargs):
@@ -423,22 +452,21 @@ class Command(BaseCommand):
                     if not counts_per_model:
                         counts_per_model = {
                             engine.stats_model._meta.label: 0,
-                            engine.daily_stats_model._meta.label: 0}
+                            engine.daily_stats_model._meta.label: 0,
+                        }
                     for model, count in counts_per_model.items():
-                        name = model.split('.')[-1]
-                        self._success(
-                            '{} {} deleted'.format(count, name))
+                        name = model.split(".")[-1]
+                        self._success("{} {} deleted".format(count, name))
 
             # Reset the metadata
             count, _ = StatsMetadata.objects.all().delete()
             if self.debug:
-                self._success(
-                    '{} StatsMetadata deleted'.format(count))
+                self._success("{} StatsMetadata deleted".format(count))
 
     def update_all_stats(self):
         """Update the statistics from all stats models."""
         try:
-            previous_update = StatsMetadata.objects.latest('updated_at')
+            previous_update = StatsMetadata.objects.latest("updated_at")
             starting_from = previous_update.updated_at
         except StatsMetadata.DoesNotExist:
             starting_from = None
@@ -450,13 +478,14 @@ class Command(BaseCommand):
             with transaction.atomic():
                 for filter_ in self._REPORT_COUNTER_FILTERS:
                     counts_per_model = engine.update_stats(
-                        filter_, up_to, starting_from)
+                        filter_, up_to, starting_from
+                    )
                     if self.debug:
                         for model, counts in counts_per_model.items():
                             for action, count in counts.items():
-                                msg = '{} {} {} for counter {}'.format(
-                                    count, model.__name__, action,
-                                    filter_.name)
+                                msg = "{} {} {} for counter {}".format(
+                                    count, model.__name__, action, filter_.name
+                                )
                                 self._success(msg)
 
         StatsMetadata(updated_at=up_to).save()

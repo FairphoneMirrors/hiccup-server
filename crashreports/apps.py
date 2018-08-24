@@ -4,4 +4,4 @@ from django.apps import AppConfig
 
 
 class crashreportsConfig(AppConfig):
-    name = 'crashreports'
+    name = "crashreports"

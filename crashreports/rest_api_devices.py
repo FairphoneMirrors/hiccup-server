@@ -17,42 +17,64 @@ from crashreports.serializers import DeviceSerializer, DeviceCreateSerializer
 from crashreports.response_descriptions import default_desc
 
 
-@method_decorator(name='get', decorator=swagger_auto_schema(
-    operation_description='List devices'))
-@method_decorator(name='post', decorator=swagger_auto_schema(
-    operation_description='Create a device',
-    responses=dict([default_desc(ValidationError)])))
+@method_decorator(
+    name="get",
+    decorator=swagger_auto_schema(operation_description="List devices"),
+)
+@method_decorator(
+    name="post",
+    decorator=swagger_auto_schema(
+        operation_description="Create a device",
+        responses=dict([default_desc(ValidationError)]),
+    ),
+)
 class ListCreateDevices(generics.ListCreateAPIView):
     """Endpoint for listing devices and creating new devices."""
 
     queryset = Device.objects.all()
     paginate_by = 20
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
     serializer_class = DeviceSerializer
-    filter_fields = ('uuid', 'board_date', 'chipset')
+    filter_fields = ("uuid", "board_date", "chipset")
 
 
-@method_decorator(name='get', decorator=swagger_auto_schema(
-    operation_description='Get a device',
-    responses=dict([default_desc(NotFound)])))
-@method_decorator(name='put', decorator=swagger_auto_schema(
-    operation_description='Update a device',
-    responses=dict([default_desc(NotFound), default_desc(ValidationError)])))
-@method_decorator(name='patch', decorator=swagger_auto_schema(
-    operation_description='Make a partial update for a device',
-    responses=dict([default_desc(NotFound), default_desc(ValidationError)])))
-@method_decorator(name='delete', decorator=swagger_auto_schema(
-    operation_description='Delete a device',
-    responses=dict([default_desc(NotFound)])))
+@method_decorator(
+    name="get",
+    decorator=swagger_auto_schema(
+        operation_description="Get a device",
+        responses=dict([default_desc(NotFound)]),
+    ),
+)
+@method_decorator(
+    name="put",
+    decorator=swagger_auto_schema(
+        operation_description="Update a device",
+        responses=dict([default_desc(NotFound), default_desc(ValidationError)]),
+    ),
+)
+@method_decorator(
+    name="patch",
+    decorator=swagger_auto_schema(
+        operation_description="Make a partial update for a device",
+        responses=dict([default_desc(NotFound), default_desc(ValidationError)]),
+    ),
+)
+@method_decorator(
+    name="delete",
+    decorator=swagger_auto_schema(
+        operation_description="Delete a device",
+        responses=dict([default_desc(NotFound)]),
+    ),
+)
 class RetrieveUpdateDestroyDevice(generics.RetrieveUpdateDestroyAPIView):
     """Endpoint for retrieving, updating, patching and deleting devices."""
 
     # pylint: disable=too-many-ancestors
 
     queryset = Device.objects.all()
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
     serializer_class = DeviceSerializer
-    lookup_field = 'uuid'
+    lookup_field = "uuid"
 
 
 class DeviceRegisterResponseSchema(DeviceSerializer):
@@ -60,19 +82,26 @@ class DeviceRegisterResponseSchema(DeviceSerializer):
 
     class Meta:  # noqa: D106
         model = Device
-        fields = ['uuid', 'token']
+        fields = ["uuid", "token"]
 
 
 @swagger_auto_schema(
-    method='post',
+    method="post",
     request_body=DeviceCreateSerializer,
-    responses=dict([
-        default_desc(ValidationError),
-        (status.HTTP_200_OK,
-         openapi.Response('The device has been successfully registered.',
-                          DeviceRegisterResponseSchema))
-    ]))
-@api_view(http_method_names=['POST'], )
+    responses=dict(
+        [
+            default_desc(ValidationError),
+            (
+                status.HTTP_200_OK,
+                openapi.Response(
+                    "The device has been successfully registered.",
+                    DeviceRegisterResponseSchema,
+                ),
+            ),
+        ]
+    ),
+)
+@api_view(http_method_names=["POST"])
 @permission_classes((AllowAny,))
 def register_device(request):
     """Register a new device.
@@ -84,13 +113,13 @@ def register_device(request):
     serializer = DeviceCreateSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     device = Device()
-    user = User.objects.create_user("device_" + str(device.uuid), '', None)
-    permission = Permission.objects.get(name='Can add crashreport')
+    user = User.objects.create_user("device_" + str(device.uuid), "", None)
+    permission = Permission.objects.get(name="Can add crashreport")
     user.user_permissions.add(permission)
     user.save()
-    device.board_date = serializer.validated_data['board_date']
-    device.chipset = serializer.validated_data['chipset']
+    device.board_date = serializer.validated_data["board_date"]
+    device.chipset = serializer.validated_data["chipset"]
     device.user = user
     device.token = Token.objects.create(user=user).key
     device.save()
-    return Response({'uuid': device.uuid, 'token': device.token})
+    return Response({"uuid": device.uuid, "token": device.token})

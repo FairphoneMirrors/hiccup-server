@@ -21,28 +21,31 @@ from rest_framework import generics
 
 class ListCreateView(generics.ListAPIView):
     queryset = LogFile.objects.all()
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
     serializer_class = LogFileSerializer
 
 
 class RetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = LogFile.objects.all()
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation, )
+    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
     serializer_class = LogFileSerializer
 
 
-@api_view(http_method_names=['POST'], )
-@parser_classes([FileUploadParser, ])
-@permission_classes([IsAuthenticated, ])
+@api_view(http_method_names=["POST"])
+@parser_classes([FileUploadParser])
+@permission_classes([IsAuthenticated])
 def logfile_put(request, uuid, device_local_id, filename):
     try:
-        crashreport = Crashreport.objects.get(device__uuid=uuid,
-                                              device_local_id=device_local_id)
+        crashreport = Crashreport.objects.get(
+            device__uuid=uuid, device_local_id=device_local_id
+        )
     except:
         raise NotFound(detail="Crashreport does not exist.")
 
-    if (not (user_owns_uuid(request.user, crashreport.device.uuid)
-             or user_is_hiccup_staff(request.user))):
+    if not (
+        user_owns_uuid(request.user, crashreport.device.uuid)
+        or user_is_hiccup_staff(request.user)
+    ):
         raise PermissionDenied(detail="Not allowed.")
     f = request.data["file"]
     logfile = LogFile(crashreport=crashreport, logfile=f)

@@ -5,9 +5,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework import permissions
 
-from crashreports.models import (
-    Crashreport, Device, HeartBeat, LogFile
-)
+from crashreports.models import Crashreport, Device, HeartBeat, LogFile
 from crashreports.permissions import user_is_hiccup_staff
 
 
@@ -23,7 +21,7 @@ class PrivateField(serializers.ReadOnlyField):
         Given the *outgoing* object instance, return the primitive value
         that should be used for this field.
         """
-        if user_is_hiccup_staff(self.context['request'].user):
+        if user_is_hiccup_staff(self.context["request"].user):
             return super(PrivateField, self).get_attribute(instance)
         return -1
 
@@ -33,10 +31,8 @@ class CrashReportSerializer(serializers.ModelSerializer):
 
     permission_classes = (permissions.AllowAny,)
     logfiles = serializers.HyperlinkedRelatedField(
-        read_only=True,
-        many=True,
-        view_name='api_v1_logfiles_by_id',
-        )
+        read_only=True, many=True, view_name="api_v1_logfiles_by_id"
+    )
     uuid = serializers.CharField(max_length=64)
     id = PrivateField()
     device_local_id = serializers.IntegerField(required=False)
@@ -44,7 +40,7 @@ class CrashReportSerializer(serializers.ModelSerializer):
 
     class Meta:  # noqa: D106
         model = Crashreport
-        exclude = ('device',)
+        exclude = ("device",)
 
     def create(self, validated_data):
         """Create a crashreport.
@@ -56,10 +52,10 @@ class CrashReportSerializer(serializers.ModelSerializer):
 
         """
         try:
-            device = Device.objects.get(uuid=validated_data['uuid'])
+            device = Device.objects.get(uuid=validated_data["uuid"])
         except ObjectDoesNotExist:
             raise NotFound(detail="uuid does not exist")
-        validated_data.pop('uuid', None)
+        validated_data.pop("uuid", None)
         report = Crashreport(**validated_data)
         report.device = device
         report.save()
@@ -77,7 +73,7 @@ class HeartBeatSerializer(serializers.ModelSerializer):
 
     class Meta:  # noqa: D106
         model = HeartBeat
-        exclude = ('device',)
+        exclude = ("device",)
 
     def create(self, validated_data):
         """Create a heartbeat report.
@@ -89,10 +85,10 @@ class HeartBeatSerializer(serializers.ModelSerializer):
 
         """
         try:
-            device = Device.objects.get(uuid=validated_data['uuid'])
+            device = Device.objects.get(uuid=validated_data["uuid"])
         except ObjectDoesNotExist:
             raise NotFound(detail="uuid does not exist")
-        validated_data.pop('uuid', None)
+        validated_data.pop("uuid", None)
         heartbeat = HeartBeat(**validated_data)
         heartbeat.device = device
         heartbeat.save()
@@ -106,7 +102,7 @@ class LogFileSerializer(serializers.ModelSerializer):
 
     class Meta:  # noqa: D106
         model = LogFile
-        fields = '__all__'
+        fields = "__all__"
 
 
 class DeviceSerializer(serializers.ModelSerializer):
@@ -118,7 +114,7 @@ class DeviceSerializer(serializers.ModelSerializer):
 
     class Meta:  # noqa: D106
         model = Device
-        fields = '__all__'
+        fields = "__all__"
 
 
 class DeviceCreateSerializer(DeviceSerializer):
@@ -126,8 +122,8 @@ class DeviceCreateSerializer(DeviceSerializer):
 
     class Meta:  # noqa: D106
         model = Device
-        fields = ('board_date', 'chipset')
+        fields = ("board_date", "chipset")
         extra_kwargs = {
-            'board_date': {'required': True},
-            'chipset': {'required': True},
+            "board_date": {"required": True},
+            "chipset": {"required": True},
         }
