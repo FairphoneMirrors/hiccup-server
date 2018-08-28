@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import connection
 from django.db.models.expressions import F
+from django.utils.decorators import method_decorator
 
 from django_filters.rest_framework import (
     DjangoFilterBackend,
@@ -32,6 +33,8 @@ from crashreports.models import Device, Crashreport, HeartBeat, LogFile
 from crashreports.permissions import (
     HasRightsOrIsDeviceOwnerDeviceCreation,
     HasStatsAccess,
+    SWAGGER_SECURITY_REQUIREMENTS_ALL,
+    SWAGGER_SECURITY_REQUIREMENTS_OAUTH,
 )
 from crashreports.response_descriptions import default_desc
 
@@ -75,6 +78,7 @@ class DeviceUpdateHistory(APIView):
 
     @swagger_auto_schema(
         operation_description="Get the update history of a device",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict(
             [
                 default_desc(NotFound),
@@ -129,6 +133,7 @@ class DeviceReportHistory(APIView):
 
     @swagger_auto_schema(
         operation_description="Get the report history of a device",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict(
             [
                 default_desc(NotFound),
@@ -179,6 +184,7 @@ class Status(APIView):
     @swagger_auto_schema(
         operation_description="Get the number of devices, crashreports and "
         "heartbeats",
+        security=SWAGGER_SECURITY_REQUIREMENTS_OAUTH,
         responses=dict(
             [
                 (
@@ -237,6 +243,7 @@ class DeviceStat(APIView):
 
     @swagger_auto_schema(
         operation_description="Get some general statistics for a device.",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict(
             [
                 default_desc(NotFound),
@@ -303,6 +310,7 @@ class LogFileDownload(APIView):
 
     @swagger_auto_schema(
         operation_description="Get a log file.",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict(
             [
                 default_desc(NotFound),
@@ -350,6 +358,10 @@ class _VersionStatsSerializer(serializers.ModelSerializer):
     permission_classes = (HasStatsAccess,)
 
 
+@method_decorator(
+    name="get",
+    decorator=swagger_auto_schema(security=SWAGGER_SECURITY_REQUIREMENTS_OAUTH),
+)
 class _VersionStatsListView(generics.ListAPIView):
     permission_classes = (HasStatsAccess,)
     filter_backends = (DjangoFilterBackend,)
@@ -364,6 +376,10 @@ class _DailyVersionStatsSerializer(serializers.ModelSerializer):
     permission_classes = (HasStatsAccess,)
 
 
+@method_decorator(
+    name="get",
+    decorator=swagger_auto_schema(security=SWAGGER_SECURITY_REQUIREMENTS_OAUTH),
+)
 class _DailyVersionStatsListView(generics.ListAPIView):
     permission_classes = (HasStatsAccess,)
     filter_backends = (DjangoFilterBackend,)

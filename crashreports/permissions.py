@@ -89,3 +89,12 @@ class HasRightsOrIsDeviceOwnerDeviceCreation(BasePermission):
                 return False
             return user_owns_uuid(request.user, request.data["uuid"])
         return False
+
+
+# Security requirements for swagger documentation
+SWAGGER_SECURITY_REQUIREMENTS_OAUTH = [{"Google OAuth": []}]
+SWAGGER_SECURITY_REQUIREMENTS_DEVICE_TOKEN = [{"Device token authentication": []}]
+SWAGGER_SECURITY_REQUIREMENTS_ALL = (
+    SWAGGER_SECURITY_REQUIREMENTS_OAUTH
+    + SWAGGER_SECURITY_REQUIREMENTS_DEVICE_TOKEN
+)

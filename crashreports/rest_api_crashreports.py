@@ -7,7 +7,10 @@ from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, ValidationError
 
-from crashreports.permissions import HasRightsOrIsDeviceOwnerDeviceCreation
+from crashreports.permissions import (
+    HasRightsOrIsDeviceOwnerDeviceCreation,
+    SWAGGER_SECURITY_REQUIREMENTS_ALL,
+)
 from crashreports.serializers import CrashReportSerializer
 from crashreports.models import Crashreport
 from crashreports.response_descriptions import default_desc
@@ -23,12 +26,16 @@ class CreateCrashreportResponseSchema(CrashReportSerializer):
 
 @method_decorator(
     name="get",
-    decorator=swagger_auto_schema(operation_description="List crash reports"),
+    decorator=swagger_auto_schema(
+        operation_description="List crash reports",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
+    ),
 )
 @method_decorator(
     name="post",
     decorator=swagger_auto_schema(
         operation_description="Create a crash report",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         request_body=CrashReportSerializer,
         responses=dict(
             [
@@ -90,6 +97,7 @@ class ListCreateView(generics.ListCreateAPIView):
     name="get",
     decorator=swagger_auto_schema(
         operation_description="Get a crash report",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(NotFound)]),
     ),
 )
@@ -97,6 +105,7 @@ class ListCreateView(generics.ListCreateAPIView):
     name="put",
     decorator=swagger_auto_schema(
         operation_description="Update a crash report",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(NotFound), default_desc(ValidationError)]),
     ),
 )
@@ -104,6 +113,7 @@ class ListCreateView(generics.ListCreateAPIView):
     name="patch",
     decorator=swagger_auto_schema(
         operation_description="Partially update a crash report",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(NotFound), default_desc(ValidationError)]),
     ),
 )
@@ -111,6 +121,7 @@ class ListCreateView(generics.ListCreateAPIView):
     name="delete",
     decorator=swagger_auto_schema(
         operation_description="Delete a crash report",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(NotFound)]),
     ),
 )

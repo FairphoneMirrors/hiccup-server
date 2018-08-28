@@ -26,12 +26,16 @@ from crashreports.permissions import (
     HasRightsOrIsDeviceOwnerDeviceCreation,
     user_owns_uuid,
     user_is_hiccup_staff,
+    SWAGGER_SECURITY_REQUIREMENTS_ALL,
 )
 
 
 @method_decorator(
     name="get",
-    decorator=swagger_auto_schema(operation_description="List log files"),
+    decorator=swagger_auto_schema(
+        operation_description="List log files",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
+    ),
 )
 class ListCreateView(generics.ListAPIView):
     """Endpoint for listing log files."""
@@ -45,6 +49,7 @@ class ListCreateView(generics.ListAPIView):
     name="get",
     decorator=swagger_auto_schema(
         operation_description="Get a log file",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(NotFound)]),
     ),
 )
@@ -52,6 +57,7 @@ class ListCreateView(generics.ListAPIView):
     name="put",
     decorator=swagger_auto_schema(
         operation_description="Update a log file",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(NotFound), default_desc(ValidationError)]),
     ),
 )
@@ -59,6 +65,7 @@ class ListCreateView(generics.ListAPIView):
     name="patch",
     decorator=swagger_auto_schema(
         operation_description="Partially update a log file",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(NotFound), default_desc(ValidationError)]),
     ),
 )
@@ -66,6 +73,7 @@ class ListCreateView(generics.ListAPIView):
     name="delete",
     decorator=swagger_auto_schema(
         operation_description="Delete a log file",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(NotFound)]),
     ),
 )
@@ -81,6 +89,7 @@ class RetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
 @swagger_auto_schema(
     method="post",
+    security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
     request_body=LogFileSerializer,
     responses=dict(
         [

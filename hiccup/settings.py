@@ -204,7 +204,33 @@ LOGGING = {
 # Automatic documentation generation
 # https://drf-yasg.readthedocs.io/en/stable/index.html
 
-SWAGGER_SETTINGS = {"DEFAULT_INFO": "hiccup.urls.api_info"}
+SWAGGER_SETTINGS = {
+    "DEFAULT_INFO": "hiccup.urls.api_info",
+    "SECURITY_DEFINITIONS": {
+        "Device token authentication": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": (
+                "Authenticate using a token that was returned on successful "
+                "registration of a new device. The token can only be used to "
+                "authenticate requests that target the device with the "
+                "matching UUID. The token has to be put in the request header: "
+                "'Authorization: Token <AUTH_TOKEN>'"
+            ),
+        },
+        "Google OAuth": {
+            "type": "oauth2",
+            "flow": "implicit",
+            "authorizationUrl": "/accounts/google/login/callback/",
+            "scopes": {},
+            "description": (
+                "Authenticate using a Google account. Only E-mail addresses "
+                "in the @fairphone.com domain are allowed."
+            ),
+        },
+    },
+}
 
 try:
     from local_settings import *  # noqa: F403,F401 pylint: disable=W0401,W0614

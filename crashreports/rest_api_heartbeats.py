@@ -8,19 +8,26 @@ from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
 
 from crashreports.models import HeartBeat
-from crashreports.permissions import HasRightsOrIsDeviceOwnerDeviceCreation
+from crashreports.permissions import (
+    HasRightsOrIsDeviceOwnerDeviceCreation,
+    SWAGGER_SECURITY_REQUIREMENTS_ALL,
+)
 from crashreports.response_descriptions import default_desc
 from crashreports.serializers import HeartBeatSerializer
 
 
 @method_decorator(
     name="get",
-    decorator=swagger_auto_schema(operation_description="List heartbeats"),
+    decorator=swagger_auto_schema(
+        operation_description="List heartbeats",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
+    ),
 )
 @method_decorator(
     name="post",
     decorator=swagger_auto_schema(
         operation_description="Create a heartbeat",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         request_body=HeartBeatSerializer,
         responses=dict(
             [
@@ -57,6 +64,7 @@ class ListCreateView(generics.ListCreateAPIView):
     name="get",
     decorator=swagger_auto_schema(
         operation_description="Get a heartbeat",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(NotFound)]),
     ),
 )
@@ -64,6 +72,7 @@ class ListCreateView(generics.ListCreateAPIView):
     name="put",
     decorator=swagger_auto_schema(
         operation_description="Update a heartbeat",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(NotFound), default_desc(ValidationError)]),
     ),
 )
@@ -71,6 +80,7 @@ class ListCreateView(generics.ListCreateAPIView):
     name="patch",
     decorator=swagger_auto_schema(
         operation_description="Partially update a heartbeat",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(NotFound), default_desc(ValidationError)]),
     ),
 )
@@ -78,6 +88,7 @@ class ListCreateView(generics.ListCreateAPIView):
     name="delete",
     decorator=swagger_auto_schema(
         operation_description="Delete a heartbeat",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(NotFound)]),
     ),
 )

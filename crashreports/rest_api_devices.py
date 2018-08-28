@@ -12,19 +12,26 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from crashreports.models import Device, User
-from crashreports.permissions import HasRightsOrIsDeviceOwnerDeviceCreation
+from crashreports.permissions import (
+    HasRightsOrIsDeviceOwnerDeviceCreation,
+    SWAGGER_SECURITY_REQUIREMENTS_ALL,
+)
 from crashreports.serializers import DeviceSerializer, DeviceCreateSerializer
 from crashreports.response_descriptions import default_desc
 
 
 @method_decorator(
     name="get",
-    decorator=swagger_auto_schema(operation_description="List devices"),
+    decorator=swagger_auto_schema(
+        operation_description="List devices",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
+    ),
 )
 @method_decorator(
     name="post",
     decorator=swagger_auto_schema(
         operation_description="Create a device",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(ValidationError)]),
     ),
 )
@@ -42,6 +49,7 @@ class ListCreateDevices(generics.ListCreateAPIView):
     name="get",
     decorator=swagger_auto_schema(
         operation_description="Get a device",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(NotFound)]),
     ),
 )
@@ -49,6 +57,7 @@ class ListCreateDevices(generics.ListCreateAPIView):
     name="put",
     decorator=swagger_auto_schema(
         operation_description="Update a device",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(NotFound), default_desc(ValidationError)]),
     ),
 )
@@ -56,6 +65,7 @@ class ListCreateDevices(generics.ListCreateAPIView):
     name="patch",
     decorator=swagger_auto_schema(
         operation_description="Make a partial update for a device",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(NotFound), default_desc(ValidationError)]),
     ),
 )
@@ -63,6 +73,7 @@ class ListCreateDevices(generics.ListCreateAPIView):
     name="delete",
     decorator=swagger_auto_schema(
         operation_description="Delete a device",
+        security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
         responses=dict([default_desc(NotFound)]),
     ),
 )
@@ -88,6 +99,7 @@ class DeviceRegisterResponseSchema(DeviceSerializer):
 @swagger_auto_schema(
     method="post",
     request_body=DeviceCreateSerializer,
+    security=[],
     responses=dict(
         [
             default_desc(ValidationError),

@@ -54,6 +54,14 @@ Create a crash report
 * hiccup
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -134,6 +142,14 @@ List crash reports
 * hiccup
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -175,6 +191,14 @@ Get a crash report
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -241,6 +265,14 @@ Update a crash report
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -324,6 +356,14 @@ Delete a crash report
 * hiccup
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -364,6 +404,14 @@ Partially update a crash report
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -444,6 +492,14 @@ Create a device
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -528,6 +584,14 @@ List devices
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -632,6 +696,14 @@ Get a crash report
 * hiccup
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -697,6 +769,14 @@ Update a crash report
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -781,6 +861,14 @@ Delete a crash report
 * hiccup
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -822,6 +910,14 @@ Partially update a crash report
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -905,6 +1001,14 @@ Get a device
 * hiccup
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -964,6 +1068,14 @@ Update a device
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -1037,6 +1149,14 @@ Delete a device
 * hiccup
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -1077,6 +1197,14 @@ Make a partial update for a device
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -1155,6 +1283,14 @@ Create a crash report
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -1238,6 +1374,14 @@ List crash reports
 * hiccup
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -1295,6 +1439,14 @@ Upload a log file for a crash report.
 * hiccup
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -1348,6 +1500,14 @@ Create a heartbeat
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -1433,6 +1593,14 @@ List heartbeats
 * hiccup
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -1475,6 +1643,14 @@ Get a heartbeat
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -1536,6 +1712,14 @@ Update a heartbeat
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -1608,6 +1792,14 @@ Delete a heartbeat
 * hiccup
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -1649,6 +1841,14 @@ Partially update a heartbeat
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -1718,6 +1918,14 @@ Create a heartbeat
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -1802,6 +2010,14 @@ List heartbeats
 * hiccup
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -1843,6 +2059,14 @@ Get a heartbeat
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -1903,6 +2127,14 @@ Update a heartbeat
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -1974,6 +2206,14 @@ Delete a heartbeat
 * hiccup
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -2014,6 +2254,14 @@ Partially update a heartbeat
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -2095,6 +2343,14 @@ List log files
 * hiccup
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -2136,6 +2392,14 @@ Get a log file
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -2193,6 +2457,14 @@ Update a log file
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -2258,6 +2530,14 @@ Delete a log file
 * hiccup
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -2298,6 +2578,14 @@ Partially update a log file
 #### Tags
 
 * hiccup
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -2377,6 +2665,14 @@ Get some general statistics for a device.
 * hiccup_stats
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -2429,6 +2725,14 @@ Get the report history of a device
 #### Tags
 
 * hiccup_stats
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -2487,6 +2791,14 @@ Get the update history of a device
 * hiccup_stats
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -2528,6 +2840,14 @@ Get a log file.
 #### Tags
 
 * hiccup_stats
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+|**apiKey**|**[Device token authentication](#device-token-authentication)**|
 
 
 #### Example HTTP request
@@ -2592,6 +2912,13 @@ View for listing RadioVersionDaily instances.
 #### Tags
 
 * hiccup_stats
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
 
 
 #### Example HTTP request
@@ -2660,6 +2987,13 @@ View for listing RadioVersion instances.
 * hiccup_stats
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -2702,6 +3036,13 @@ Get the number of devices, crashreports and heartbeats
 #### Tags
 
 * hiccup_stats
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
 
 
 #### Example HTTP request
@@ -2768,6 +3109,13 @@ View for listing VersionDaily instances.
 * hiccup_stats
 
 
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
+
+
 #### Example HTTP request
 
 ##### Request path
@@ -2832,6 +3180,13 @@ View for listing versions.
 #### Tags
 
 * hiccup_stats
+
+
+#### Security
+
+|Type|Name|
+|---|---|
+|**oauth2**|**[Google OAuth](#google-oauth)**|
 
 
 #### Example HTTP request
@@ -3018,9 +3373,22 @@ View for listing versions.
 <a name="securityscheme"></a>
 ## Security
 
-<a name="basic"></a>
-### basic
-*Type* : basic
+<a name="device-token-authentication"></a>
+### Device token authentication
+Authenticate using a token that was returned on successful registration of a new device. The token can only be used to authenticate requests that target the device with the matching UUID. The token has to be put in the request header: 'Authorization: Token <AUTH_TOKEN>'
+
+*Type* : apiKey  
+*Name* : Authorization  
+*In* : HEADER
+
+
+<a name="google-oauth"></a>
+### Google OAuth
+Authenticate using a Google account. Only E-mail addresses in the @fairphone.com domain are allowed.
+
+*Type* : oauth2  
+*Flow* : implicit  
+*Token URL* : /accounts/google/login/callback/
 
 
 
