@@ -2,3 +2,4 @@
 -rrequirements-dev-pylint.txt
 tox
 black
+coverage

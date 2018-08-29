@@ -157,9 +157,21 @@ We use tox to both test and validate the code quality:
 
     (hiccupenv) $ pip install -r requirements-dev.txt
 
+#### Testing
+
 Simply run `tox` to test your changes in the supported environments:
 
     (hiccupenv) $ tox
+
+To get an overview of the test coverage run:
+
+    (hiccupenv) $ tox -e coverage
+
+To generate HTML coverage reports (saved to `htmlcov/`):
+
+     (hiccupenv) $ tox -e coverage-html
+
+#### Linters and Formatters
 
 To run flake8 on only the diff with upstream:
 
