@@ -1,4 +1,5 @@
 """Authorization permission classes for accessing the API."""
+import logging
 
 from rest_framework.permissions import BasePermission
 from crashreports.models import Device
@@ -16,7 +17,8 @@ def user_owns_uuid(user, uuid):
     """
     try:
         device = Device.objects.get(user=user)
-    except:
+    except Exception as exception:  # pylint: disable=broad-except
+        logging.exception(exception)
         return False
     if uuid == device.uuid:
         return True
