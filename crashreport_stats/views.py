@@ -68,7 +68,7 @@ def home(request):
                         + "?uuid="
                         + devices[0].uuid
                     )
-                if len(devices) == 0:
+                if not devices:
                     messages.warning(request, "No devices found.")
             else:
                 return HttpResponseRedirect(
