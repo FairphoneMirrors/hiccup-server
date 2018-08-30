@@ -53,7 +53,7 @@ def sqlite_execute_device_update_history_query(cursor, params):
     where
         crashreports_device.uuid=%s
         group by build_fingerprint;
-    """
+    """  # noqa: E501
     uuid = params.get("uuid", "18f530d7-e9c3-4dcf-adba-3dddcd7d3155")
     param_array = [uuid]
     cursor.execute(query, param_array)
@@ -88,7 +88,7 @@ def psql_execute_device_update_history_query(cursor, params):
     where
         crashreports_device.uuid=%s
         group by build_fingerprint;
-    """
+    """  # noqa: E501
     uuid = params.get("uuid", "18f530d7-e9c3-4dcf-adba-3dddcd7d3155")
     param_array = [uuid]
     cursor.execute(query, param_array)
@@ -127,7 +127,7 @@ def sqlite_execute_device_report_history(cursor, params):
     where
       crashreports_device.uuid = %s
     group by date;
-    """
+    """  # noqa: E501
     uuid = params.get("uuid", "18f530d7-e9c3-4dcf-adba-3dddcd7d3155")
     param_array = [uuid]
     cursor.execute(query, param_array)
@@ -147,7 +147,7 @@ def psql_execute_device_report_history(cursor, params):
     left join crashreports_crashreport on crashreports_device.id = crashreports_crashreport.device_id and  crashreports_heartbeat.date::date = crashreports_crashreport.date::date
     where
       crashreports_device.uuid = %s group by crashreports_heartbeat.date, crashreports_device.id;
-    """
+    """  # noqa: E501
     uuid = params.get("uuid", "18f530d7-e9c3-4dcf-adba-3dddcd7d3155")
     param_array = [uuid]
     cursor.execute(query, param_array)
