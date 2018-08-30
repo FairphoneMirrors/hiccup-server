@@ -40,23 +40,22 @@ def user_is_hiccup_staff(user):
     """
     if user.groups.filter(name="FairphoneSoftwareTeam").exists():
         return True
-    else:
-        return user.has_perms(
-            [
-                # Crashreports
-                "crashreports.add_crashreport",
-                "crashreports.change_crashreport",
-                "crashreports.del_crashreport",
-                # Heartbeats
-                "heartbeat.add_crashreport",
-                "heartbeat.change_crashreport",
-                "heartbeat.del_crashreport",
-                # Logfiles
-                "heartbeat.add_logfile",
-                "heartbeat.change_logfile",
-                "heartbeat.del_logfile",
-            ]
-        )
+    return user.has_perms(
+        [
+            # Crashreports
+            "crashreports.add_crashreport",
+            "crashreports.change_crashreport",
+            "crashreports.del_crashreport",
+            # Heartbeats
+            "heartbeat.add_crashreport",
+            "heartbeat.change_crashreport",
+            "heartbeat.del_crashreport",
+            # Logfiles
+            "heartbeat.add_logfile",
+            "heartbeat.change_logfile",
+            "heartbeat.del_logfile",
+        ]
+    )
 
 
 class HasStatsAccess(BasePermission):

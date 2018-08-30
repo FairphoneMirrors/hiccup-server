@@ -10,8 +10,7 @@ def execute_device_update_history_query(cursor, params):
         == "django.db.backends.postgresql_psycopg2"
     ):
         return psql_execute_device_update_history_query(cursor, params)
-    else:
-        return sqlite_execute_device_update_history_query(cursor, params)
+    return sqlite_execute_device_update_history_query(cursor, params)
 
 
 def execute_device_report_history(cursor, params):
@@ -21,8 +20,7 @@ def execute_device_report_history(cursor, params):
         == "django.db.backends.postgresql_psycopg2"
     ):
         return psql_execute_device_report_history(cursor, params)
-    else:
-        return sqlite_execute_device_report_history(cursor, params)
+    return sqlite_execute_device_report_history(cursor, params)
 
 
 def sqlite_execute_device_update_history_query(cursor, params):
