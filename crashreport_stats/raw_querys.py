@@ -1,29 +1,6 @@
 from django.conf import settings
 
 
-class FormatDict(dict):
-    def __missing__(self, key):
-        return "{" + key + "}"
-
-
-def fill_in_build_fingerprints(query, build_fingerprints):
-    all_fingerprints_query = (
-        "select distinct build_fingerprint from crashreports_crashreport"
-    )
-    if len(build_fingerprints) > 0:
-        return query.format(
-            FormatDict(
-                fingerprint_placeholers=",".join(
-                    ["%s"] * len(build_fingerprints)
-                )
-            )
-        )
-    else:
-        return query.format(
-            FormatDict(fingerprint_placeholers=all_fingerprints_query)
-        )
-
-
 def execute_device_update_history_query(cursor, params):
     if (
         settings.DATABASES["default"]["ENGINE"]
