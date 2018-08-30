@@ -1,4 +1,4 @@
-"""Introduce the StatsMetadata model and remove broken default dates."""
+"""Migrations to introduce the StatsMetadata model."""
 from __future__ import unicode_literals
 
 from django.db import migrations, models

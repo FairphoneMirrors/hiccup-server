@@ -1,0 +1,1 @@
+"""Hiccup crashreports application."""

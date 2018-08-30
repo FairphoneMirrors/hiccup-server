@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-#
-# Set the default values for the Version and VersionDaily models.
+
+"""Migrations to set default values for the Version and VersionDaily models."""
+
 from __future__ import unicode_literals
 
 from django.db import migrations, models
@@ -8,6 +9,7 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
+    """Set the default values for the Version and VersionDaily models."""
 
     dependencies = [("crashreport_stats", "0001_initial")]
 

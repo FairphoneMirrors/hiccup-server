@@ -1,3 +1,5 @@
+"""Views for the Hiccup statistics."""
+
 from crashreports.models import *
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render
@@ -13,15 +15,19 @@ from django.urls import reverse
 
 
 def is_fairphone_staff(user):
+    """Check if the user is part of the FairphoneSoftwareTeam group."""
     return user.groups.filter(name="FairphoneSoftwareTeam").exists()
 
 
 class DeviceUUIDForm(forms.Form):
+    """Form for searching devices by UUID."""
+
     uuid = forms.CharField(label="Device UUID:", max_length=100)
 
 
 @user_passes_test(is_fairphone_staff)
 def device_stats(request):
+    """Respond with statistics for a specific device."""
     template = loader.get_template("crashreport_stats/device.html")
     uuid = request.GET.get("uuid", "NO_UUID")
     if not Device.objects.filter(uuid=uuid).exists():
@@ -31,19 +37,27 @@ def device_stats(request):
 
 @user_passes_test(is_fairphone_staff)
 def versions_all_overview(request):
+    """Respond with the distribution of official release versions."""
     template = loader.get_template("crashreport_stats/versions.html")
     return HttpResponse(template.render({"is_official_release": "1"}, request))
 
 
 @user_passes_test(is_fairphone_staff)
 def versions_overview(request):
+    """Respond with the distribution of non-official release versions."""
     template = loader.get_template("crashreport_stats/versions.html")
     return HttpResponse(template.render({"is_official_release": "2"}, request))
 
 
 @user_passes_test(is_fairphone_staff)
 def home(request):
-    """ The home view allows to search for devices. """
+    """Respond with a form for searching devices by UUID.
+
+    When using a HTTP GET method, the search device form view is returned.
+    The response additionally includes possible results if a HTTP POST message
+    was sent. If a single device was found, a redirect to the device
+    statistics of that device is sent.
+    """
     devices = None
     if request.method == "POST":
         # create a form instance and populate it with data from the request:

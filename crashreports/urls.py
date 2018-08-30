@@ -1,3 +1,5 @@
+"""URLs for accessing devices, crashreports, logfiles and heartbeats."""
+
 from django.conf.urls import url
 from . import rest_api_devices
 from . import rest_api_crashreports

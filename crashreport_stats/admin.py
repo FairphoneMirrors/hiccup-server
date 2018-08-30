@@ -1,4 +1,4 @@
-"""Register models for admin site"""
+"""Register models for admin site."""
 from django.contrib import admin
 from crashreport_stats.models import (
     Version,

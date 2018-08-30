@@ -1,7 +1,10 @@
+"""SQL queries for getting device statistics."""
+
 from django.conf import settings
 
 
 def execute_device_update_history_query(cursor, params):
+    """Query the device update history."""
     if (
         settings.DATABASES["default"]["ENGINE"]
         == "django.db.backends.postgresql_psycopg2"
@@ -12,6 +15,7 @@ def execute_device_update_history_query(cursor, params):
 
 
 def execute_device_report_history(cursor, params):
+    """Query the device report history."""
     if (
         settings.DATABASES["default"]["ENGINE"]
         == "django.db.backends.postgresql_psycopg2"
@@ -22,6 +26,7 @@ def execute_device_report_history(cursor, params):
 
 
 def sqlite_execute_device_update_history_query(cursor, params):
+    """Execute SQLite query for getting the device update history."""
     query = """
     SELECT
         min(crashreports_heartbeat.date) as update_date,
@@ -55,6 +60,7 @@ def sqlite_execute_device_update_history_query(cursor, params):
 
 
 def psql_execute_device_update_history_query(cursor, params):
+    """Execute PostgreSQL query for getting the device update history."""
     query = """
     SELECT
         min(crashreports_heartbeat.date) as update_date,
@@ -89,6 +95,7 @@ def psql_execute_device_update_history_query(cursor, params):
 
 
 def sqlite_execute_device_report_history(cursor, params):
+    """Execute SQLite query for getting the device report history."""
     query = """
     SELECT
       strftime("%%Y-%%m-%%d",crashreports_heartbeat.date) as date,
@@ -127,6 +134,7 @@ def sqlite_execute_device_report_history(cursor, params):
 
 
 def psql_execute_device_report_history(cursor, params):
+    """Execute Postgresql query for getting the device report history."""
     query = """
     SELECT
       crashreports_heartbeat.date::date as date,

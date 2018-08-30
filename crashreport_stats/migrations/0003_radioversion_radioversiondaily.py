@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-#
-# Introducing the RadioVersion and RadioVersionDaily models
+
+"""Migrations to introduce the RadioVersion and RadioVersionDaily models."""
+
 from __future__ import unicode_literals
 
 from django.db import migrations, models
@@ -8,6 +9,7 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
+    """Introduce the RadioVersion and RadioVersionDaily models."""
 
     dependencies = [
         ("crashreport_stats", "0002_version_and_versiondaily_with_defaults")

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
-#
-# Extend the Crashreport and Heartbeat models to support the radio version.
+
+"""Extend the Crashreport and Heartbeat models to support radio versions."""
+
 from __future__ import unicode_literals
 
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+    """Extend the Crashreport and Heartbeat models to support radio versions."""
 
     dependencies = [("crashreports", "0002_auto_20170502_1155")]
 
