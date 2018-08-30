@@ -37,13 +37,13 @@ class FairphoneAccountAdapter(DefaultSocialAccountAdapter):
         Returns: The newly created user from the local database.
 
         """
-        u = DefaultSocialAccountAdapter.save_user(
+        user = DefaultSocialAccountAdapter.save_user(
             self, request, sociallogin, form=None
         )
-        if u.email.split("@")[1] == "fairphone.com":
-            g = Group.objects.get(name="FairphoneSoftwareTeam")
-            g.user_set.add(u)
-        return u
+        if user.email.split("@")[1] == "fairphone.com":
+            group = Group.objects.get(name="FairphoneSoftwareTeam")
+            group.user_set.add(user)
+        return user
 
     def populate_user(
         self, request: HttpRequest, sociallogin: SocialLogin, data: dict
@@ -63,12 +63,12 @@ class FairphoneAccountAdapter(DefaultSocialAccountAdapter):
         Returns: The user from the database.
 
         """
-        u = DefaultSocialAccountAdapter.populate_user(
+        user = DefaultSocialAccountAdapter.populate_user(
             self, request, sociallogin, data
         )
-        if not u.email.split("@")[1] == "fairphone.com":
+        if not user.email.split("@")[1] == "fairphone.com":
             raise PermissionDenied()
-        return u
+        return user
 
 
 class FormAccountAdapter(DefaultAccountAdapter):
