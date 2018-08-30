@@ -1,7 +1,7 @@
 """Authorization permission classes for accessing the API."""
 
-from crashreports.models import Device
 from rest_framework.permissions import BasePermission
+from crashreports.models import Device
 
 
 def user_owns_uuid(user, uuid):

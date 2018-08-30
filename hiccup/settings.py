@@ -205,6 +205,6 @@ LOGGING = {
 SWAGGER_SETTINGS = {"DEFAULT_INFO": "hiccup.urls.api_info"}
 
 try:
-    from local_settings import *  # noqa: F403, F401
+    from local_settings import *  # noqa: F403,F401 pylint: disable=W0401,W0614
 except ImportError as e:
     pass

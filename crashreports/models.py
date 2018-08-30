@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 """Models for devices, heartbeats, crashreports and log files."""
 
-from django.db import models
-from django.db import transaction
+import uuid
 
+from django.db import models, transaction
 from django.contrib.auth.models import User
 from taggit.managers import TaggableManager
-
-import uuid
 
 
 class Device(models.Model):
