@@ -70,11 +70,6 @@ MIDDLEWARE_CLASSES = [
 
 ROOT_URLCONF = "hiccup.urls"
 
-TEMPLATE_LOADERS = (
-    "django.template.loaders.filesystem.Loader",
-    "django.template.loaders.app_directories.Loader",
-)
-
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
