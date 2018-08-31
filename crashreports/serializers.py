@@ -25,6 +25,14 @@ class PrivateField(serializers.ReadOnlyField):
             return super(PrivateField, self).get_attribute(instance)
         return -1
 
+    def to_internal_value(self, data):
+        """Transform the *incoming* primitive data into a native value.
+
+        Since PrivateField is read only, there will never be any incoming data,
+        thus we raise NotImplementedError.
+        """
+        raise NotImplementedError()
+
 
 class CrashReportSerializer(serializers.ModelSerializer):
     """Serializer for CrashReport instances."""
