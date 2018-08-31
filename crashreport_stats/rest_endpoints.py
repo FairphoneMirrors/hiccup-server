@@ -88,13 +88,12 @@ class DeviceUpdateHistory(APIView):
             ]
         ),
     )
-    def get(self, request, uuid, format=None):
+    def get(self, request, uuid):
         """Get the update history of a device.
 
         Args:
             request: Http request
             uuid: The UUID of the device
-            format: Optional response format parameter
 
         Returns: The update history of the requested device.
 
@@ -143,13 +142,12 @@ class DeviceReportHistory(APIView):
             ]
         ),
     )
-    def get(self, request, uuid, format=None):
+    def get(self, request, uuid):
         """Get the report history of a device.
 
         Args:
             request: Http request
             uuid: The UUID of the device
-            format: Optional response format parameter
 
         Returns: The report history of the requested device.
 
@@ -193,12 +191,11 @@ class Status(APIView):
             ]
         ),
     )
-    def get(self, request, format=None):
+    def get(self, request):
         """Get the number of devices, crashreports and heartbeats.
 
         Args:
             request: Http request
-            format: Optional response format parameter
 
         Returns: The number of devices, crashreports and heartbeats.
 
@@ -253,13 +250,12 @@ class DeviceStat(APIView):
             ]
         ),
     )
-    def get(self, request, uuid, format=None):
+    def get(self, request, uuid):
         """Get some general statistics for a device.
 
         Args:
             request: Http request
             uuid:  The UUID of the device
-            format: Optional response format parameter
 
         Returns: Some general information of the device in a dictionary.
 
@@ -319,13 +315,12 @@ class LogFileDownload(APIView):
             ]
         ),
     )
-    def get(self, request, id_logfile, format=None):
+    def get(self, request, id_logfile):
         """Get a logfile.
 
         Args:
             request: Http request
             id_logfile: The id of the log file
-            format: Optional response format parameter
 
         Returns: The log file with the corresponding id.
 
