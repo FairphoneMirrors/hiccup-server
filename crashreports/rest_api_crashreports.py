@@ -59,7 +59,7 @@ class ListCreateView(generics.ListCreateAPIView):
     serializer_class = CrashReportSerializer
     filter_fields = ("device", "build_fingerprint", "radio_version")
 
-    def dispatch(self, *args, **kwargs):
+    def dispatch(self, request, *args, **kwargs):
         """Dispatch an incoming HTTP request to the right method.
 
         The method is overridden in order to replace the 'device__uuid'
@@ -69,7 +69,9 @@ class ListCreateView(generics.ListCreateAPIView):
             self.queryset = Crashreport.objects.filter(
                 device__uuid=kwargs["uuid"]
             )
-        return generics.ListCreateAPIView.dispatch(self, *args, **kwargs)
+        return generics.ListCreateAPIView.dispatch(
+            self, request, *args, **kwargs
+        )
 
     def perform_create(self, serializer):
         """Create a crash report instance in the database.

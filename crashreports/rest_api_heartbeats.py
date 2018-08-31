@@ -44,13 +44,13 @@ class ListCreateView(generics.ListCreateAPIView):
     serializer_class = HeartBeatSerializer
     filter_fields = ("device", "build_fingerprint", "radio_version")
 
-    def get(self, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         """Override device__uuid parameter with uuid."""
         if "uuid" in kwargs:
             self.queryset = HeartBeat.objects.filter(
                 device__uuid=kwargs["uuid"]
             )
-        return generics.ListCreateAPIView.get(self, *args, **kwargs)
+        return generics.ListCreateAPIView.get(self, request, *args, **kwargs)
 
 
 @method_decorator(

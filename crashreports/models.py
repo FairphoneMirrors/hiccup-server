@@ -113,11 +113,19 @@ class Crashreport(models.Model):
         self.save()
         return ret
 
-    def save(self, *args, **kwargs):
+    def save(
+        self,
+        force_insert=False,
+        force_update=False,
+        using=None,
+        update_fields=None,
+    ):
         """Save the crashreport and set its local ID if it was not set."""
         if not self.device_local_id:
             self.device_local_id = self.device.get_crashreport_key()
-        super(Crashreport, self).save(*args, **kwargs)
+        super(Crashreport, self).save(
+            force_insert, force_update, using, update_fields
+        )
 
     def _get_uuid(self):
         """Return the device UUID."""
@@ -137,11 +145,19 @@ class LogFile(models.Model):
     crashreport_local_id = models.PositiveIntegerField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def save(self, *args, **kwargs):
+    def save(
+        self,
+        force_insert=False,
+        force_update=False,
+        using=None,
+        update_fields=None,
+    ):
         """Save the log file and set its local ID if it was not set."""
         if not self.crashreport_local_id:
             self.crashreport_local_id = self.crashreport.get_logfile_key()
-        super(LogFile, self).save(*args, **kwargs)
+        super(LogFile, self).save(
+            force_insert, force_update, using, update_fields
+        )
 
 
 class HeartBeat(models.Model):
@@ -161,11 +177,19 @@ class HeartBeat(models.Model):
     device_local_id = models.PositiveIntegerField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def save(self, *args, **kwargs):
+    def save(
+        self,
+        force_insert=False,
+        force_update=False,
+        using=None,
+        update_fields=None,
+    ):
         """Save the heartbeat and set its local ID if it was not set."""
         if not self.device_local_id:
             self.device_local_id = self.device.get_heartbeat_key()
-        super(HeartBeat, self).save(*args, **kwargs)
+        super(HeartBeat, self).save(
+            force_insert, force_update, using, update_fields
+        )
 
     def _get_uuid(self):
         """Return the device UUID."""
