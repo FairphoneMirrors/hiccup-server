@@ -254,10 +254,8 @@ class _StatsModelsEngine:
 
         """
         return (
-            query_objects.annotate(_report_day=TruncDate("date")).values(
-                self.version_field_name, "_report_day"
-            )
-            # FIXME Agressively drop duplicates
+            query_objects.annotate(_report_day=TruncDate("date"))
+            .values(self.version_field_name, "_report_day")
             .annotate(count=Count("date", distinct=True))
         )
 

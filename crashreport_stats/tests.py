@@ -558,13 +558,6 @@ class RadioVersionDailyTestCase(VersionDailyTestCase):
 class StatsCommandVersionsTestCase(TestCase):
     """Test the generation of Version stats with the stats command."""
 
-    # FIXME: Test for false duplicates: same timestamps but different UUIDs
-    # FIXME: Test that the 'released_on' field changes or not once an older
-    #   report has been sent depending on whether the field has been manually
-    #   changed
-    # FIXME: Test that tests the daily version stats
-    # FIXME: Test creating stats from reports of different devices/users.
-
     # The class of the version type to be tested
     version_class = Version
     # The attribute name characterising the unicity of a stats entry (the

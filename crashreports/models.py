@@ -126,7 +126,6 @@ class Crashreport(models.Model):
     uuid = property(_get_uuid)
 
 
-# TODO remove logfile_type or make it meaningful
 class LogFile(models.Model):
     """A log file that was sent along with a crashreport."""
 

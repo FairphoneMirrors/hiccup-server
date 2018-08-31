@@ -12,9 +12,6 @@ from crashreports.permissions import HasRightsOrIsDeviceOwnerDeviceCreation
 from crashreports.response_descriptions import default_desc
 from crashreports.serializers import HeartBeatSerializer
 
-# TODO: There is quite some code duplciation between here and the corresponding
-#       crashreport code. We should revisit this later.
-
 
 @method_decorator(
     name="get",
