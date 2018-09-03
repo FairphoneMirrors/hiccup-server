@@ -39,7 +39,7 @@ urlpatterns = [
     ),
     url(
         r"^api/v1/logfiles/$",
-        rest_api_logfiles.ListCreateView.as_view(),
+        rest_api_logfiles.ListView.as_view(),
         name="api_v1_logfiles",
     ),
     url(

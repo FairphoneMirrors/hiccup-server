@@ -37,7 +37,7 @@ from crashreports.permissions import (
         security=SWAGGER_SECURITY_REQUIREMENTS_ALL,
     ),
 )
-class ListCreateView(generics.ListAPIView):
+class ListView(generics.ListAPIView):
     """Endpoint for listing log files."""
 
     queryset = LogFile.objects.all()
