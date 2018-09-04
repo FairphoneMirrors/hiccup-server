@@ -1,4 +1,7 @@
 """Test crashreport_stats models and the 'stats' command."""
+
+# pylint: disable=too-many-lines,too-many-public-methods
+
 from io import StringIO
 from datetime import datetime, date, timedelta
 import unittest
@@ -892,6 +895,163 @@ class StatsCommandVersionsTestCase(TestCase):
         device = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
         self._assert_duplicates_are_ignored(
             Crashreport, device, counter_attribute_name, **params
+        )
+
+    def _assert_older_reports_update_released_on_date(
+        self, report_type, **kwargs
+    ):
+        """Test updating of the released_on date.
+
+        Validate that the released_on date is updated once an older report is
+        sent.
+        """
+        # Create a report
+        device = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
+        report = Dummy.create_dummy_report(report_type, device=device, **kwargs)
+
+        # Run the command to update the database
+        call_command("stats", "update")
+
+        # Get the corresponding version instance from the database
+        version = self.version_class.objects.get(
+            **{self.unique_entry_name: getattr(report, self.unique_entry_name)}
+        )
+
+        # Assert that the released_on date matches the first report date
+        self.assertEqual(version.released_on, report.date.date())
+
+        # Create a second report with the a timestamp earlier in time
+        report_2_date = report.date - timedelta(days=1)
+        Dummy.create_dummy_report(
+            report_type, device=device, date=report_2_date, **kwargs
+        )
+
+        # Run the command to update the database
+        call_command("stats", "update")
+
+        # Get the corresponding version instance from the database
+        version = self.version_class.objects.get(
+            **{self.unique_entry_name: getattr(report, self.unique_entry_name)}
+        )
+
+        # Assert that the released_on date matches the older report date
+        self.assertEqual(version.released_on, report_2_date.date())
+
+    def _assert_newer_reports_do_not_update_released_on_date(
+        self, report_type, **kwargs
+    ):
+        """Test updating of the released_on date.
+
+        Validate that the released_on date is not updated once a newer report is
+        sent.
+        """
+        # Create a report
+        device = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
+        report = Dummy.create_dummy_report(report_type, device=device, **kwargs)
+        report_1_date = report.date.date()
+
+        # Run the command to update the database
+        call_command("stats", "update")
+
+        # Get the corresponding version instance from the database
+        version = self.version_class.objects.get(
+            **{self.unique_entry_name: getattr(report, self.unique_entry_name)}
+        )
+
+        # Assert that the released_on date matches the first report date
+        self.assertEqual(version.released_on, report_1_date)
+
+        # Create a second report with the a timestamp later in time
+        report_2_date = report.date + timedelta(days=1)
+        Dummy.create_dummy_report(
+            report_type, device=device, date=report_2_date, **kwargs
+        )
+
+        # Run the command to update the database
+        call_command("stats", "update")
+
+        # Get the corresponding version instance from the database
+        version = self.version_class.objects.get(
+            **{self.unique_entry_name: getattr(report, self.unique_entry_name)}
+        )
+
+        # Assert that the released_on date matches the older report date
+        self.assertEqual(version.released_on, report_1_date)
+
+    def test_older_heartbeat_updates_released_on_date(self):
+        """Validate that older heartbeats update the release date."""
+        self._assert_older_reports_update_released_on_date(HeartBeat)
+
+    def test_older_crash_report_updates_released_on_date(self):
+        """Validate that older crash reports update the release date."""
+        self._assert_older_reports_update_released_on_date(Crashreport)
+
+    def test_newer_heartbeat_does_not_update_released_on_date(self):
+        """Validate that newer heartbeats don't update the release date."""
+        self._assert_newer_reports_do_not_update_released_on_date(HeartBeat)
+
+    def test_newer_crash_report_does_not_update_released_on_date(self):
+        """Validate that newer crash reports don't update the release date."""
+        self._assert_newer_reports_do_not_update_released_on_date(Crashreport)
+
+    def _assert_manually_changed_released_on_date_is_not_updated(
+        self, report_type, **kwargs
+    ):
+        """Test updating of manually changed released_on dates.
+
+        Validate that a manually changed released_on date is not updated when
+        new reports are sent.
+        """
+        # Create a report
+        device = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
+        report = Dummy.create_dummy_report(report_type, device=device, **kwargs)
+
+        # Run the command to update the database
+        call_command("stats", "update")
+
+        # Get the corresponding version instance from the database
+        version = self.version_class.objects.get(
+            **{self.unique_entry_name: getattr(report, self.unique_entry_name)}
+        )
+
+        # Assert that the released_on date matches the first report date
+        self.assertEqual(version.released_on, report.date.date())
+
+        # Create a second report with a timestamp earlier in time
+        report_2_date = report.date - timedelta(days=1)
+        Dummy.create_dummy_report(
+            report_type, device=device, date=report_2_date, **kwargs
+        )
+
+        # Manually change the released_on date
+        version_release_date = report.date + timedelta(days=1)
+        version.released_on = version_release_date
+        version.save()
+
+        # Run the command to update the database
+        call_command("stats", "update")
+
+        # Get the corresponding version instance from the database
+        version = self.version_class.objects.get(
+            **{self.unique_entry_name: getattr(report, self.unique_entry_name)}
+        )
+
+        # Assert that the released_on date still matches the date is was
+        # manually changed to
+        self.assertEqual(version.released_on, version_release_date.date())
+
+    def test_manually_changed_released_on_date_is_not_updated_by_heartbeat(
+        self
+    ):
+        """Test update of manually changed released_on date with heartbeat."""
+        self._assert_manually_changed_released_on_date_is_not_updated(HeartBeat)
+
+    def test_manually_changed_released_on_date_is_not_updated_by_crash_report(
+        self
+    ):
+        """Test update of manually changed released_on date with crashreport."""
+        self._assert_manually_changed_released_on_date_is_not_updated(
+            Crashreport
         )
 
 
