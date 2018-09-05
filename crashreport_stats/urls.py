@@ -34,7 +34,7 @@ urlpatterns = [
         name="hiccup_stats_api_v1_device_report_history",
     ),
     url(
-        r"^api/v1/logfile_download/(?P<id>[0-9]+)/$",
+        r"^api/v1/logfile_download/(?P<id_logfile>[0-9]+)/$",
         rest_endpoints.LogFileDownload.as_view(),
         name="hiccup_stats_api_v1_logfile_download",
     ),

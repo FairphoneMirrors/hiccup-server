@@ -1596,7 +1596,6 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
         # Assert that the statistics match
         self.assertEqual(expected_update_history, response.data)
 
-    @unittest.skip("Fails because of bug in urls.py")
     def test_download_non_existing_logfile(self):
         """Test download of a non existing log file."""
         # Try to get a log file
@@ -1607,7 +1606,6 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
         # Assert that the log file was not found
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    @unittest.skip("Fails because of bug in urls.py")
     def test_download_logfile(self):
         """Test download of log files."""
         # Create a device with a crash report along with log file
