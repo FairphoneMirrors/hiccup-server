@@ -34,15 +34,13 @@ i.e., because I have compiled python 3.6.6:
 
     pyenv virtualenv -p python3.6 3.6.6 hiccupenv
 
-By default Django will use a SQLite3 database (`db.sqlite3` in the base directory).
+#### Setting up PostgreSQL Server
 
-#### Using PostgreSQL Server
+The Hiccup server relies on a PostgreSQL database.
 
-To use a PostgreSQL database (like the production server is running), you can install the following
-packages:
+To set up a database server, you can install the following package:
 
     (hiccupenv) $ sudo apt install postgresql
-    (hiccupenv) $ pip install psycopg2
 
 Then create a user and database:
 
@@ -50,22 +48,13 @@ Then create a user and database:
     (hiccupenv) $ sudo -u postgres createuser $USER --createdb
     (hiccupenv) $ sudo -u postgres createdb -O $USER $USER
 
-
-
-Copy the following to `local_settings.py` (create the file if it did not exist before) to use the
-PostgreSQL database instread of SQLite:
-
-    import os
-
-    DATABASES = {
-      'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.environ.get('USER'),
-        'USER': os.environ.get('USER'),
-        'PORT': '',
-      }
-    }
-
+The settings for accessing the PostgreSQL server can be found in
+`hiccup/settings.py` (see the `DATABASES` setting). When both the postgresql
+server and the Hiccup server are running on the same machine and you are
+using the same user that you used for creating the database for running the
+server, the default settings should be fine. For all other cases a
+`local_settings.py` file can be created in the project root directory to
+overwrite the default settings.
 
 Test that the configuration is correct:
 

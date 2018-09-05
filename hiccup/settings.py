@@ -103,8 +103,12 @@ AUTHENTICATION_BACKENDS = (
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "HOST": "",  # Connect to database through UNIX domain sockets
+        "PORT": "",  # Not needed for UNIX domain sockets
+        "NAME": os.environ.get("USER"),
+        "USER": os.environ.get("USER"),
+        "PASSWORD": "",  # Not needed for UNIX domain sockets
     }
 }
 
