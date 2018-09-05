@@ -8,6 +8,8 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Group
 from django.http import HttpRequest
 
+FP_STAFF_GROUP_NAME = "FairphoneSoftwareTeam"
+
 
 class FairphoneAccountAdapter(DefaultSocialAccountAdapter):
     """Account adapter for existing Google accounts."""
@@ -41,7 +43,7 @@ class FairphoneAccountAdapter(DefaultSocialAccountAdapter):
             self, request, sociallogin, form=None
         )
         if user.email.split("@")[1] == "fairphone.com":
-            group = Group.objects.get(name="FairphoneSoftwareTeam")
+            group = Group.objects.get(name=FP_STAFF_GROUP_NAME)
             group.user_set.add(user)
         return user
 

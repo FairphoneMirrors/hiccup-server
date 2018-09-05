@@ -4,10 +4,14 @@
 
 from io import StringIO
 from datetime import datetime, date, timedelta
+import operator
+import os
 import unittest
+import zipfile
 
 import pytz
 
+from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
@@ -24,7 +28,8 @@ from crashreport_stats.models import (
     StatsMetadata,
 )
 
-from crashreports.models import User, Device, Crashreport, HeartBeat
+from crashreports.models import Crashreport, Device, HeartBeat, LogFile, User
+from hiccup.allauth_adapters import FP_STAFF_GROUP_NAME
 
 
 class Dummy:
@@ -93,7 +98,7 @@ class Dummy:
         ),
         "build_fingerprint": BUILD_FINGERPRINTS[0],
         "radio_version": RADIO_VERSIONS[0],
-        "date": datetime(2018, 3, 19, tzinfo=pytz.utc),
+        "date": datetime(2018, 3, 19, 12, 0, 0, tzinfo=pytz.utc),
     }
 
     DEFAULT_DUMMY_CRASHREPORT_VALUES = DEFAULT_DUMMY_HEARTBEAT_VALUES.copy()
@@ -105,6 +110,13 @@ class Dummy:
             "power_off_reason": "something happened and it went off",
         }
     )
+
+    DEFAULT_DUMMY_LOG_FILE_VALUES = {
+        "logfile_type": "last_kmsg",
+        "logfile": os.path.join("resources", "test", "test_logfile.zip"),
+    }
+
+    DEFAULT_DUMMY_LOG_FILE_NAME = "dmesg.log"
 
     @staticmethod
     def update_copy(original, update):
@@ -187,6 +199,33 @@ class Dummy:
             )
         entity.save()
         return entity
+
+    @staticmethod
+    def create_dummy_log_file(crashreport, **kwargs):
+        """Create a dummy log file instance.
+
+        The dummy instance is created and saved to the database.
+
+        Args:
+            crashreport: The crashreport that the log file belongs to.
+            **kwargs: Optional arguments to extend/overwrite the default values.
+
+        Returns: The created log file instance.
+
+        """
+        entity = LogFile(
+            crashreport=crashreport,
+            **Dummy.update_copy(Dummy.DEFAULT_DUMMY_LOG_FILE_VALUES, kwargs)
+        )
+
+        entity.save()
+        return entity
+
+    @staticmethod
+    def read_logfile_contents(path_to_zipfile, logfile_name):
+        """Read bytes of a zipped logfile."""
+        archive = zipfile.ZipFile(path_to_zipfile, "r")
+        return archive.read(logfile_name)
 
     @staticmethod
     def create_dummy_version(**kwargs):
@@ -289,7 +328,35 @@ class Dummy:
         return entity
 
 
-class _VersionTestCase(APITestCase):
+class _HiccupAPITestCase(APITestCase):
+    """Abstract class for Hiccup REST API test cases to inherit from."""
+
+    @classmethod
+    def setUpTestData(cls):  # noqa: N802
+        """Create an admin and client user for accessing the API.
+
+        The APIClient that can be used to make authenticated requests as
+        admin user is stored in self.admin. Another client (which is
+        related to a user that is part of the Fairphone software team group)
+        is stored in self.fp_staff_client.
+        """
+        admin_user = User.objects.create_superuser(
+            "somebody", "somebody@example.com", "thepassword"
+        )
+        cls.admin = APIClient()
+        cls.admin.force_authenticate(admin_user)
+
+        fp_software_team_group = Group(name=FP_STAFF_GROUP_NAME)
+        fp_software_team_group.save()
+        fp_software_team_user = User.objects.create_user(
+            "fp_staff", "somebody@fairphone.com", "thepassword"
+        )
+        fp_software_team_user.groups.add(fp_software_team_group)
+        cls.fp_staff_client = APIClient()
+        cls.fp_staff_client.login(username="fp_staff", password="thepassword")
+
+
+class _VersionTestCase(_HiccupAPITestCase):
     """Abstract class for version-related test cases to inherit from."""
 
     # The attribute name characterising the unicity of a stats entry (the
@@ -299,19 +366,6 @@ class _VersionTestCase(APITestCase):
     unique_entries = Dummy.BUILD_FINGERPRINTS
     # The URL to retrieve the stats entries from
     endpoint_url = reverse("hiccup_stats_api_v1_versions")
-
-    @classmethod
-    def setUpTestData(cls):  # noqa: N802
-        """Create an admin user for accessing the API.
-
-        The APIClient that can be used to make authenticated requests to the
-        server is stored in self.admin.
-        """
-        admin_user = User.objects.create_superuser(
-            "somebody", "somebody@example.com", "thepassword"
-        )
-        cls.admin = APIClient()
-        cls.admin.force_authenticate(admin_user)
 
     @staticmethod
     def _create_dummy_version(**kwargs):
@@ -354,6 +408,8 @@ class _VersionTestCase(APITestCase):
 
 class VersionTestCase(_VersionTestCase):
     """Test the Version and REST endpoint."""
+
+    # pylint: disable=too-many-ancestors
 
     def _create_version_entities(self):
         versions = [
@@ -1138,4 +1194,439 @@ class CommandDebugOutputTestCase(TestCase):
         # We expect that the model instances get deleted
         self._assert_command_output_matches(
             "reset", 1, ["deleted"], self._ALL_MODELS
+        )
+
+
+class DeviceStatsTestCase(_HiccupAPITestCase):
+    """Test the single device stats REST endpoints."""
+
+    def _get_with_params(self, url, params):
+        url = reverse(url, kwargs=params)
+        return self.fp_staff_client.get(url)
+
+    def _assert_device_stats_response_is(
+        self,
+        response,
+        uuid,
+        board_date,
+        num_heartbeats,
+        num_crashreports,
+        num_smpls,
+        crashes_per_day,
+        smpl_per_day,
+        last_active,
+    ):
+        # pylint: disable=too-many-arguments
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertIn("uuid", response.data)
+        self.assertIn("board_date", response.data)
+        self.assertIn("heartbeats", response.data)
+        self.assertIn("crashreports", response.data)
+        self.assertIn("smpls", response.data)
+        self.assertIn("crashes_per_day", response.data)
+        self.assertIn("smpl_per_day", response.data)
+        self.assertIn("last_active", response.data)
+
+        self.assertEqual(response.data["uuid"], uuid)
+        self.assertEqual(response.data["board_date"], board_date)
+        self.assertEqual(response.data["heartbeats"], num_heartbeats)
+        self.assertEqual(response.data["crashreports"], num_crashreports)
+        self.assertEqual(response.data["smpls"], num_smpls)
+        self.assertEqual(response.data["crashes_per_day"], crashes_per_day)
+        self.assertEqual(response.data["smpl_per_day"], smpl_per_day)
+        self.assertEqual(response.data["last_active"], last_active)
+
+    @unittest.skip(
+        "Fails because there is no fallback for the last_active "
+        "date for devices without heartbeats."
+    )
+    def test_get_device_stats_no_reports(self):
+        """Test getting device stats for a device without reports."""
+        # Create a device
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+
+        # Get the device statistics
+        response = self._get_with_params(
+            "hiccup_stats_api_v1_device_overview", {"uuid": device.uuid}
+        )
+
+        # Assert that the statistics match
+        self._assert_device_stats_response_is(
+            response=response,
+            uuid=str(device.uuid),
+            board_date=device.board_date,
+            num_heartbeats=0,
+            num_crashreports=0,
+            num_smpls=0,
+            crashes_per_day=0.0,
+            smpl_per_day=0.0,
+            last_active=device.board_date,
+        )
+
+    def test_get_device_stats_no_crash_reports(self):
+        """Test getting device stats for a device without crashreports."""
+        # Create a device and a heartbeat
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        heartbeat = Dummy.create_dummy_report(HeartBeat, device)
+
+        # Get the device statistics
+        response = self._get_with_params(
+            "hiccup_stats_api_v1_device_overview", {"uuid": device.uuid}
+        )
+
+        # Assert that the statistics match
+        self._assert_device_stats_response_is(
+            response=response,
+            uuid=str(device.uuid),
+            board_date=device.board_date,
+            num_heartbeats=1,
+            num_crashreports=0,
+            num_smpls=0,
+            crashes_per_day=0.0,
+            smpl_per_day=0.0,
+            last_active=heartbeat.date,
+        )
+
+    @unittest.skip(
+        "Fails because there is no fallback for the last_active "
+        "date for devices without heartbeats."
+    )
+    def test_get_device_stats_no_heartbeats(self):
+        """Test getting device stats for a device without heartbeats."""
+        # Create a device and crashreport
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        Dummy.create_dummy_report(Crashreport, device)
+
+        # Get the device statistics
+        response = self._get_with_params(
+            "hiccup_stats_api_v1_device_overview", {"uuid": device.uuid}
+        )
+
+        # Assert that the statistics match
+        self._assert_device_stats_response_is(
+            response=response,
+            uuid=str(device.uuid),
+            board_date=device.board_date,
+            num_heartbeats=0,
+            num_crashreports=1,
+            num_smpls=0,
+            crashes_per_day=0.0,
+            smpl_per_day=0.0,
+            last_active=device.board_date,
+        )
+
+    def test_get_device_stats(self):
+        """Test getting device stats for a device."""
+        # Create a device with a heartbeat and one report of each type
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        heartbeat = Dummy.create_dummy_report(HeartBeat, device)
+        for boot_reason in (
+            Crashreport.SMPL_BOOT_REASONS
+            + Crashreport.CRASH_BOOT_REASONS
+            + ["other boot reason"]
+        ):
+            Dummy.create_dummy_report(
+                Crashreport, device, boot_reason=boot_reason
+            )
+
+        # Get the device statistics
+        response = self._get_with_params(
+            "hiccup_stats_api_v1_device_overview", {"uuid": device.uuid}
+        )
+
+        # Assert that the statistics match
+        self._assert_device_stats_response_is(
+            response=response,
+            uuid=str(device.uuid),
+            board_date=device.board_date,
+            num_heartbeats=1,
+            num_crashreports=len(Crashreport.CRASH_BOOT_REASONS),
+            num_smpls=len(Crashreport.SMPL_BOOT_REASONS),
+            crashes_per_day=len(Crashreport.CRASH_BOOT_REASONS),
+            smpl_per_day=len(Crashreport.SMPL_BOOT_REASONS),
+            last_active=heartbeat.date,
+        )
+
+    def test_get_device_stats_multiple_days(self):
+        """Test getting device stats for a device that sent more reports."""
+        # Create a device with some heartbeats and reports over time
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        num_days = 100
+        for i in range(num_days):
+            report_day = datetime.now(tz=pytz.utc) + timedelta(days=i)
+            heartbeat = Dummy.create_dummy_report(
+                HeartBeat, device, date=report_day
+            )
+            Dummy.create_dummy_report(Crashreport, device, date=report_day)
+            Dummy.create_dummy_report(
+                Crashreport,
+                device,
+                date=report_day,
+                boot_reason=Crashreport.SMPL_BOOT_REASONS[0],
+            )
+
+        # Get the device statistics
+        response = self._get_with_params(
+            "hiccup_stats_api_v1_device_overview", {"uuid": device.uuid}
+        )
+
+        # Assert that the statistics match
+        self._assert_device_stats_response_is(
+            response=response,
+            uuid=str(device.uuid),
+            board_date=device.board_date,
+            num_heartbeats=num_days,
+            num_crashreports=num_days,
+            num_smpls=num_days,
+            crashes_per_day=1,
+            smpl_per_day=1,
+            last_active=heartbeat.date,
+        )
+
+    def test_get_device_stats_multiple_days_missing_heartbeat(self):
+        """Test getting device stats for a device with missing heartbeat."""
+        # Create a device with some heartbeats and reports over time
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        num_days = 100
+        skip_day = round(num_days / 2)
+        for i in range(num_days):
+            report_day = datetime.now(tz=pytz.utc) + timedelta(days=i)
+            # Skip creation of heartbeat at one day
+            if i != skip_day:
+                heartbeat = Dummy.create_dummy_report(
+                    HeartBeat, device, date=report_day
+                )
+            Dummy.create_dummy_report(Crashreport, device, date=report_day)
+
+        # Get the device statistics
+        response = self._get_with_params(
+            "hiccup_stats_api_v1_device_overview", {"uuid": device.uuid}
+        )
+
+        # Assert that the statistics match
+        self._assert_device_stats_response_is(
+            response=response,
+            uuid=str(device.uuid),
+            board_date=device.board_date,
+            num_heartbeats=num_days - 1,
+            num_crashreports=num_days,
+            num_smpls=0,
+            crashes_per_day=num_days / (num_days - 1),
+            smpl_per_day=0,
+            last_active=heartbeat.date,
+        )
+
+    @unittest.skip("Duplicate heartbeats are currently not dropped.")
+    def test_get_device_stats_multiple_days_duplicate_heartbeat(self):
+        """Test getting device stats for a device with duplicate heartbeat.
+
+        Duplicate heartbeats are dropped and thus should not influence the
+        statistics.
+        """
+        # Create a device with some heartbeats and reports over time
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        num_days = 100
+        duplicate_day = round(num_days / 2)
+        first_report_day = Dummy.DEFAULT_DUMMY_HEARTBEAT_VALUES["date"]
+        for i in range(num_days):
+            report_day = first_report_day + timedelta(days=i)
+            heartbeat = Dummy.create_dummy_report(
+                HeartBeat, device, date=report_day
+            )
+            # Create a second at the duplicate day (with 1 hour delay)
+            if i == duplicate_day:
+                Dummy.create_dummy_report(
+                    HeartBeat, device, date=report_day + timedelta(hours=1)
+                )
+            Dummy.create_dummy_report(Crashreport, device, date=report_day)
+
+        # Get the device statistics
+        response = self._get_with_params(
+            "hiccup_stats_api_v1_device_overview", {"uuid": device.uuid}
+        )
+
+        # Assert that the statistics match
+        self._assert_device_stats_response_is(
+            response=response,
+            uuid=str(device.uuid),
+            board_date=device.board_date,
+            num_heartbeats=num_days,
+            num_crashreports=num_days,
+            num_smpls=0,
+            crashes_per_day=1,
+            smpl_per_day=0,
+            last_active=heartbeat.date,
+        )
+
+    def test_get_device_report_history_no_reports(self):
+        """Test getting report history stats for a device without reports."""
+        # Create a device
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+
+        # Get the device report history statistics
+        response = self._get_with_params(
+            "hiccup_stats_api_v1_device_report_history", {"uuid": device.uuid}
+        )
+
+        # Assert that the report history is empty
+        self.assertEqual([], response.data)
+
+    @unittest.skip("Broken raw query. Heartbeats are not counted correctly.")
+    def test_get_device_report_history(self):
+        """Test getting report history stats for a device."""
+        # Create a device with a heartbeat and one report of each type
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        heartbeat = Dummy.create_dummy_report(HeartBeat, device)
+        for boot_reason in (
+            Crashreport.SMPL_BOOT_REASONS
+            + Crashreport.CRASH_BOOT_REASONS
+            + ["other boot reason"]
+        ):
+            Dummy.create_dummy_report(
+                Crashreport, device, boot_reason=boot_reason
+            )
+
+        # Get the device report history statistics
+        response = self._get_with_params(
+            "hiccup_stats_api_v1_device_report_history", {"uuid": device.uuid}
+        )
+
+        # Assert that the statistics match
+        report_history = [
+            {
+                "date": heartbeat.date.date(),
+                "heartbeats": 1,
+                "smpl": len(Crashreport.SMPL_BOOT_REASONS),
+                "prob_crashes": len(Crashreport.CRASH_BOOT_REASONS),
+                "other": 1,
+            }
+        ]
+        self.assertEqual(report_history, response.data)
+
+    def test_get_device_update_history_no_reports(self):
+        """Test getting update history stats for a device without reports."""
+        # Create a device
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+
+        # Get the device report history statistics
+        response = self._get_with_params(
+            "hiccup_stats_api_v1_device_update_history", {"uuid": device.uuid}
+        )
+
+        # Assert that the update history is empty
+        self.assertEqual([], response.data)
+
+    def test_get_device_update_history(self):
+        """Test getting update history stats for a device."""
+        # Create a device with a heartbeat and one report of each type
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        heartbeat = Dummy.create_dummy_report(HeartBeat, device)
+        for boot_reason in (
+            Crashreport.SMPL_BOOT_REASONS
+            + Crashreport.CRASH_BOOT_REASONS
+            + ["other boot reason"]
+        ):
+            params = {"boot_reason": boot_reason}
+            Dummy.create_dummy_report(Crashreport, device, **params)
+
+        # Get the device update history statistics
+        response = self._get_with_params(
+            "hiccup_stats_api_v1_device_update_history", {"uuid": device.uuid}
+        )
+
+        # Assert that the statistics match
+        update_history = [
+            {
+                "build_fingerprint": heartbeat.build_fingerprint,
+                "heartbeats": 1,
+                "max": device.id,
+                "other": 1,
+                "prob_crashes": len(Crashreport.CRASH_BOOT_REASONS),
+                "smpl": len(Crashreport.SMPL_BOOT_REASONS),
+                "update_date": heartbeat.date,
+            }
+        ]
+        self.assertEqual(update_history, response.data)
+
+    def test_get_device_update_history_multiple_updates(self):
+        """Test getting update history stats with multiple updates."""
+        # Create a device with a heartbeats and crashreport for each build
+        # fingerprint in the dummy values
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        expected_update_history = []
+        for i, build_fingerprint in enumerate(Dummy.BUILD_FINGERPRINTS):
+            report_day = datetime.now(tz=pytz.utc) + timedelta(days=i)
+            Dummy.create_dummy_report(
+                HeartBeat,
+                device,
+                date=report_day,
+                build_fingerprint=build_fingerprint,
+            )
+            Dummy.create_dummy_report(
+                Crashreport,
+                device,
+                date=report_day,
+                build_fingerprint=build_fingerprint,
+            )
+
+            # Create the expected update history object
+            expected_update_history.append(
+                {
+                    "update_date": report_day,
+                    "build_fingerprint": build_fingerprint,
+                    "max": device.id,
+                    "prob_crashes": 1,
+                    "smpl": 0,
+                    "other": 0,
+                    "heartbeats": 1,
+                }
+            )
+        # Sort the expected values by build fingerprint
+        expected_update_history.sort(
+            key=operator.itemgetter("build_fingerprint")
+        )
+
+        # Get the device update history statistics and sort it
+        response = self._get_with_params(
+            "hiccup_stats_api_v1_device_update_history", {"uuid": device.uuid}
+        )
+        response.data.sort(key=operator.itemgetter("build_fingerprint"))
+
+        # Assert that the statistics match
+        self.assertEqual(expected_update_history, response.data)
+
+    @unittest.skip("Fails because of bug in urls.py")
+    def test_download_non_existing_logfile(self):
+        """Test download of a non existing log file."""
+        # Try to get a log file
+        response = self._get_with_params(
+            "hiccup_stats_api_v1_logfile_download", {"id_logfile": 0}
+        )
+
+        # Assert that the log file was not found
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    @unittest.skip("Fails because of bug in urls.py")
+    def test_download_logfile(self):
+        """Test download of log files."""
+        # Create a device with a crash report along with log file
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        crashreport = Dummy.create_dummy_report(Crashreport, device)
+        logfile = Dummy.create_dummy_log_file(crashreport)
+
+        # Get the log file
+        response = self._get_with_params(
+            "hiccup_stats_api_v1_logfile_download", {"id_logfile": logfile.id}
+        )
+
+        # Assert that the log file contents are in the response data
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(Dummy.DEFAULT_DUMMY_LOG_FILE_NAME, response.data)
+        expected_logfile_content = Dummy.read_logfile_contents(
+            logfile.logfile.path, Dummy.DEFAULT_DUMMY_LOG_FILE_NAME
+        )
+        self.assertEqual(
+            response.data[Dummy.DEFAULT_DUMMY_LOG_FILE_NAME],
+            expected_logfile_content,
         )

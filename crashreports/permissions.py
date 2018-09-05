@@ -4,6 +4,7 @@ import logging
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.permissions import BasePermission
 from crashreports.models import Device
+from hiccup.allauth_adapters import FP_STAFF_GROUP_NAME
 
 
 def user_owns_uuid(user, uuid):
@@ -44,7 +45,7 @@ def user_is_hiccup_staff(user):
     Returns: True if user is part of the Hiccup staff.
 
     """
-    if user.groups.filter(name="FairphoneSoftwareTeam").exists():
+    if user.groups.filter(name=FP_STAFF_GROUP_NAME).exists():
         return True
     return user.has_perms(
         [
@@ -93,7 +94,9 @@ class HasRightsOrIsDeviceOwnerDeviceCreation(BasePermission):
 
 # Security requirements for swagger documentation
 SWAGGER_SECURITY_REQUIREMENTS_OAUTH = [{"Google OAuth": []}]
-SWAGGER_SECURITY_REQUIREMENTS_DEVICE_TOKEN = [{"Device token authentication": []}]
+SWAGGER_SECURITY_REQUIREMENTS_DEVICE_TOKEN = [
+    {"Device token authentication": []}
+]
 SWAGGER_SECURITY_REQUIREMENTS_ALL = (
     SWAGGER_SECURITY_REQUIREMENTS_OAUTH
     + SWAGGER_SECURITY_REQUIREMENTS_DEVICE_TOKEN
