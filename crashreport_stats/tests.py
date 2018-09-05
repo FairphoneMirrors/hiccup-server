@@ -356,6 +356,46 @@ class _HiccupAPITestCase(APITestCase):
         cls.fp_staff_client.login(username="fp_staff", password="thepassword")
 
 
+class StatusTestCase(_HiccupAPITestCase):
+    """Test the status endpoint."""
+
+    status_url = reverse("hiccup_stats_api_v1_status")
+
+    def _assert_status_response_is(
+        self, response, num_devices, num_crashreports, num_heartbeats
+    ):
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("devices", response.data)
+        self.assertIn("crashreports", response.data)
+        self.assertIn("heartbeats", response.data)
+        self.assertEqual(response.data["devices"], num_devices)
+        self.assertEqual(response.data["crashreports"], num_crashreports)
+        self.assertEqual(response.data["heartbeats"], num_heartbeats)
+
+    def test_get_status_empty_database(self):
+        """Get the status when the database is empty."""
+        response = self.fp_staff_client.get(self.status_url)
+        self._assert_status_response_is(response, 0, 0, 0)
+
+    def test_get_status(self):
+        """Get the status after some reports have been created."""
+        # Create a device with a heartbeat and a crash report
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        Dummy.create_dummy_report(HeartBeat, device)
+        Dummy.create_dummy_report(Crashreport, device)
+
+        # Create a second device without any reports
+        Dummy.create_dummy_device(
+            Dummy.create_dummy_user(username=Dummy.USERNAMES[1])
+        )
+
+        # Assert that the status includes the appropriate numbers
+        response = self.fp_staff_client.get(self.status_url)
+        self._assert_status_response_is(
+            response, num_devices=2, num_crashreports=1, num_heartbeats=1
+        )
+
+
 class _VersionTestCase(_HiccupAPITestCase):
     """Abstract class for version-related test cases to inherit from."""
 
