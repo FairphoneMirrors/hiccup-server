@@ -1,6 +1,7 @@
 """Authorization permission classes for accessing the API."""
 import logging
 
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.permissions import BasePermission
 from crashreports.models import Device
 
@@ -17,7 +18,12 @@ def user_owns_uuid(user, uuid):
     """
     try:
         device = Device.objects.get(user=user)
+    except (ObjectDoesNotExist, TypeError):
+        # If the device does not exist or type of the given user is not
+        # correct, False is returned.
+        return False
     except Exception as exception:  # pylint: disable=broad-except
+        # All other exceptions are logged and False is returned.
         logging.exception(exception)
         return False
     if uuid == device.uuid:
