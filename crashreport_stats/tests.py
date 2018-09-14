@@ -66,6 +66,8 @@ class Dummy:
         "build_fingerprint": BUILD_FINGERPRINTS[0],
         "first_seen_on": DATES[1],
         "released_on": DATES[0],
+        "is_beta_release": False,
+        "is_official_release": True,
     }
 
     DEFAULT_DUMMY_VERSION_DAILY_VALUES = {"date": DATES[1]}
@@ -1668,3 +1670,207 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
             response.data[Dummy.DEFAULT_DUMMY_LOG_FILE_NAME],
             expected_logfile_content,
         )
+
+
+class ViewsTestCase(_HiccupAPITestCase):
+    """Test cases for the statistics views."""
+
+    home_url = reverse("device")
+    device_url = reverse("hiccup_stats_device")
+    versions_url = reverse("hiccup_stats_versions")
+    versions_all_url = reverse("hiccup_stats_versions_all")
+
+    @staticmethod
+    def _url_with_params(url, params):
+        return "{}?{}".format(url, urlencode(params))
+
+    def _get_with_params(self, url, params):
+        return self.fp_staff_client.get(self._url_with_params(url, params))
+
+    def test_get_home_view(self):
+        """Test getting the home view with device search form."""
+        response = self.fp_staff_client.get(self.home_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTemplateUsed(
+            response, "crashreport_stats/home.html", count=1
+        )
+        self.assertEqual(response.context["devices"], None)
+
+    def test_home_view_filter_devices_by_uuid(self):
+        """Test filtering devices by UUID."""
+        # Create a device
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+
+        # Filter devices by UUID of the created device
+        response = self.fp_staff_client.post(
+            self.home_url, data={"uuid": str(device.uuid)}
+        )
+
+        # Assert that the the client is redirected to the device page
+        self.assertRedirects(
+            response,
+            self._url_with_params(self.device_url, {"uuid": device.uuid}),
+        )
+
+    def test_home_view_filter_devices_by_uuid_part(self):
+        """Test filtering devices by start of UUID."""
+        # Create a device
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+
+        # Filter devices with start of the created device's UUID
+        response = self.fp_staff_client.post(
+            self.home_url, data={"uuid": str(device.uuid)[:4]}
+        )
+
+        # Assert that the the client is redirected to the device page
+        self.assertRedirects(
+            response,
+            self._url_with_params(self.device_url, {"uuid": device.uuid}),
+        )
+
+    def test_home_view_filter_devices_by_uuid_part_ambiguous_result(self):
+        """Test filtering devices with common start of UUIDs."""
+        # Create two devices
+        device1 = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        device2 = Dummy.create_dummy_device(
+            Dummy.create_dummy_user(username=Dummy.USERNAMES[1])
+        )
+
+        # Adapt the devices' UUID so that they start with the same characters
+        device1.uuid = "4060fd90-6de1-4b03-a380-4277c703e913"
+        device1.save()
+        device2.uuid = "4061c59b-823d-4ec6-a463-8ac0c1cea67d"
+        device2.save()
+
+        # Filter devices with first three (common) characters of the UUID
+        response = self.fp_staff_client.post(
+            self.home_url, data={"uuid": str(device1.uuid)[:3]}
+        )
+
+        # Assert that both devices are part of the result
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTemplateUsed(
+            response, "crashreport_stats/home.html", count=1
+        )
+        self.assertEqual(set(response.context["devices"]), {device1, device2})
+
+    def test_home_view_filter_devices_empty_database(self):
+        """Test filtering devices on an empty database."""
+        response = self.fp_staff_client.post(
+            self.home_url, data={"uuid": "TestUUID"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNotNone(response.content)
+
+    def test_home_view_filter_devices_no_uuid(self):
+        """Test filtering devices without specifying UUID."""
+        response = self.fp_staff_client.post(self.home_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTemplateUsed(
+            response, "crashreport_stats/home.html", count=1
+        )
+        self.assertEqual(response.context["devices"], None)
+
+    def test_get_device_view_empty_database(self):
+        """Test getting device view on an empty database."""
+        response = self.fp_staff_client.get(self.device_url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_device_view(self):
+        """Test getting device view."""
+        # Create a device
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+
+        # Get the corresponding device view
+        response = self._get_with_params(self.device_url, {"uuid": device.uuid})
+
+        # Assert that the view is constructed from the correct templates and
+        # the response context contains the device UUID
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTemplateUsed(
+            response, "crashreport_stats/device.html", count=1
+        )
+        self.assertTemplateUsed(
+            response, "crashreport_stats/tags/device_overview.html", count=1
+        )
+        self.assertTemplateUsed(
+            response,
+            "crashreport_stats/tags/device_update_history.html",
+            count=1,
+        )
+        self.assertTemplateUsed(
+            response,
+            "crashreport_stats/tags/device_report_history.html",
+            count=1,
+        )
+        self.assertTemplateUsed(
+            response,
+            "crashreport_stats/tags/device_crashreport_table.html",
+            count=1,
+        )
+        self.assertEqual(response.context["uuid"], str(device.uuid))
+
+    def _assert_versions_view_templates_are_used(self, response):
+        self.assertTemplateUsed(
+            response, "crashreport_stats/versions.html", count=1
+        )
+        self.assertTemplateUsed(
+            response, "crashreport_stats/tags/versions_table.html", count=1
+        )
+        self.assertTemplateUsed(
+            response, "crashreport_stats/tags/versions_pie_chart.html", count=1
+        )
+        self.assertTemplateUsed(
+            response, "crashreport_stats/tags/versions_bar_chart.html", count=1
+        )
+        self.assertTemplateUsed(
+            response, "crashreport_stats/tags/versions_area_chart.html", count=1
+        )
+
+    @unittest.skip("Fails because of wrong boolean usage in views.py")
+    def test_get_versions_view_empty_database(self):
+        """Test getting versions view on an empty database."""
+        response = self.fp_staff_client.get(self.versions_url)
+
+        # Assert that the correct templates are used and the response context
+        # contains the correct value for is_official_release
+        self._assert_versions_view_templates_are_used(response)
+        self.assertEqual(response.context["is_official_release"], True)
+
+    @unittest.skip("Fails because of wrong boolean usage in views.py")
+    def test_get_versions_view(self):
+        """Test getting versions view."""
+        # Create a version
+        Dummy.create_dummy_version()
+
+        # Get the versions view
+        response = self.fp_staff_client.get(self.versions_url)
+
+        # Assert that the correct templates are used and the response context
+        # contains the correct value for is_official_release
+        self._assert_versions_view_templates_are_used(response)
+        self.assertEqual(response.context["is_official_release"], True)
+
+    @unittest.skip("Fails because of wrong boolean usage in views.py")
+    def test_get_versions_all_view_no_versions(self):
+        """Test getting versions all view on an empty database."""
+        response = self.fp_staff_client.get(self.versions_all_url)
+
+        # Assert that the correct templates are used and the response context
+        # contains an empty value for is_official_release
+        self._assert_versions_view_templates_are_used(response)
+        self.assertEqual(response.context.get("is_official_release", ""), "")
+
+    @unittest.skip("Fails because of wrong boolean usage in views.py")
+    def test_get_versions_all_view(self):
+        """Test getting versions view."""
+        # Create a version
+        Dummy.create_dummy_version()
+
+        # Get the versions view
+        response = self.fp_staff_client.get(self.versions_all_url)
+
+        # Assert that the correct templates are used and the response context
+        # contains the an empty value for is_official_release
+        self._assert_versions_view_templates_are_used(response)
+        self.assertEqual(response.context.get("is_official_release", ""), "")
