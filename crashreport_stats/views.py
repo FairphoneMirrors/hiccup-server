@@ -8,11 +8,7 @@ from django.contrib import messages
 from django.urls import reverse
 
 from crashreports.models import Device
-
-
-def is_fairphone_staff(user):
-    """Check if the user is part of the FairphoneSoftwareTeam group."""
-    return user.groups.filter(name="FairphoneSoftwareTeam").exists()
+from crashreports.permissions import user_is_hiccup_staff
 
 
 class DeviceUUIDForm(forms.Form):
@@ -21,7 +17,7 @@ class DeviceUUIDForm(forms.Form):
     uuid = forms.CharField(label="Device UUID:", max_length=100)
 
 
-@user_passes_test(is_fairphone_staff)
+@user_passes_test(user_is_hiccup_staff)
 def device_stats(request):
     """Respond with statistics for a specific device."""
     template = loader.get_template("crashreport_stats/device.html")
@@ -31,21 +27,21 @@ def device_stats(request):
     return HttpResponse(template.render({"uuid": uuid}, request))
 
 
-@user_passes_test(is_fairphone_staff)
+@user_passes_test(user_is_hiccup_staff)
 def versions_all_overview(request):
     """Respond with the distribution of official release versions."""
     template = loader.get_template("crashreport_stats/versions.html")
     return HttpResponse(template.render({"is_official_release": "1"}, request))
 
 
-@user_passes_test(is_fairphone_staff)
+@user_passes_test(user_is_hiccup_staff)
 def versions_overview(request):
     """Respond with the distribution of non-official release versions."""
     template = loader.get_template("crashreport_stats/versions.html")
     return HttpResponse(template.render({"is_official_release": "2"}, request))
 
 
-@user_passes_test(is_fairphone_staff)
+@user_passes_test(user_is_hiccup_staff)
 def home(request):
     """Respond with a form for searching devices by UUID.
 

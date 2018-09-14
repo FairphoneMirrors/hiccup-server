@@ -31,9 +31,6 @@ class ViewsTestCase(HiccupStatsAPITestCase):
     def _get_with_params(self, url, params):
         return self.fp_staff_client.get(self._url_with_params(url, params))
 
-    @unittest.skip(
-        "Fails because the view is currently not accessible for admin users."
-    )
     def test_home_view_as_admin(self):
         """Test that admin users can access the home view."""
         self._assert_get_as_admin_user_succeeds(self.home_url)
@@ -56,9 +53,6 @@ class ViewsTestCase(HiccupStatsAPITestCase):
             self.home_url, expected_status=status.HTTP_302_FOUND
         )
 
-    @unittest.skip(
-        "Fails because the view is currently not accessible for admin users."
-    )
     def test_device_view_as_admin(self):
         """Test that admin users can access the device view."""
         self._assert_get_as_admin_user_succeeds(
@@ -95,9 +89,6 @@ class ViewsTestCase(HiccupStatsAPITestCase):
             expected_status=status.HTTP_302_FOUND,
         )
 
-    @unittest.skip(
-        "Fails because the view is currently not accessible for admin users."
-    )
     def test_versions_view_as_admin(self):
         """Test that admin users can access the versions view."""
         self._assert_get_as_admin_user_succeeds(self.versions_url)
@@ -120,9 +111,6 @@ class ViewsTestCase(HiccupStatsAPITestCase):
             self.versions_url, expected_status=status.HTTP_302_FOUND
         )
 
-    @unittest.skip(
-        "Fails because the view is currently not accessible for admin users."
-    )
     def test_versions_all_view_as_admin(self):
         """Test that admin users can access the versions all view."""
         self._assert_get_as_admin_user_succeeds(self.versions_all_url)
@@ -145,9 +133,6 @@ class ViewsTestCase(HiccupStatsAPITestCase):
             self.versions_all_url, expected_status=status.HTTP_302_FOUND
         )
 
-    @unittest.skip(
-        "Fails because the view is currently not accessible for admin users."
-    )
     def test_home_view_post_as_admin_user(self):
         """Test HTTP POST method to home view as admin user."""
         response = self.admin.post(
