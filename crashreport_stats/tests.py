@@ -7,17 +7,19 @@ from datetime import datetime, date, timedelta
 import operator
 import os
 import unittest
+from urllib.parse import urlencode
 import zipfile
 
 import pytz
 
+from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
-from django.utils.http import urlencode
 
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase, APIClient
 
 from crashreport_stats.models import (
@@ -330,17 +332,18 @@ class Dummy:
         return entity
 
 
-class _HiccupAPITestCase(APITestCase):
-    """Abstract class for Hiccup REST API test cases to inherit from."""
+class _HiccupStatsAPITestCase(APITestCase):
+    """Abstract class for Hiccup stats REST API test cases to inherit from."""
 
     @classmethod
     def setUpTestData(cls):  # noqa: N802
-        """Create an admin and client user for accessing the API.
+        """Create an admin and two client users for accessing the API.
 
         The APIClient that can be used to make authenticated requests as
-        admin user is stored in self.admin. Another client (which is
-        related to a user that is part of the Fairphone software team group)
-        is stored in self.fp_staff_client.
+        admin user is stored in self.admin. A client which is related to a
+        user that is part of the Fairphone staff group is stored in
+        self.fp_staff_client. A client which is related to a device owner
+        user is stored in self.device_owner_client.
         """
         admin_user = User.objects.create_superuser(
             "somebody", "somebody@example.com", "thepassword"
@@ -348,17 +351,53 @@ class _HiccupAPITestCase(APITestCase):
         cls.admin = APIClient()
         cls.admin.force_authenticate(admin_user)
 
-        fp_software_team_group = Group(name=FP_STAFF_GROUP_NAME)
-        fp_software_team_group.save()
-        fp_software_team_user = User.objects.create_user(
+        fp_staff_group = Group(name=FP_STAFF_GROUP_NAME)
+        fp_staff_group.save()
+        fp_staff_user = User.objects.create_user(
             "fp_staff", "somebody@fairphone.com", "thepassword"
         )
-        fp_software_team_user.groups.add(fp_software_team_group)
+        fp_staff_user.groups.add(fp_staff_group)
         cls.fp_staff_client = APIClient()
-        cls.fp_staff_client.login(username="fp_staff", password="thepassword")
+        cls.fp_staff_client.force_login(fp_staff_user)
+
+        cls.device_owner_user = User.objects.create_user(
+            "device_owner", "somebody@somemail.com", "thepassword"
+        )
+        Token.objects.create(user=cls.device_owner_user)
+        cls.device_owner_device = Dummy.create_dummy_device(
+            user=cls.device_owner_user
+        )
+        cls.device_owner_client = APIClient()
+        cls.device_owner_client.credentials(
+            HTTP_AUTHORIZATION="Token " + cls.device_owner_user.auth_token.key
+        )
+
+    def _assert_get_as_admin_user_succeeds(
+        self, url, expected_status=status.HTTP_200_OK
+    ):
+        response = self.admin.get(url)
+        self.assertEqual(response.status_code, expected_status)
+
+    def _assert_get_as_fp_staff_succeeds(
+        self, url, expected_status=status.HTTP_200_OK
+    ):
+        response = self.fp_staff_client.get(url)
+        self.assertEqual(response.status_code, expected_status)
+
+    def _assert_get_without_authentication_fails(
+        self, url, expected_status=status.HTTP_401_UNAUTHORIZED
+    ):
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, expected_status)
+
+    def _assert_get_as_device_owner_fails(
+        self, url, expected_status=status.HTTP_403_FORBIDDEN
+    ):
+        response = self.device_owner_client.get(url)
+        self.assertEqual(response.status_code, expected_status)
 
 
-class StatusTestCase(_HiccupAPITestCase):
+class StatusTestCase(_HiccupStatsAPITestCase):
     """Test the status endpoint."""
 
     status_url = reverse("hiccup_stats_api_v1_status")
@@ -374,10 +413,29 @@ class StatusTestCase(_HiccupAPITestCase):
         self.assertEqual(response.data["crashreports"], num_crashreports)
         self.assertEqual(response.data["heartbeats"], num_heartbeats)
 
+    def test_status_url_as_admin(self):
+        """Test that admin users can access the status URL."""
+        self._assert_get_as_admin_user_succeeds(self.status_url)
+
+    def test_status_url_as_fp_staff(self):
+        """Test that Fairphone staff users can access the status URL."""
+        self._assert_get_as_fp_staff_succeeds(self.status_url)
+
+    def test_status_url_as_device_owner(self):
+        """Test that device owner users can not access the status URL."""
+        self._assert_get_as_device_owner_fails(self.status_url)
+
+    def test_status_url_no_auth(self):
+        """Test that non-authenticated users can not access the status URL."""
+        self._assert_get_without_authentication_fails(self.status_url)
+
     def test_get_status_empty_database(self):
         """Get the status when the database is empty."""
         response = self.fp_staff_client.get(self.status_url)
-        self._assert_status_response_is(response, 0, 0, 0)
+
+        # Assert that only the device that was created by the setUpTestData()
+        # method is found.
+        self._assert_status_response_is(response, 1, 0, 0)
 
     def test_get_status(self):
         """Get the status after some reports have been created."""
@@ -391,23 +449,16 @@ class StatusTestCase(_HiccupAPITestCase):
             Dummy.create_dummy_user(username=Dummy.USERNAMES[1])
         )
 
-        # Assert that the status includes the appropriate numbers
+        # Assert that the status includes the appropriate numbers (a third
+        # device was created by the setUpTestData() method)
         response = self.fp_staff_client.get(self.status_url)
         self._assert_status_response_is(
-            response, num_devices=2, num_crashreports=1, num_heartbeats=1
+            response, num_devices=3, num_crashreports=1, num_heartbeats=1
         )
 
 
-class _VersionTestCase(_HiccupAPITestCase):
+class _VersionTestCase(_HiccupStatsAPITestCase):
     """Abstract class for version-related test cases to inherit from."""
-
-    # The attribute name characterising the unicity of a stats entry (the
-    # named identifier)
-    unique_entry_name = "build_fingerprint"
-    # The collection of unique entries to post
-    unique_entries = Dummy.BUILD_FINGERPRINTS
-    # The URL to retrieve the stats entries from
-    endpoint_url = reverse("hiccup_stats_api_v1_versions")
 
     @staticmethod
     def _create_dummy_version(**kwargs):
@@ -423,28 +474,17 @@ class _VersionTestCase(_HiccupAPITestCase):
         self.assertEqual(response.data["count"], count)
         self.assertEqual(len(response.data["results"]), count)
 
-    def _assert_device_owner_has_no_get_access(self, entries_url):
-        # Create a user and device
-        user = Dummy.create_dummy_user()
-        device = Dummy.create_dummy_device(user=user)
-
-        # Create authenticated client
-        user = APIClient()
-        user.credentials(HTTP_AUTHORIZATION="Token " + device.token)
-
-        # Try getting entries using the client
-        response = user.get(entries_url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def _assert_filter_result_matches(self, filter_params, expected_result):
+    def _assert_filter_result_matches(
+        self, endpoint_url, unique_entry_name, filter_params, expected_result
+    ):
         # List entities with filter
-        response = self._get_with_params(self.endpoint_url, filter_params)
+        response = self._get_with_params(endpoint_url, filter_params)
 
         # Expect only the single matching result to be returned
         self._assert_result_length_is(response, 1)
         self.assertEqual(
-            response.data["results"][0][self.unique_entry_name],
-            getattr(expected_result, self.unique_entry_name),
+            response.data["results"][0][unique_entry_name],
+            getattr(expected_result, unique_entry_name),
         )
 
 
@@ -453,6 +493,14 @@ class VersionTestCase(_VersionTestCase):
 
     # pylint: disable=too-many-ancestors
 
+    # The attribute name characterising the unicity of a stats entry (the
+    # named identifier)
+    unique_entry_name = "build_fingerprint"
+    # The collection of unique entries to post
+    unique_entries = Dummy.BUILD_FINGERPRINTS
+    # The URL to retrieve the stats entries from
+    endpoint_url = reverse("hiccup_stats_api_v1_versions")
+
     def _create_version_entities(self):
         versions = [
             self._create_dummy_version(**{self.unique_entry_name: unique_entry})
@@ -460,14 +508,21 @@ class VersionTestCase(_VersionTestCase):
         ]
         return versions
 
-    def test_list_versions_without_authentication(self):
-        """Test listing of versions without authentication."""
-        response = self.client.get(self.endpoint_url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    def test_endpoint_url_as_admin(self):
+        """Test that admin users can access the endpoint URL."""
+        self._assert_get_as_admin_user_succeeds(self.endpoint_url)
 
-    def test_list_versions_as_device_owner(self):
-        """Test listing of versions as device owner."""
-        self._assert_device_owner_has_no_get_access(self.endpoint_url)
+    def test_endpoint_url_as_fp_staff(self):
+        """Test that Fairphone staff users can access the endpoint URL."""
+        self._assert_get_as_fp_staff_succeeds(self.endpoint_url)
+
+    def test_endpoint_url_as_device_owner(self):
+        """Test that device owner users can not access the endpoint URL."""
+        self._assert_get_as_device_owner_fails(self.endpoint_url)
+
+    def test_endpoint_url_no_auth(self):
+        """Test that non-authenticated users can not access the endpoint URL."""
+        self._assert_get_without_authentication_fails(self.endpoint_url)
 
     def test_list_versions_empty_database(self):
         """Test listing of versions on an empty database."""
@@ -493,7 +548,10 @@ class VersionTestCase(_VersionTestCase):
             self.unique_entry_name: getattr(versions[0], self.unique_entry_name)
         }
         self._assert_filter_result_matches(
-            filter_params, expected_result=versions[0]
+            self.endpoint_url,
+            self.unique_entry_name,
+            filter_params,
+            expected_result=versions[0],
         )
 
     def test_filter_versions_by_release_type(self):
@@ -525,7 +583,10 @@ class VersionTestCase(_VersionTestCase):
                 "is_beta_release": version.is_beta_release,
             }
             self._assert_filter_result_matches(
-                filter_params, expected_result=version
+                self.endpoint_url,
+                self.unique_entry_name,
+                filter_params,
+                expected_result=version,
             )
 
     def test_filter_versions_by_first_seen_date(self):
@@ -543,7 +604,10 @@ class VersionTestCase(_VersionTestCase):
         # Expect the single matching result to be returned
         filter_params = {"first_seen_after": Dummy.DATES[2]}
         self._assert_filter_result_matches(
-            filter_params, expected_result=versions[0]
+            self.endpoint_url,
+            self.unique_entry_name,
+            filter_params,
+            expected_result=versions[0],
         )
 
 
@@ -563,6 +627,8 @@ class RadioVersionTestCase(VersionTestCase):
 class VersionDailyTestCase(_VersionTestCase):
     """Test the VersionDaily REST endpoint."""
 
+    unique_entry_name = "build_fingerprint"
+    unique_entries = Dummy.BUILD_FINGERPRINTS
     endpoint_url = reverse("hiccup_stats_api_v1_version_daily")
 
     @staticmethod
@@ -580,14 +646,21 @@ class VersionDailyTestCase(_VersionTestCase):
         ]
         return versions_daily
 
-    def test_list_daily_versions_without_authentication(self):
-        """Test listing of daily versions without authentication."""
-        response = self.client.get(self.endpoint_url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    def test_endpoint_url_as_admin(self):
+        """Test that admin users can access the endpoint URL."""
+        self._assert_get_as_admin_user_succeeds(self.endpoint_url)
 
-    def test_list_daily_versions_as_device_owner(self):
-        """Test listing of daily versions as device owner."""
-        self._assert_device_owner_has_no_get_access(self.endpoint_url)
+    def test_endpoint_url_as_fp_staff(self):
+        """Test that Fairphone staff users can access the endpoint URL."""
+        self._assert_get_as_fp_staff_succeeds(self.endpoint_url)
+
+    def test_endpoint_url_as_device_owner(self):
+        """Test that device owner users can not access the endpoint URL."""
+        self._assert_get_as_device_owner_fails(self.endpoint_url)
+
+    def test_endpoint_url_no_auth(self):
+        """Test that non-authenticated users can not access the endpoint URL."""
+        self._assert_get_without_authentication_fails(self.endpoint_url)
 
     def test_list_daily_versions_empty_database(self):
         """Test listing of daily versions on an empty database."""
@@ -615,7 +688,10 @@ class VersionDailyTestCase(_VersionTestCase):
             param_name: getattr(versions[0].version, self.unique_entry_name)
         }
         self._assert_filter_result_matches(
-            filter_params, expected_result=versions[0].version
+            self.endpoint_url,
+            self.unique_entry_name,
+            filter_params,
+            expected_result=versions[0].version,
         )
 
     def test_filter_daily_versions_by_date(self):
@@ -634,7 +710,10 @@ class VersionDailyTestCase(_VersionTestCase):
         # Expect the single matching result to be returned
         filter_params = {"date": versions[0].date}
         self._assert_filter_result_matches(
-            filter_params, expected_result=versions[0].version
+            self.endpoint_url,
+            self.unique_entry_name,
+            filter_params,
+            expected_result=versions[0].version,
         )
 
 
@@ -1239,8 +1318,13 @@ class CommandDebugOutputTestCase(TestCase):
         )
 
 
-class DeviceStatsTestCase(_HiccupAPITestCase):
+class DeviceStatsTestCase(_HiccupStatsAPITestCase):
     """Test the single device stats REST endpoints."""
+
+    device_overview_url = "hiccup_stats_api_v1_device_overview"
+    device_report_history_url = "hiccup_stats_api_v1_device_report_history"
+    device_update_history_url = "hiccup_stats_api_v1_device_update_history"
+    device_logfile_download_url = "hiccup_stats_api_v1_logfile_download"
 
     def _get_with_params(self, url, params):
         url = reverse(url, kwargs=params)
@@ -1283,6 +1367,176 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
         "Fails because there is no fallback for the last_active "
         "date for devices without heartbeats."
     )
+    def test_device_overview_url_as_admin(self):
+        """Test that admin users can access the URL."""
+        self._assert_get_as_admin_user_succeeds(
+            reverse(
+                self.device_overview_url,
+                kwargs={"uuid": self.device_owner_device.uuid},
+            )
+        )
+
+    @unittest.skip(
+        "Fails because there is no fallback for the last_active "
+        "date for devices without heartbeats."
+    )
+    def test_device_overview_url_as_fp_staff(self):
+        """Test that Fairphone staff users can access the URL."""
+        self._assert_get_as_fp_staff_succeeds(
+            reverse(
+                self.device_overview_url,
+                kwargs={"uuid": self.device_owner_device.uuid},
+            )
+        )
+
+    def test_device_overview_url_as_device_owner(self):
+        """Test that device owner users can not access the URL."""
+        self._assert_get_as_device_owner_fails(
+            reverse(
+                self.device_overview_url,
+                kwargs={"uuid": self.device_owner_device.uuid},
+            )
+        )
+
+    def test_device_overview_url_no_auth(self):
+        """Test that non-authenticated users can not access the URL."""
+        self._assert_get_without_authentication_fails(
+            reverse(
+                self.device_overview_url,
+                kwargs={"uuid": self.device_owner_device.uuid},
+            )
+        )
+
+    def test_device_report_history_url_as_admin(self):
+        """Test that admin users can access device report history URL."""
+        self._assert_get_as_admin_user_succeeds(
+            reverse(
+                self.device_report_history_url,
+                kwargs={"uuid": self.device_owner_device.uuid},
+            )
+        )
+
+    def test_device_report_history_url_as_fp_staff(self):
+        """Test that FP staff can access device report history URL."""
+        self._assert_get_as_fp_staff_succeeds(
+            reverse(
+                self.device_report_history_url,
+                kwargs={"uuid": self.device_owner_device.uuid},
+            )
+        )
+
+    def test_device_report_history_url_as_device_owner(self):
+        """Test that device owners can't access device report history URL."""
+        self._assert_get_as_device_owner_fails(
+            reverse(
+                self.device_report_history_url,
+                kwargs={"uuid": self.device_owner_device.uuid},
+            )
+        )
+
+    def test_device_report_history_url_no_auth(self):
+        """Test that device report history is not accessible without auth."""
+        self._assert_get_without_authentication_fails(
+            reverse(
+                self.device_report_history_url,
+                kwargs={"uuid": self.device_owner_device.uuid},
+            )
+        )
+
+    def test_device_update_history_url_as_admin(self):
+        """Test that admin users can access device update history URL."""
+        self._assert_get_as_admin_user_succeeds(
+            reverse(
+                self.device_update_history_url,
+                kwargs={"uuid": self.device_owner_device.uuid},
+            )
+        )
+
+    def test_device_update_history_url_as_fp_staff(self):
+        """Test that FP staff can access device update history URL."""
+        self._assert_get_as_fp_staff_succeeds(
+            reverse(
+                self.device_update_history_url,
+                kwargs={"uuid": self.device_owner_device.uuid},
+            )
+        )
+
+    def test_device_update_history_url_as_device_owner(self):
+        """Test that device owners can't access device update history URL."""
+        self._assert_get_as_device_owner_fails(
+            reverse(
+                self.device_update_history_url,
+                kwargs={"uuid": self.device_owner_device.uuid},
+            )
+        )
+
+    def test_device_update_history_url_no_auth(self):
+        """Test that device update history is not accessible without auth."""
+        self._assert_get_without_authentication_fails(
+            reverse(
+                self.device_update_history_url,
+                kwargs={"uuid": self.device_owner_device.uuid},
+            )
+        )
+
+    def test_logfile_download_url_as_admin(self):
+        """Test that admin users can access the logfile download URL."""
+        non_existent_logfile_id = 0
+        self.assertFalse(
+            LogFile.objects.filter(id=non_existent_logfile_id).exists()
+        )
+        self._assert_get_as_admin_user_succeeds(
+            reverse(
+                self.device_logfile_download_url,
+                kwargs={"id_logfile": non_existent_logfile_id},
+            ),
+            expected_status=status.HTTP_404_NOT_FOUND,
+        )
+
+    def tes_logfile_download_url_as_fp_staff(self):
+        """Test that FP staff can access the logfile download URL."""
+        non_existent_logfile_id = 0
+        self.assertFalse(
+            LogFile.objects.filter(id=non_existent_logfile_id).exists()
+        )
+        self._assert_get_as_fp_staff_succeeds(
+            reverse(
+                self.device_logfile_download_url,
+                kwargs={"id_logfile": non_existent_logfile_id},
+            ),
+            expected_status=status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_logfile_download_url_as_device_owner(self):
+        """Test that device owners can't access the logfile download URL."""
+        non_existent_logfile_id = 0
+        self.assertFalse(
+            LogFile.objects.filter(id=non_existent_logfile_id).exists()
+        )
+        self._assert_get_as_device_owner_fails(
+            reverse(
+                self.device_logfile_download_url,
+                kwargs={"id_logfile": non_existent_logfile_id},
+            )
+        )
+
+    def test_logfile_download_url_no_auth(self):
+        """Test that the logfile download URL is not accessible without auth."""
+        non_existent_logfile_id = 0
+        self.assertFalse(
+            LogFile.objects.filter(id=non_existent_logfile_id).exists()
+        )
+        self._assert_get_without_authentication_fails(
+            reverse(
+                self.device_logfile_download_url,
+                kwargs={"id_logfile": non_existent_logfile_id},
+            )
+        )
+
+    @unittest.skip(
+        "Fails because there is no fallback for the last_active "
+        "date for devices without heartbeats."
+    )
     def test_get_device_stats_no_reports(self):
         """Test getting device stats for a device without reports."""
         # Create a device
@@ -1290,7 +1544,7 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
 
         # Get the device statistics
         response = self._get_with_params(
-            "hiccup_stats_api_v1_device_overview", {"uuid": device.uuid}
+            self.device_overview_url, {"uuid": device.uuid}
         )
 
         # Assert that the statistics match
@@ -1314,7 +1568,7 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
 
         # Get the device statistics
         response = self._get_with_params(
-            "hiccup_stats_api_v1_device_overview", {"uuid": device.uuid}
+            self.device_overview_url, {"uuid": device.uuid}
         )
 
         # Assert that the statistics match
@@ -1342,7 +1596,7 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
 
         # Get the device statistics
         response = self._get_with_params(
-            "hiccup_stats_api_v1_device_overview", {"uuid": device.uuid}
+            self.device_overview_url, {"uuid": device.uuid}
         )
 
         # Assert that the statistics match
@@ -1374,7 +1628,7 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
 
         # Get the device statistics
         response = self._get_with_params(
-            "hiccup_stats_api_v1_device_overview", {"uuid": device.uuid}
+            self.device_overview_url, {"uuid": device.uuid}
         )
 
         # Assert that the statistics match
@@ -1410,7 +1664,7 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
 
         # Get the device statistics
         response = self._get_with_params(
-            "hiccup_stats_api_v1_device_overview", {"uuid": device.uuid}
+            self.device_overview_url, {"uuid": device.uuid}
         )
 
         # Assert that the statistics match
@@ -1443,7 +1697,7 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
 
         # Get the device statistics
         response = self._get_with_params(
-            "hiccup_stats_api_v1_device_overview", {"uuid": device.uuid}
+            self.device_overview_url, {"uuid": device.uuid}
         )
 
         # Assert that the statistics match
@@ -1485,7 +1739,7 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
 
         # Get the device statistics
         response = self._get_with_params(
-            "hiccup_stats_api_v1_device_overview", {"uuid": device.uuid}
+            self.device_overview_url, {"uuid": device.uuid}
         )
 
         # Assert that the statistics match
@@ -1508,7 +1762,7 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
 
         # Get the device report history statistics
         response = self._get_with_params(
-            "hiccup_stats_api_v1_device_report_history", {"uuid": device.uuid}
+            self.device_report_history_url, {"uuid": device.uuid}
         )
 
         # Assert that the report history is empty
@@ -1531,7 +1785,7 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
 
         # Get the device report history statistics
         response = self._get_with_params(
-            "hiccup_stats_api_v1_device_report_history", {"uuid": device.uuid}
+            self.device_report_history_url, {"uuid": device.uuid}
         )
 
         # Assert that the statistics match
@@ -1553,7 +1807,7 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
 
         # Get the device report history statistics
         response = self._get_with_params(
-            "hiccup_stats_api_v1_device_update_history", {"uuid": device.uuid}
+            self.device_update_history_url, {"uuid": device.uuid}
         )
 
         # Assert that the update history is empty
@@ -1574,7 +1828,7 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
 
         # Get the device update history statistics
         response = self._get_with_params(
-            "hiccup_stats_api_v1_device_update_history", {"uuid": device.uuid}
+            self.device_update_history_url, {"uuid": device.uuid}
         )
 
         # Assert that the statistics match
@@ -1631,7 +1885,7 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
 
         # Get the device update history statistics and sort it
         response = self._get_with_params(
-            "hiccup_stats_api_v1_device_update_history", {"uuid": device.uuid}
+            self.device_update_history_url, {"uuid": device.uuid}
         )
         response.data.sort(key=operator.itemgetter("build_fingerprint"))
 
@@ -1642,7 +1896,7 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
         """Test download of a non existing log file."""
         # Try to get a log file
         response = self._get_with_params(
-            "hiccup_stats_api_v1_logfile_download", {"id_logfile": 0}
+            self.device_logfile_download_url, {"id_logfile": 0}
         )
 
         # Assert that the log file was not found
@@ -1657,7 +1911,7 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
 
         # Get the log file
         response = self._get_with_params(
-            "hiccup_stats_api_v1_logfile_download", {"id_logfile": logfile.id}
+            self.device_logfile_download_url, {"id_logfile": logfile.id}
         )
 
         # Assert that the log file contents are in the response data
@@ -1672,7 +1926,7 @@ class DeviceStatsTestCase(_HiccupAPITestCase):
         )
 
 
-class ViewsTestCase(_HiccupAPITestCase):
+class ViewsTestCase(_HiccupStatsAPITestCase):
     """Test cases for the statistics views."""
 
     home_url = reverse("device")
@@ -1682,10 +1936,189 @@ class ViewsTestCase(_HiccupAPITestCase):
 
     @staticmethod
     def _url_with_params(url, params):
-        return "{}?{}".format(url, urlencode(params))
+        # Encode params, but keep slashes because we want to accept URLs as
+        # parameter values.
+        encoded_params = urlencode(params, safe="/")
+        return "{}?{}".format(url, encoded_params)
 
     def _get_with_params(self, url, params):
         return self.fp_staff_client.get(self._url_with_params(url, params))
+
+    @unittest.skip(
+        "Fails because the view is currently not accessible for admin users."
+    )
+    def test_home_view_as_admin(self):
+        """Test that admin users can access the home view."""
+        self._assert_get_as_admin_user_succeeds(self.home_url)
+
+    def test_home_view_as_fp_staff(self):
+        """Test that Fairphone staff users can access the home view."""
+        self._assert_get_as_fp_staff_succeeds(self.home_url)
+
+    def test_home_view_as_device_owner(self):
+        """Test that device owner users can not access the home view."""
+        # Assert that the response is a redirect (to the login page)
+        self._assert_get_as_device_owner_fails(
+            self.home_url, expected_status=status.HTTP_302_FOUND
+        )
+
+    def test_home_view_no_auth(self):
+        """Test that one can not access the home view without auth."""
+        # Assert that the response is a redirect (to the login page)
+        self._assert_get_without_authentication_fails(
+            self.home_url, expected_status=status.HTTP_302_FOUND
+        )
+
+    @unittest.skip(
+        "Fails because the view is currently not accessible for admin users."
+    )
+    def test_device_view_as_admin(self):
+        """Test that admin users can access the device view."""
+        self._assert_get_as_admin_user_succeeds(
+            self._url_with_params(
+                self.device_url, {"uuid": self.device_owner_device.uuid}
+            )
+        )
+
+    def test_device_view_as_fp_staff(self):
+        """Test that Fairphone staff users can access the device view."""
+        self._assert_get_as_fp_staff_succeeds(
+            self._url_with_params(
+                self.device_url, {"uuid": self.device_owner_device.uuid}
+            )
+        )
+
+    def test_device_view_as_device_owner(self):
+        """Test that device owner users can not access the device view."""
+        # Assert that the response is a redirect (to the login page)
+        self._assert_get_as_device_owner_fails(
+            self._url_with_params(
+                self.device_url, {"uuid": self.device_owner_device.uuid}
+            ),
+            expected_status=status.HTTP_302_FOUND,
+        )
+
+    def test_device_view_no_auth(self):
+        """Test that non-authenticated users can not access the device view."""
+        # Assert that the response is a redirect (to the login page)
+        self._assert_get_without_authentication_fails(
+            self._url_with_params(
+                self.device_url, {"uuid": self.device_owner_device.uuid}
+            ),
+            expected_status=status.HTTP_302_FOUND,
+        )
+
+    @unittest.skip(
+        "Fails because the view is currently not accessible for admin users."
+    )
+    def test_versions_view_as_admin(self):
+        """Test that admin users can access the versions view."""
+        self._assert_get_as_admin_user_succeeds(self.versions_url)
+
+    def test_versions_view_as_fp_staff(self):
+        """Test that Fairphone staff users can access the versions view."""
+        self._assert_get_as_fp_staff_succeeds(self.versions_url)
+
+    def test_versions_view_as_device_owner(self):
+        """Test that device owner users can not access the versions view."""
+        # Assert that the response is a redirect (to the login page)
+        self._assert_get_as_device_owner_fails(
+            self.versions_url, expected_status=status.HTTP_302_FOUND
+        )
+
+    def test_versions_view_no_auth(self):
+        """Test one can not access the versions view without auth."""
+        # Assert that the response is a redirect (to the login page)
+        self._assert_get_without_authentication_fails(
+            self.versions_url, expected_status=status.HTTP_302_FOUND
+        )
+
+    @unittest.skip(
+        "Fails because the view is currently not accessible for admin users."
+    )
+    def test_versions_all_view_as_admin(self):
+        """Test that admin users can access the versions all view."""
+        self._assert_get_as_admin_user_succeeds(self.versions_all_url)
+
+    def test_versions_all_view_as_fp_staff(self):
+        """Test that Fairphone staff users can access the versions all view."""
+        self._assert_get_as_fp_staff_succeeds(self.versions_all_url)
+
+    def test_versions_all_view_as_device_owner(self):
+        """Test that device owner users can not access the versions all view."""
+        # Assert that the response is a redirect (to the login page)
+        self._assert_get_as_device_owner_fails(
+            self.versions_all_url, expected_status=status.HTTP_302_FOUND
+        )
+
+    def test_versions_all_view_no_auth(self):
+        """Test that one can not access the versions all view without auth."""
+        # Assert that the response is a redirect (to the login page)
+        self._assert_get_without_authentication_fails(
+            self.versions_all_url, expected_status=status.HTTP_302_FOUND
+        )
+
+    @unittest.skip(
+        "Fails because the view is currently not accessible for admin users."
+    )
+    def test_home_view_post_as_admin_user(self):
+        """Test HTTP POST method to home view as admin user."""
+        response = self.admin.post(
+            self.home_url, data={"uuid": str(self.device_owner_device.uuid)}
+        )
+
+        # Assert that the response is a redirect to the device page
+        self.assertRedirects(
+            response,
+            self._url_with_params(
+                self.device_url, {"uuid": self.device_owner_device.uuid}
+            ),
+        )
+
+    def test_home_view_post_as_fp_staff(self):
+        """Test HTTP POST method to home view as Fairphone staff user."""
+        response = self.fp_staff_client.post(
+            self.home_url, data={"uuid": str(self.device_owner_device.uuid)}
+        )
+
+        # Assert that the response is a redirect to the device page
+        self.assertRedirects(
+            response,
+            self._url_with_params(
+                self.device_url, {"uuid": self.device_owner_device.uuid}
+            ),
+        )
+
+    def test_home_view_post_no_auth(self):
+        """Test HTTP POST method to home view without authentication."""
+        response = self.client.post(
+            self.home_url, data={"uuid": str(self.device_owner_device.uuid)}
+        )
+
+        # Assert that the response is a redirect to the login page
+        self.assertRedirects(
+            response,
+            self._url_with_params(
+                settings.ACCOUNT_LOGOUT_REDIRECT_URL,
+                {"next": settings.LOGIN_REDIRECT_URL},
+            ),
+        )
+
+    def test_home_view_post_as_device_owner(self):
+        """Test HTTP POST method to home view as device owner."""
+        response = self.device_owner_client.post(
+            self.home_url, data={"uuid": str(self.device_owner_device.uuid)}
+        )
+
+        # Assert that the response is a redirect to the login page
+
+        self.assertRedirects(
+            response,
+            self._url_with_params(
+                settings.ACCOUNT_LOGOUT_REDIRECT_URL,
+                {"next": settings.LOGIN_REDIRECT_URL},
+            ),
+        )
 
     def test_get_home_view(self):
         """Test getting the home view with device search form."""
