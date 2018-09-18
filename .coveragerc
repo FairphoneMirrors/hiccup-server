@@ -3,6 +3,7 @@ branch = True
 omit =
     */migrations/*
     */tests.py
+    */tests/*
     .tox/*
     .venv/*
     manage.py
