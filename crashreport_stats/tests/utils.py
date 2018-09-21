@@ -47,6 +47,7 @@ class Dummy:
         "4437.1-FP2-0-09",
         "4437.1-FP2-0-10",
     ]
+    UUIDs = ["e1c0cc95-ab8d-461a-a768-cb8d9d7fdb04"]
 
     USERNAMES = ["testuser1", "testuser2"]
 
