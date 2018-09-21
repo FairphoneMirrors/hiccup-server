@@ -193,6 +193,72 @@ class StatsCommandVersionsTestCase(TestCase):
             Crashreport, numbers, counter_attribute_name, **boot_reason_param
         )
 
+    def _assert_accumulated_counters_are_correct(
+        self, report_type, counter_attribute_name, **kwargs
+    ):
+        """Validate a counter distribution with reports of different devices."""
+        # Create some devices and corresponding reports
+        devices = [
+            Dummy.create_dummy_device(Dummy.create_dummy_user(username=name))
+            for name in Dummy.USERNAMES
+        ]
+        num_reports = 5
+        for device in devices:
+            self._create_reports(
+                report_type,
+                self.unique_entries[0],
+                device,
+                num_reports,
+                **kwargs
+            )
+
+        # Run the command to update the database
+        call_command("stats", "update")
+
+        # Check whether the numbers of reports match
+        version = self.version_class.objects.get(
+            **{self.unique_entry_name: self.unique_entries[0]}
+        )
+        self.assertEqual(
+            len(Dummy.USERNAMES) * num_reports,
+            getattr(version, counter_attribute_name),
+        )
+
+    def test_accumulated_heartbeats_counter(self):
+        """Test heartbeats counter with reports from different devices."""
+        report_type = HeartBeat
+        counter_attribute_name = "heartbeats"
+        self._assert_accumulated_counters_are_correct(
+            report_type, counter_attribute_name
+        )
+
+    def test_accumulated_crash_reports_counter(self):
+        """Test crash reports counter with reports from different devices."""
+        report_type = Crashreport
+        counter_attribute_name = "prob_crashes"
+        boot_reason_param = {"boot_reason": Crashreport.CRASH_BOOT_REASONS[0]}
+        self._assert_accumulated_counters_are_correct(
+            report_type, counter_attribute_name, **boot_reason_param
+        )
+
+    def test_accumulated_smpl_reports_counter(self):
+        """Test smpl reports counter with reports from different devices."""
+        report_type = Crashreport
+        counter_attribute_name = "smpl"
+        boot_reason_param = {"boot_reason": Crashreport.SMPL_BOOT_REASONS[0]}
+        self._assert_accumulated_counters_are_correct(
+            report_type, counter_attribute_name, **boot_reason_param
+        )
+
+    def test_accumulated_other_reports_counter(self):
+        """Test other reports counter with reports from different devices."""
+        report_type = Crashreport
+        counter_attribute_name = "other"
+        boot_reason_param = {"boot_reason": "random boot reason"}
+        self._assert_accumulated_counters_are_correct(
+            report_type, counter_attribute_name, **boot_reason_param
+        )
+
     def _assert_reports_with_same_timestamp_are_counted(
         self, report_type, counter_attribute_name, **kwargs
     ):

@@ -49,7 +49,7 @@ class Dummy:
     ]
     UUIDs = ["e1c0cc95-ab8d-461a-a768-cb8d9d7fdb04"]
 
-    USERNAMES = ["testuser1", "testuser2"]
+    USERNAMES = ["testuser1", "testuser2", "testuser3"]
 
     DATES = [date(2018, 3, 19), date(2018, 3, 26), date(2018, 5, 1)]
 
