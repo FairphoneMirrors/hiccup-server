@@ -331,6 +331,98 @@ class StatsCommandVersionsTestCase(TestCase):
             Crashreport, "other", **boot_reason_param
         )
 
+    def _assert_updating_twice_gives_correct_counters(
+        self, report_type, counter_attribute_name, **boot_reason_param
+    ):
+        # Create a device and a corresponding reports for 2 different versions
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        num_reports = 5
+        self._create_reports(
+            report_type,
+            self.unique_entries[0],
+            device,
+            num_reports,
+            **boot_reason_param
+        )
+        self._create_reports(
+            report_type,
+            self.unique_entries[1],
+            device,
+            num_reports,
+            **boot_reason_param
+        )
+
+        # Run the command to update the database
+        call_command("stats", "update")
+
+        # Check whether the numbers of reports match for both versions
+        version_1 = self.version_class.objects.get(
+            **{self.unique_entry_name: self.unique_entries[0]}
+        )
+        self.assertEqual(
+            num_reports, getattr(version_1, counter_attribute_name)
+        )
+        version_2 = self.version_class.objects.get(
+            **{self.unique_entry_name: self.unique_entries[1]}
+        )
+        self.assertEqual(
+            num_reports, getattr(version_2, counter_attribute_name)
+        )
+
+        # Create another report for the first version
+        report_new_attributes = {
+            self.unique_entry_name: self.unique_entries[0],
+            "device": device,
+            **boot_reason_param,
+        }
+        Dummy.create_dummy_report(report_type, **report_new_attributes)
+
+        # Run the command to update the database again
+        call_command("stats", "update")
+
+        # Check whether the numbers of reports match:
+        # Assert that the first version's counter is increased by one
+        version_1 = self.version_class.objects.get(
+            **{self.unique_entry_name: self.unique_entries[0]}
+        )
+        self.assertEqual(
+            num_reports + 1, getattr(version_1, counter_attribute_name)
+        )
+        # Assert that the second versions counter is unchanged
+        version_2 = self.version_class.objects.get(
+            **{self.unique_entry_name: self.unique_entries[1]}
+        )
+        self.assertEqual(
+            num_reports, getattr(version_2, counter_attribute_name)
+        )
+
+    def test_updating_heartbeats_counter_twice(self):
+        """Test updating the heartbeats counter twice."""
+        self._assert_updating_twice_gives_correct_counters(
+            HeartBeat, "heartbeats"
+        )
+
+    def test_updating_crash_reports_counter_twice(self):
+        """Test updating the crash reports counter twice."""
+        boot_reason_param = {"boot_reason": Crashreport.CRASH_BOOT_REASONS[0]}
+        self._assert_updating_twice_gives_correct_counters(
+            Crashreport, "prob_crashes", **boot_reason_param
+        )
+
+    def test_updating_smpl_reports_counter_twice(self):
+        """Test updating the smpl reports counter twice."""
+        boot_reason_param = {"boot_reason": Crashreport.SMPL_BOOT_REASONS[0]}
+        self._assert_updating_twice_gives_correct_counters(
+            Crashreport, "smpl", **boot_reason_param
+        )
+
+    def test_updating_other_reports_counter_twice(self):
+        """Test updating the other reports counter twice."""
+        boot_reason_param = {"boot_reason": "random boot reason"}
+        self._assert_updating_twice_gives_correct_counters(
+            Crashreport, "other", **boot_reason_param
+        )
+
     def _assert_reports_with_same_timestamp_are_counted(
         self, report_type, counter_attribute_name, **kwargs
     ):
