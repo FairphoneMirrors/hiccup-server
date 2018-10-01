@@ -259,6 +259,78 @@ class StatsCommandVersionsTestCase(TestCase):
             report_type, counter_attribute_name, **boot_reason_param
         )
 
+    def test_reset_deletion_of_unrelated_version(self):
+        """Test delete functionality of the reset command."""
+        # Create a version instance that is not related to any reports
+        Dummy.create_dummy_version(
+            self.version_class,
+            **{self.unique_entry_name: self.unique_entries[0]}
+        )
+
+        # Run the command to reset the database
+        call_command("stats", "reset")
+
+        # Check whether the unrelated version instance has been deleted
+        self.assertFalse(
+            self.version_class.objects.filter(
+                **{self.unique_entry_name: self.unique_entries[0]}
+            ).exists()
+        )
+
+    def _assert_reset_updates_counter(
+        self, report_type, counter_attribute_name, **kwargs
+    ):
+        # Create a device and corresponding reports
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        num_reports = 5
+        self._create_reports(
+            report_type, self.unique_entries[0], device, num_reports, **kwargs
+        )
+
+        # Create a version instance with wrong numbers
+        wrong_num_of_reports = 4
+        Dummy.create_dummy_version(
+            self.version_class,
+            **{
+                self.unique_entry_name: self.unique_entries[0],
+                counter_attribute_name: wrong_num_of_reports,
+            }
+        )
+
+        # Run the command to reset the database
+        call_command("stats", "reset")
+
+        # Check whether the numbers of reports do match
+        version = self.version_class.objects.get(
+            **{self.unique_entry_name: self.unique_entries[0]}
+        )
+        self.assertEqual(num_reports, getattr(version, counter_attribute_name))
+
+    def test_reset_update_heartbeat_counter(self):
+        """Test update of the heartbeat counter using the reset command."""
+        self._assert_reset_updates_counter(HeartBeat, "heartbeats")
+
+    def test_reset_update_crash_report_counter(self):
+        """Test update of the crash report counter using the reset command."""
+        boot_reason_param = {"boot_reason": Crashreport.CRASH_BOOT_REASONS[0]}
+        self._assert_reset_updates_counter(
+            Crashreport, "prob_crashes", **boot_reason_param
+        )
+
+    def test_reset_update_smpl_report_counter(self):
+        """Test update of the smpl report counter using the reset command."""
+        boot_reason_param = {"boot_reason": Crashreport.SMPL_BOOT_REASONS[0]}
+        self._assert_reset_updates_counter(
+            Crashreport, "smpl", **boot_reason_param
+        )
+
+    def test_reset_update_other_report_counter(self):
+        """Test update of the other report counter using the reset command."""
+        boot_reason_param = {"boot_reason": "random boot reason"}
+        self._assert_reset_updates_counter(
+            Crashreport, "other", **boot_reason_param
+        )
+
     def _assert_reports_with_same_timestamp_are_counted(
         self, report_type, counter_attribute_name, **kwargs
     ):
