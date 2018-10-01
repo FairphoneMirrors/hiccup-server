@@ -657,7 +657,7 @@ class CommandDebugOutputTestCase(TestCase):
         """
         # Create dummy version instances
         version = Dummy.create_dummy_version()
-        radio_version = Dummy.create_dummy_radio_version()
+        radio_version = Dummy.create_dummy_version(RadioVersion)
         Dummy.create_dummy_daily_version(version)
         Dummy.create_dummy_daily_radio_version(radio_version)
         Dummy.create_dummy_stats_metadata()

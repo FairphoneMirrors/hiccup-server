@@ -221,40 +221,37 @@ class Dummy:
         return archive.read(logfile_name)
 
     @staticmethod
-    def create_dummy_version(**kwargs):
+    def create_dummy_version(version_type=Version, **kwargs):
         """Create a dummy version instance.
 
         The dummy instance is created and saved to the database.
         Args:
+            version_type: The class of the version type to be created.
             **kwargs:
                 Optional arguments to extend/overwrite the default values.
 
         Returns: The created version instance.
 
-        """
-        entity = Version(
-            **Dummy.update_copy(Dummy.DEFAULT_DUMMY_VERSION_VALUES, kwargs)
-        )
-        entity.save()
-        return entity
-
-    @staticmethod
-    def create_dummy_radio_version(**kwargs):
-        """Create a dummy radio version instance.
-
-        The dummy instance is created and saved to the database.
-        Args:
-            **kwargs:
-                Optional arguments to extend/overwrite the default values.
-
-        Returns: The created radio version instance.
+        Raises:
+            ValueError: If version_type is not a valid version class type.
 
         """
-        entity = RadioVersion(
-            **Dummy.update_copy(
-                Dummy.DEFAULT_DUMMY_RADIO_VERSION_VALUES, kwargs
+        if version_type == Version:
+            entity = Version(
+                **Dummy.update_copy(Dummy.DEFAULT_DUMMY_VERSION_VALUES, kwargs)
             )
-        )
+        elif version_type == RadioVersion:
+            entity = RadioVersion(
+                **Dummy.update_copy(
+                    Dummy.DEFAULT_DUMMY_RADIO_VERSION_VALUES, kwargs
+                )
+            )
+        else:
+            raise ValueError(
+                "No dummy version instance can be created for {}".format(
+                    version_type.__name__
+                )
+            )
         entity.save()
         return entity
 

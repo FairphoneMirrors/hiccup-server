@@ -243,7 +243,7 @@ class RadioVersionTestCase(VersionTestCase):
 
     @staticmethod
     def _create_dummy_version(**kwargs):
-        return Dummy.create_dummy_radio_version(**kwargs)
+        return Dummy.create_dummy_version(RadioVersion, **kwargs)
 
 
 class VersionDailyTestCase(_VersionTestCase):
@@ -348,13 +348,7 @@ class RadioVersionDailyTestCase(VersionDailyTestCase):
 
     @staticmethod
     def _create_dummy_version(**kwargs):
-        entity = RadioVersion(
-            **Dummy.update_copy(
-                Dummy.DEFAULT_DUMMY_RADIO_VERSION_VALUES, kwargs
-            )
-        )
-        entity.save()
-        return entity
+        return Dummy.create_dummy_version(RadioVersion, **kwargs)
 
     @staticmethod
     def _create_dummy_daily_version(version, **kwargs):
