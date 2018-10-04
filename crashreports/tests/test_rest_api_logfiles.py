@@ -1,11 +1,13 @@
 """Tests for the logfiles REST API."""
 
 import os
+import zipfile
 
 from django.urls import reverse
 
 from rest_framework import status
 
+from crashreports.models import crashreport_file_name, Device
 from crashreports.tests.utils import HiccupCrashreportsAPITestCase, Dummy
 
 
@@ -34,6 +36,18 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
 
         return device_local_id
 
+    def _assert_zip_file_contents_equal(self, file1, file2):
+        """Assert that the files within two zip files are equal."""
+        zip_file_1 = zipfile.ZipFile(file1)
+        zip_file_2 = zipfile.ZipFile(file2)
+        for file_name_1, file_name_2 in zip(
+            zip_file_1.filelist, zip_file_2.filelist
+        ):
+            file_1 = zip_file_1.open(file_name_1)
+            file_2 = zip_file_2.open(file_name_2)
+
+            self.assertEqual(file_1.read(), file_2.read())
+
     def _test_logfile_upload(self, user, uuid):
         # Upload crashreport
         device_local_id = self._upload_crashreport(user, uuid)
@@ -41,16 +55,32 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
         # Upload a logfile for the crashreport
         logfile = open(Dummy.DEFAULT_DUMMY_LOG_FILE_PATH, "rb")
 
+        logfile_name = os.path.basename(logfile.name)
         response = user.post(
             reverse(
-                self.PUT_LOGFILE_URL,
-                args=[uuid, device_local_id, os.path.basename(logfile.name)],
+                self.PUT_LOGFILE_URL, args=[uuid, device_local_id, logfile_name]
             ),
             {"file": logfile},
             format="multipart",
         )
         logfile.close()
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+
+        logfile_instance = (
+            Device.objects.get(uuid=uuid)
+            .crashreports.get(device_local_id=device_local_id)
+            .logfiles.last()
+        )
+        uploaded_logfile_path = crashreport_file_name(
+            logfile_instance, logfile_name
+        )
+
+        self.assertTrue(os.path.isfile(uploaded_logfile_path))
+        # The files are not 100% equal, because the server adds some extra
+        # bytes. However, we mainly care that the contents are equal:
+        self._assert_zip_file_contents_equal(
+            uploaded_logfile_path, Dummy.DEFAULT_DUMMY_LOG_FILE_PATH
+        )
 
     def test_logfile_upload_as_user(self):
         """Test upload of logfiles as device owner."""
