@@ -1,5 +1,6 @@
 """Utility functions shared by all crashreports tests."""
 
+import os
 from typing import Optional
 
 from django.contrib.auth.models import User
@@ -71,6 +72,10 @@ class Dummy:
         "smpl": Crashreport.BOOT_REASON_RTC_ALARM,
         "other": "whatever",
     }
+
+    DEFAULT_DUMMY_LOG_FILE_PATH = os.path.join(
+        "resources", "test", "test_logfile.zip"
+    )
 
     @staticmethod
     def _update_copy(original, update):

@@ -1,7 +1,6 @@
 """Tests for the logfiles REST API."""
 
 import os
-import tempfile
 
 from django.urls import reverse
 
@@ -40,8 +39,8 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
         device_local_id = self._upload_crashreport(user, uuid)
 
         # Upload a logfile for the crashreport
-        logfile = tempfile.NamedTemporaryFile("w+", suffix=".log", delete=True)
-        logfile.write(u"blihblahblub")
+        logfile = open(Dummy.DEFAULT_DUMMY_LOG_FILE_PATH, "rb")
+
         response = user.post(
             reverse(
                 self.PUT_LOGFILE_URL,
@@ -50,6 +49,7 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
             {"file": logfile},
             format="multipart",
         )
+        logfile.close()
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
 
     def test_logfile_upload_as_user(self):
