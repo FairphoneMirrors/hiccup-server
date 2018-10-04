@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Models for devices, heartbeats, crashreports and log files."""
 
+import os
 import uuid
 
 from django.db import models, transaction
@@ -58,6 +59,10 @@ class Device(models.Model):
 def crashreport_file_name(instance, filename):
     """Generate the full path for new uploaded log files.
 
+    The path is created by splitting up the device UUID into 3 parts: The
+    first 2 characters, the second 2 characters and the rest. This way the
+    number of directories in each subdirectory does not get too big.
+
     Args:
         instance: The log file instance.
         filename: The name of the actual log file.
@@ -65,14 +70,13 @@ def crashreport_file_name(instance, filename):
     Returns: The generated path including the file name.
 
     """
-    return "/".join(
-        [
-            "crashreport_uploads",
-            instance.crashreport.device.uuid,
-            str(instance.crashreport.id),
-            str(instance.crashreport.date),
-            filename,
-        ]
+    return os.path.join(
+        "crashreport_uploads",
+        str(instance.crashreport.device.uuid)[0:2],
+        str(instance.crashreport.device.uuid)[2:4],
+        str(instance.crashreport.device.uuid)[4:],
+        str(instance.crashreport.id),
+        filename,
     )
 
 
