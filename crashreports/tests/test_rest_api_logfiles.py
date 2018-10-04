@@ -17,6 +17,11 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
     LIST_CREATE_URL = "api_v1_crashreports"
     PUT_LOGFILE_URL = "api_v1_putlogfile_for_device_id"
 
+    def setUp(self):
+        """Call the super setup method and register a device."""
+        super().setUp()
+        self.device_uuid, self.user, _ = self._register_device()
+
     def _upload_crashreport(self, user, uuid):
         """
         Upload dummy crashreport data.
@@ -84,10 +89,23 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
 
     def test_logfile_upload_as_user(self):
         """Test upload of logfiles as device owner."""
-        uuid, user, _ = self._register_device()
-        self._test_logfile_upload(user, uuid)
+        self._test_logfile_upload(self.user, self.device_uuid)
 
     def test_logfile_upload_as_admin(self):
         """Test upload of logfiles as admin user."""
-        uuid, _, _ = self._register_device()
-        self._test_logfile_upload(self.admin, uuid)
+        self._test_logfile_upload(self.admin, self.device_uuid)
+
+    def tearDown(self):
+        """Remove the file and directories that were created for the test."""
+        device = Device.objects.get(uuid=self.device_uuid)
+        for crashreport_instance in device.crashreports.all():
+            for logfile_instance in crashreport_instance.logfiles.all():
+                uploaded_logfile_path = crashreport_file_name(
+                    logfile_instance,
+                    os.path.basename(Dummy.DEFAULT_DUMMY_LOG_FILE_PATH),
+                )
+                try:
+                    os.remove(uploaded_logfile_path)
+                    os.removedirs(os.path.dirname(uploaded_logfile_path))
+                except (FileNotFoundError, OSError):
+                    pass
