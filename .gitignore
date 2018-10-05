@@ -120,5 +120,6 @@ documentation/hiccup-api.json
 documentation/api-endpoints.adoc
 documentation/api-endpoints.html
 
-# Crashreports uploads directory
+# Crashreport uploads directories
 crashreport_uploads/
+crashreport_uploads_legacy/
