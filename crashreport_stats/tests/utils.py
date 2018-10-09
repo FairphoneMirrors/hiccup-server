@@ -1,7 +1,6 @@
 """Utility functions shared by all crashreport stats tests."""
 
 from datetime import datetime, date
-import os
 import zipfile
 
 import pytz
@@ -106,7 +105,7 @@ class Dummy:
 
     DEFAULT_DUMMY_LOG_FILE_VALUES = {
         "logfile_type": "last_kmsg",
-        "logfile": os.path.join("resources", "test", "test_logfile.zip"),
+        "logfile": "test_logfile.zip",
     }
 
     DEFAULT_DUMMY_LOG_FILE_NAME = "dmesg.log"

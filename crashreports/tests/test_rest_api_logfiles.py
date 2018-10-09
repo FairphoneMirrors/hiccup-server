@@ -1,8 +1,13 @@
 """Tests for the logfiles REST API."""
 
 import os
+import shutil
+import tempfile
 import zipfile
 
+from django.conf import settings
+from django.core.files.storage import default_storage
+from django.test import override_settings
 from django.urls import reverse
 
 from rest_framework import status
@@ -11,6 +16,7 @@ from crashreports.models import crashreport_file_name, Device
 from crashreports.tests.utils import HiccupCrashreportsAPITestCase, Dummy
 
 
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp(".hiccup-tests"))
 class LogfileUploadTest(HiccupCrashreportsAPITestCase):
     """Test cases for upload of log files."""
 
@@ -80,11 +86,12 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
             logfile_instance, logfile_name
         )
 
-        self.assertTrue(os.path.isfile(uploaded_logfile_path))
+        self.assertTrue(default_storage.exists(uploaded_logfile_path))
         # The files are not 100% equal, because the server adds some extra
         # bytes. However, we mainly care that the contents are equal:
         self._assert_zip_file_contents_equal(
-            uploaded_logfile_path, Dummy.DEFAULT_DUMMY_LOG_FILE_PATH
+            default_storage.path(uploaded_logfile_path),
+            Dummy.DEFAULT_DUMMY_LOG_FILE_PATH,
         )
 
     def test_logfile_upload_as_user(self):
@@ -97,15 +104,4 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
 
     def tearDown(self):
         """Remove the file and directories that were created for the test."""
-        device = Device.objects.get(uuid=self.device_uuid)
-        for crashreport_instance in device.crashreports.all():
-            for logfile_instance in crashreport_instance.logfiles.all():
-                uploaded_logfile_path = crashreport_file_name(
-                    logfile_instance,
-                    os.path.basename(Dummy.DEFAULT_DUMMY_LOG_FILE_PATH),
-                )
-                try:
-                    os.remove(uploaded_logfile_path)
-                    os.removedirs(os.path.dirname(uploaded_logfile_path))
-                except (FileNotFoundError, OSError):
-                    pass
+        shutil.rmtree(settings.MEDIA_ROOT)

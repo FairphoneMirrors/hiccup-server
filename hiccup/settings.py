@@ -185,6 +185,8 @@ STATIC_URL = "/static/"
 
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
+MEDIA_ROOT = os.path.join(BASE_DIR, "crashreport_uploads")
+
 
 # Logging
 # https://docs.djangoproject.com/en/2.0/topics/logging/#examples

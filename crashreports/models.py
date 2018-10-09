@@ -71,7 +71,6 @@ def crashreport_file_name(instance, filename):
 
     """
     return os.path.join(
-        "crashreport_uploads",
         str(instance.crashreport.device.uuid)[0:2],
         str(instance.crashreport.device.uuid)[2:4],
         str(instance.crashreport.device.uuid)[4:],

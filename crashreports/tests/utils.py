@@ -10,6 +10,8 @@ from rest_framework.test import APITestCase, APIClient
 
 from crashreports.models import Crashreport
 
+DEFAULT_DUMMY_LOG_FILE_DIRECTORY = os.path.join("resources", "test")
+
 
 class InvalidCrashTypeError(BaseException):
     """Invalid crash type encountered.
@@ -74,7 +76,7 @@ class Dummy:
     }
 
     DEFAULT_DUMMY_LOG_FILE_PATH = os.path.join(
-        "resources", "test", "test_logfile.zip"
+        DEFAULT_DUMMY_LOG_FILE_DIRECTORY, "test_logfile.zip"
     )
 
     @staticmethod

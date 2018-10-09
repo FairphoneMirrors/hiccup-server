@@ -9,6 +9,7 @@ import shutil
 
 from django.db import migrations
 from django.conf import settings
+from django.core.files.storage import default_storage
 
 from crashreports.models import LogFile, crashreport_file_name
 
@@ -26,16 +27,24 @@ def migrate_logfiles(apps, schema_editor):
     logger = get_django_logger()
 
     crashreport_uploads_dir = "crashreport_uploads"
-    crashreport_uploads_legacy_dir = "crashreport_uploads_legacy"
-    if not os.path.isdir(crashreport_uploads_dir):
+
+    if not LogFile.objects.filter(
+        logfile__startswith=crashreport_uploads_dir
+    ).exists():
         logger.info(
-            "%s directory not found. Assuming this is a new installation and "
-            "the migration does not need to be applied.",
-            os.path.join(settings.BASE_DIR, crashreport_uploads_dir),
+            "No old logfile path found. Assuming this is a new installation "
+            "and the migration does not need to be applied."
         )
         return
 
-    shutil.move(crashreport_uploads_dir, crashreport_uploads_legacy_dir)
+    crashreport_uploads_legacy_dir = crashreport_uploads_dir + "_legacy"
+    assert not os.path.isdir(crashreport_uploads_legacy_dir), (
+        "Existing crashreport_uploads_legacy directory found. Remove this"
+        "directory in order to run this migration."
+    )
+
+    if os.path.isdir(crashreport_uploads_dir):
+        shutil.move(crashreport_uploads_dir, crashreport_uploads_legacy_dir)
 
     for logfile in LogFile.objects.all():
         migrate_logfile_instance(
@@ -49,30 +58,33 @@ def migrate_logfile_instance(
     """Migrate a single logfile instance."""
     logger = get_django_logger()
 
-    original_path = logfile.logfile.name
-    old_logfile_path = original_path.replace(
+    old_logfile_relative_path = logfile.logfile.name.replace(
         crashreport_uploads_dir, crashreport_uploads_legacy_dir, 1
     )
-    new_logfile_path = crashreport_file_name(
-        logfile, os.path.basename(original_path)
+    old_logfile_absolute_path = os.path.join(
+        settings.BASE_DIR, old_logfile_relative_path
     )
-    logger.info("Migrating %s", old_logfile_path)
-    if os.path.isfile(old_logfile_path):
+    new_logfile_path = crashreport_file_name(
+        logfile, os.path.basename(old_logfile_relative_path)
+    )
+    logger.info("Migrating %s", old_logfile_absolute_path)
+    if os.path.isfile(old_logfile_absolute_path):
         update_logfile_path(logfile, new_logfile_path)
-        move_logfile_file(old_logfile_path, new_logfile_path)
+        move_logfile_file(old_logfile_absolute_path, new_logfile_path)
     else:
-        logger.warning("Logfile does not exist: %s", old_logfile_path)
+        logger.warning("Logfile does not exist: %s", old_logfile_absolute_path)
 
 
 def move_logfile_file(old_logfile_path, new_logfile_path):
     """Move a logfile to a new path and delete empty directories."""
     logger = get_django_logger()
+    new_logfile_absolute_path = default_storage.path(new_logfile_path)
 
-    logger.debug("Creating directories for %s", new_logfile_path)
-    os.makedirs(os.path.dirname(new_logfile_path), exist_ok=True)
+    logger.debug("Creating directories for %s", new_logfile_absolute_path)
+    os.makedirs(os.path.dirname(new_logfile_absolute_path), exist_ok=True)
 
-    logger.debug("Moving %s to %s", old_logfile_path, new_logfile_path)
-    shutil.move(old_logfile_path, new_logfile_path)
+    logger.debug("Moving %s to %s", old_logfile_path, new_logfile_absolute_path)
+    shutil.move(old_logfile_path, new_logfile_absolute_path)
 
     logger.debug("Deleting empty directories from %s", old_logfile_path)
     os.removedirs(os.path.dirname(old_logfile_path))
