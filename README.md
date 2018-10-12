@@ -22,7 +22,7 @@ Clone Hiccup server and install it locally:
     $ cd hiccup-server
     $ virtualenv -p python3.6 .venv/hiccupenv
     $ source .venv/hiccupenv/bin/activate
-    (hiccupenv) $ pip install -r requirements.txt
+    (hiccupenv) $ pip install -e .
 
 When using a virtualenv with pyenv (e.g. to get python3.6 on Ubuntu 16.04),
 the python executable needs to be explicitly named to make tox work (see
