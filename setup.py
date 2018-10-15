@@ -8,10 +8,11 @@ with open("README.md") as f:
 
 setup(
     name="hiccup",
-    version="1.0",
+    version="1.0.1",
     description="Hiccup crash reporting server",
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
+    author="Fairphone B.V.",
     packages=find_packages(),
     python_requires="==3.6.*",
     install_requires=[
