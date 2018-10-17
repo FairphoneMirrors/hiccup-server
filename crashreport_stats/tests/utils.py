@@ -336,8 +336,7 @@ class HiccupStatsAPITestCase(APITestCase):
         cls.admin = APIClient()
         cls.admin.force_login(admin_user)
 
-        fp_staff_group = Group(name=FP_STAFF_GROUP_NAME)
-        fp_staff_group.save()
+        fp_staff_group = Group.objects.get(name=FP_STAFF_GROUP_NAME)
         fp_staff_user = User.objects.create_user(
             "fp_staff", "somebody@fairphone.com", "thepassword"
         )

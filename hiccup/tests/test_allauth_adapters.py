@@ -18,6 +18,8 @@ from hiccup import settings
 class Dummy:
     """Create dummies class instances for testing."""
 
+    # pylint: disable=too-few-public-methods
+
     EMAIL_FAIRPHONE = "test@fairphone.com"
     EMAIL_OTHER = "test@test.com"
 
@@ -39,13 +41,6 @@ class Dummy:
             email_addresses=[EmailAddress(email=user_email, verified=True)],
         )
         return sociallogin
-
-    @staticmethod
-    def create_fp_staff_group():
-        """Create a FP staff group instance and save it to the database."""
-        group = Group(name=FP_STAFF_GROUP_NAME)
-        group.save()
-        return group
 
 
 class FairphoneAccountAdapterTests(TestCase):
@@ -74,8 +69,8 @@ class FairphoneAccountAdapterTests(TestCase):
 
     def test_save_user_with_fp_email(self):
         """Test saving a user with a Fairphone E-Mail address."""
-        # Create the Fairphone staff group
-        fp_staff_group = Dummy.create_fp_staff_group()
+        # Get the Fairphone staff group
+        fp_staff_group = Group.objects.get(name=FP_STAFF_GROUP_NAME)
 
         # Save a user with a Fairphone E-Mail address
         user = self._save_user(Dummy.EMAIL_FAIRPHONE)
@@ -85,8 +80,8 @@ class FairphoneAccountAdapterTests(TestCase):
 
     def test_save_user_without_fp_email(self):
         """Test saving a user without a Fairphone E-Mail address."""
-        # Create the Fairphone staff group
-        fp_staff_group = Dummy.create_fp_staff_group()
+        # Get the Fairphone staff group
+        fp_staff_group = Group.objects.get(name=FP_STAFF_GROUP_NAME)
 
         # Save a user without a Fairphone E-Mail address
         user = self._save_user(Dummy.EMAIL_OTHER)

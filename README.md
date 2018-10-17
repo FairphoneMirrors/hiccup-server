@@ -97,15 +97,13 @@ Run the following command or perform the manual steps below:
     python manage.py shell -c "
         from django.contrib.auth.models import Group, User
         admin = User.objects.get(username='admin')
-        stats_group = Group.objects.create(name='FairphoneSoftwareTeam')
+        stats_group = Group.objects.get(name='FairphoneSoftwareTeam')
         stats_group.user_set.add(admin)
         "
 
 * You need a running server and a super-user account;
-* Head to `http://localhost:8000/hiccup/admin/auth/group/`;
-* Create a new group named `FairphoneSoftwareTeam`;
-* Go back to the user list at `http://localhost:8000/hiccup/admin/auth/user/` and add your
-  super-user to the new group.
+* Go to the user list at `http://localhost:8000/hiccup/admin/auth/user/` and add your
+  super-user to the 'FairphoneSoftwareTeam' group.
 
 ## API Documentation
 
