@@ -268,10 +268,14 @@ class DeviceStat(APIView):
 
         """
         device = Device.objects.filter(uuid=uuid)
-        last_active = (
-            HeartBeat.objects.filter(device=device).order_by("-date")[0].date
-        )
-        heartbeats = HeartBeat.objects.filter(device=device).count()
+
+        heartbeat_instances = HeartBeat.objects.filter(device=device)
+        if heartbeat_instances.exists():
+            last_active = heartbeat_instances.order_by("-date")[0].date
+        else:
+            last_active = device[0].board_date
+
+        heartbeats = heartbeat_instances.count()
         crashreports = (
             Crashreport.objects.filter(device=device)
             .filter(boot_reason__in=Crashreport.CRASH_BOOT_REASONS)

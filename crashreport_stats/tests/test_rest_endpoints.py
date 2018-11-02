@@ -402,10 +402,6 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
         self.assertEqual(response.data["smpl_per_day"], smpl_per_day)
         self.assertEqual(response.data["last_active"], last_active)
 
-    @unittest.skip(
-        "Fails because there is no fallback for the last_active "
-        "date for devices without heartbeats."
-    )
     def test_device_overview_url_as_admin(self):
         """Test that admin users can access the URL."""
         self._assert_get_as_admin_user_succeeds(
@@ -415,10 +411,6 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
             )
         )
 
-    @unittest.skip(
-        "Fails because there is no fallback for the last_active "
-        "date for devices without heartbeats."
-    )
     def test_device_overview_url_as_fp_staff(self):
         """Test that Fairphone staff users can access the URL."""
         self._assert_get_as_fp_staff_succeeds(
@@ -572,10 +564,6 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
             )
         )
 
-    @unittest.skip(
-        "Fails because there is no fallback for the last_active "
-        "date for devices without heartbeats."
-    )
     def test_get_device_stats_no_reports(self):
         """Test getting device stats for a device without reports."""
         # Create a device
@@ -623,10 +611,6 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
             last_active=heartbeat.date,
         )
 
-    @unittest.skip(
-        "Fails because there is no fallback for the last_active "
-        "date for devices without heartbeats."
-    )
     def test_get_device_stats_no_heartbeats(self):
         """Test getting device stats for a device without heartbeats."""
         # Create a device and crashreport
