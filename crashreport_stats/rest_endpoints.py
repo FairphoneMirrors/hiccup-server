@@ -1,4 +1,5 @@
 """REST API for accessing the crashreports statistics."""
+import operator
 import zipfile
 from collections import OrderedDict
 
@@ -11,7 +12,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import connection
 from django.db.models.expressions import F
 from django.utils.decorators import method_decorator
 
@@ -38,17 +38,7 @@ from crashreports.permissions import (
 )
 from crashreports.response_descriptions import default_desc
 
-from . import raw_querys
-
 _RESPONSE_STATUS_200_DESCRIPTION = "OK"
-
-
-def dictfetchall(cursor):
-    """Return all rows from a cursor as a dict."""
-    desc = cursor.description
-    return [
-        dict(zip([col[0] for col in desc], row)) for row in cursor.fetchall()
-    ]
 
 
 _DEVICE_UPDATE_HISTORY_SCHEMA = openapi.Schema(
@@ -99,13 +89,51 @@ class DeviceUpdateHistory(APIView):
             request: Http request
             uuid: The UUID of the device
 
-        Returns: The update history of the requested device.
+        Returns:
+            The update history of the requested device, sorted by the update
+            date.
 
         """
-        cursor = connection.cursor()
-        raw_querys.execute_device_update_history_query(cursor, {"uuid": uuid})
-        res = dictfetchall(cursor)
-        return Response(res)
+        device = Device.objects.get(uuid=uuid)
+
+        device_heartbeats = list(device.heartbeats.all())
+        device_crashreports = list(device.crashreports.all())
+
+        build_fingerprints = {hb.build_fingerprint for hb in device_heartbeats}
+
+        response = [
+            get_release_stats(
+                build_fingerprint,
+                device,
+                device_crashreports,
+                device_heartbeats,
+            )
+            for build_fingerprint in build_fingerprints
+        ]
+        response = sorted(response, key=operator.itemgetter("update_date"))
+
+        return Response(response)
+
+
+def get_release_stats(build_fingerprint, device, crashreports, heartbeats):
+    """Get the stats for a device for a specific release."""
+    heartbeats = filter_instances(
+        heartbeats, lambda hb: hb.build_fingerprint == build_fingerprint
+    )
+    crashreports = filter_instances(
+        crashreports, lambda c: c.build_fingerprint == build_fingerprint
+    )
+
+    stats = get_stats(heartbeats, crashreports)
+    stats.update(
+        {
+            "build_fingerprint": build_fingerprint,
+            "update_date": min([heartbeat.date for heartbeat in heartbeats]),
+            "max": device.id,
+        }
+    )
+
+    return stats
 
 
 _DEVICE_REPORT_HISTORY_SCHEMA = openapi.Schema(
@@ -154,13 +182,64 @@ class DeviceReportHistory(APIView):
             request: Http request
             uuid: The UUID of the device
 
-        Returns: The report history of the requested device.
+        Returns: The report history of the requested device, sorted by date.
 
         """
-        cursor = connection.cursor()
-        raw_querys.execute_device_report_history(cursor, {"uuid": uuid})
-        res = dictfetchall(cursor)
-        return Response(res)
+        device = Device.objects.get(uuid=uuid)
+
+        device_heartbeats = list(device.heartbeats.all())
+        device_crashreports = list(device.crashreports.all())
+
+        dates = {heartbeat.date.date() for heartbeat in device_heartbeats}
+
+        response = [
+            get_stats_for_date(date, device_crashreports, device_heartbeats)
+            for date in sorted(dates)
+        ]
+
+        return Response(response)
+
+
+def get_stats_for_date(date, crashreports, heartbeats):
+    """Get the stats for a device for a specific date."""
+    heartbeats = filter_instances(heartbeats, lambda hb: hb.date.date() == date)
+    crashreports = filter_instances(
+        crashreports, lambda c: c.date.date() == date
+    )
+
+    stats = get_stats(heartbeats, crashreports)
+    stats.update(date=date)
+    return stats
+
+
+def filter_instances(instances, filter_expr):
+    """Filter instances using a lambda filter function."""
+    return list(filter(filter_expr, instances))
+
+
+def get_stats(heartbeats, crashreports):
+    """Get the numbers of heartbeats and crashes per for each type."""
+    crashes = [
+        crashreport
+        for crashreport in crashreports
+        if crashreport.boot_reason in Crashreport.CRASH_BOOT_REASONS
+    ]
+    smpls = [
+        crashreport
+        for crashreport in crashreports
+        if crashreport.boot_reason in Crashreport.SMPL_BOOT_REASONS
+    ]
+    others = [
+        crashreport
+        for crashreport in crashreports
+        if crashreport not in crashes + smpls
+    ]
+    return {
+        "heartbeats": len(heartbeats),
+        "smpl": len(smpls),
+        "prob_crashes": len(crashes),
+        "other": len(others),
+    }
 
 
 _STATUS_RESPONSE_SCHEMA = openapi.Schema(

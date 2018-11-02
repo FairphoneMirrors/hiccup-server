@@ -1,6 +1,6 @@
 """Tests for the rest_endpoints module."""
-from datetime import datetime, timedelta
 import operator
+from datetime import datetime, timedelta
 import unittest
 
 import pytz
@@ -791,7 +791,6 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
         # Assert that the report history is empty
         self.assertEqual([], response.data)
 
-    @unittest.skip("Broken raw query. Heartbeats are not counted correctly.")
     def test_get_device_report_history(self):
         """Test getting report history stats for a device."""
         # Create a device with a heartbeat and one report of each type
@@ -822,6 +821,52 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
             }
         ]
         self.assertEqual(report_history, response.data)
+
+    def test_get_device_report_history_multiple_days(self):
+        """Test getting report history stats for a device for multiple days."""
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        expected_report_history = []
+
+        # Create a device with a heartbeat and one report of each type for 10
+        # days
+        report_date = Dummy.DEFAULT_DUMMY_CRASHREPORT_VALUES["date"]
+        for _ in range(10):
+            report_date = report_date + timedelta(days=1)
+
+            Dummy.create_dummy_report(HeartBeat, device, date=report_date)
+            for boot_reason in (
+                Crashreport.SMPL_BOOT_REASONS
+                + Crashreport.CRASH_BOOT_REASONS
+                + ["other boot reason"]
+            ):
+                Dummy.create_dummy_report(
+                    Crashreport,
+                    device,
+                    boot_reason=boot_reason,
+                    date=report_date,
+                )
+
+            # Create the expected report history object
+            expected_report_history.append(
+                {
+                    "date": report_date.date(),
+                    "heartbeats": 1,
+                    "smpl": len(Crashreport.SMPL_BOOT_REASONS),
+                    "prob_crashes": len(Crashreport.CRASH_BOOT_REASONS),
+                    "other": 1,
+                }
+            )
+
+        # Sort the expected values by date
+        expected_report_history.sort(key=operator.itemgetter("date"))
+
+        # Get the device report history statistics
+        response = self._get_with_params(
+            self.device_report_history_url, {"uuid": device.uuid}
+        )
+
+        # Assert that the statistics match
+        self.assertEqual(expected_report_history, response.data)
 
     def test_get_device_update_history_no_reports(self):
         """Test getting update history stats for a device without reports."""
@@ -901,16 +946,13 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
                     "heartbeats": 1,
                 }
             )
-        # Sort the expected values by build fingerprint
-        expected_update_history.sort(
-            key=operator.itemgetter("build_fingerprint")
-        )
+        # Sort the expected values by update date
+        expected_update_history.sort(key=operator.itemgetter("update_date"))
 
-        # Get the device update history statistics and sort it
+        # Get the device update history statistics
         response = self._get_with_params(
             self.device_update_history_url, {"uuid": device.uuid}
         )
-        response.data.sort(key=operator.itemgetter("build_fingerprint"))
 
         # Assert that the statistics match
         self.assertEqual(expected_update_history, response.data)
