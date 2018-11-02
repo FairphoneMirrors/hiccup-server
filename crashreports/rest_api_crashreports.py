@@ -1,7 +1,6 @@
 """REST API for accessing crash reports."""
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from rest_framework import status, generics
 from rest_framework.response import Response
@@ -12,6 +11,7 @@ from crashreports.permissions import (
     SWAGGER_SECURITY_REQUIREMENTS_ALL,
 )
 from crashreports.serializers import CrashReportSerializer
+from crashreports.utils import get_object_by_lookup_fields
 from crashreports.models import Crashreport
 from crashreports.response_descriptions import default_desc
 
@@ -137,11 +137,4 @@ class RetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         """Retrieve a crash report."""
-        queryset = self.get_queryset()
-        query_filter = {}
-        for field in self.multiple_lookup_fields:
-            if field in self.kwargs:
-                query_filter[field] = self.kwargs[field]
-        obj = get_object_or_404(queryset, **query_filter)
-        self.check_object_permissions(self.request, obj)
-        return obj
+        return get_object_by_lookup_fields(self, self.multiple_lookup_fields)

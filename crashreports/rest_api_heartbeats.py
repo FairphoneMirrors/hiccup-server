@@ -1,6 +1,5 @@
 """REST API for accessing heartbeats."""
 
-from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -14,6 +13,7 @@ from crashreports.permissions import (
 )
 from crashreports.response_descriptions import default_desc
 from crashreports.serializers import HeartBeatSerializer
+from crashreports.utils import get_object_by_lookup_fields
 
 
 @method_decorator(
@@ -104,11 +104,4 @@ class RetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         """Retrieve a heartbeat."""
-        queryset = self.get_queryset()
-        query_filter = {}
-        for field in self.multiple_lookup_fields:
-            if field in self.kwargs:
-                query_filter[field] = self.kwargs[field]
-        obj = get_object_or_404(queryset, **query_filter)
-        self.check_object_permissions(self.request, obj)
-        return obj
+        return get_object_by_lookup_fields(self, self.multiple_lookup_fields)
