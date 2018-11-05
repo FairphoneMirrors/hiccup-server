@@ -36,10 +36,6 @@ class StatusTestCase(HiccupStatsAPITestCase):
         self.assertEqual(response.data["crashreports"], num_crashreports)
         self.assertEqual(response.data["heartbeats"], num_heartbeats)
 
-    def test_status_url_as_admin(self):
-        """Test that admin users can access the status URL."""
-        self._assert_get_as_admin_user_succeeds(self.status_url)
-
     def test_status_url_as_fp_staff(self):
         """Test that Fairphone staff users can access the status URL."""
         self._assert_get_as_fp_staff_succeeds(self.status_url)
@@ -88,7 +84,7 @@ class _VersionTestCase(HiccupStatsAPITestCase):
         return Dummy.create_dummy_version(**kwargs)
 
     def _get_with_params(self, url, params):
-        return self.admin.get("{}?{}".format(url, urlencode(params)))
+        return self.fp_staff_client.get("{}?{}".format(url, urlencode(params)))
 
     def _assert_result_length_is(self, response, count):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -131,10 +127,6 @@ class VersionTestCase(_VersionTestCase):
         ]
         return versions
 
-    def test_endpoint_url_as_admin(self):
-        """Test that admin users can access the endpoint URL."""
-        self._assert_get_as_admin_user_succeeds(self.endpoint_url)
-
     def test_endpoint_url_as_fp_staff(self):
         """Test that Fairphone staff users can access the endpoint URL."""
         self._assert_get_as_fp_staff_succeeds(self.endpoint_url)
@@ -149,19 +141,19 @@ class VersionTestCase(_VersionTestCase):
 
     def test_list_versions_empty_database(self):
         """Test listing of versions on an empty database."""
-        response = self.admin.get(self.endpoint_url)
+        response = self.fp_staff_client.get(self.endpoint_url)
         self._assert_result_length_is(response, 0)
 
     def test_list_versions(self):
         """Test listing versions."""
         versions = self._create_version_entities()
-        response = self.admin.get(self.endpoint_url)
+        response = self.fp_staff_client.get(self.endpoint_url)
         self._assert_result_length_is(response, len(versions))
 
     def test_filter_versions_by_unique_entry_name(self):
         """Test filtering versions by their unique entry name."""
         versions = self._create_version_entities()
-        response = self.admin.get(self.endpoint_url)
+        response = self.fp_staff_client.get(self.endpoint_url)
 
         # Listing all entities should return the correct result length
         self._assert_result_length_is(response, len(versions))
@@ -196,7 +188,7 @@ class VersionTestCase(_VersionTestCase):
                 i += 1
 
         # # Listing all entities should return the correct result length
-        response = self.admin.get(self.endpoint_url)
+        response = self.fp_staff_client.get(self.endpoint_url)
         self._assert_result_length_is(response, len(versions))
 
         # List each of the entities with the matching filter params
@@ -221,7 +213,7 @@ class VersionTestCase(_VersionTestCase):
         versions[0].save()
 
         # Listing all entities should return the correct result length
-        response = self.admin.get(self.endpoint_url)
+        response = self.fp_staff_client.get(self.endpoint_url)
         self._assert_result_length_is(response, len(versions))
 
         # Expect the single matching result to be returned
@@ -269,10 +261,6 @@ class VersionDailyTestCase(_VersionTestCase):
         ]
         return versions_daily
 
-    def test_endpoint_url_as_admin(self):
-        """Test that admin users can access the endpoint URL."""
-        self._assert_get_as_admin_user_succeeds(self.endpoint_url)
-
     def test_endpoint_url_as_fp_staff(self):
         """Test that Fairphone staff users can access the endpoint URL."""
         self._assert_get_as_fp_staff_succeeds(self.endpoint_url)
@@ -287,13 +275,13 @@ class VersionDailyTestCase(_VersionTestCase):
 
     def test_list_daily_versions_empty_database(self):
         """Test listing of daily versions on an empty database."""
-        response = self.admin.get(self.endpoint_url)
+        response = self.fp_staff_client.get(self.endpoint_url)
         self._assert_result_length_is(response, 0)
 
     def test_list_daily_versions(self):
         """Test listing daily versions."""
         versions_daily = self._create_version_entities()
-        response = self.admin.get(self.endpoint_url)
+        response = self.fp_staff_client.get(self.endpoint_url)
         self._assert_result_length_is(response, len(versions_daily))
 
     def test_filter_daily_versions_by_version(self):
@@ -302,7 +290,7 @@ class VersionDailyTestCase(_VersionTestCase):
         versions = self._create_version_entities()
 
         # Listing all entities should return the correct result length
-        response = self.admin.get(self.endpoint_url)
+        response = self.fp_staff_client.get(self.endpoint_url)
         self._assert_result_length_is(response, len(versions))
 
         # List entities with filter
@@ -327,7 +315,7 @@ class VersionDailyTestCase(_VersionTestCase):
         versions[0].save()
 
         # Listing all entities should return the correct result length
-        response = self.admin.get(self.endpoint_url)
+        response = self.fp_staff_client.get(self.endpoint_url)
         self._assert_result_length_is(response, len(versions))
 
         # Expect the single matching result to be returned
@@ -402,15 +390,6 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
         self.assertEqual(response.data["smpl_per_day"], smpl_per_day)
         self.assertEqual(response.data["last_active"], last_active)
 
-    def test_device_overview_url_as_admin(self):
-        """Test that admin users can access the URL."""
-        self._assert_get_as_admin_user_succeeds(
-            reverse(
-                self.device_overview_url,
-                kwargs={"uuid": self.device_owner_device.uuid},
-            )
-        )
-
     def test_device_overview_url_as_fp_staff(self):
         """Test that Fairphone staff users can access the URL."""
         self._assert_get_as_fp_staff_succeeds(
@@ -434,15 +413,6 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
         self._assert_get_without_authentication_fails(
             reverse(
                 self.device_overview_url,
-                kwargs={"uuid": self.device_owner_device.uuid},
-            )
-        )
-
-    def test_device_report_history_url_as_admin(self):
-        """Test that admin users can access device report history URL."""
-        self._assert_get_as_admin_user_succeeds(
-            reverse(
-                self.device_report_history_url,
                 kwargs={"uuid": self.device_owner_device.uuid},
             )
         )
@@ -474,15 +444,6 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
             )
         )
 
-    def test_device_update_history_url_as_admin(self):
-        """Test that admin users can access device update history URL."""
-        self._assert_get_as_admin_user_succeeds(
-            reverse(
-                self.device_update_history_url,
-                kwargs={"uuid": self.device_owner_device.uuid},
-            )
-        )
-
     def test_device_update_history_url_as_fp_staff(self):
         """Test that FP staff can access device update history URL."""
         self._assert_get_as_fp_staff_succeeds(
@@ -508,20 +469,6 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
                 self.device_update_history_url,
                 kwargs={"uuid": self.device_owner_device.uuid},
             )
-        )
-
-    def test_logfile_download_url_as_admin(self):
-        """Test that admin users can access the logfile download URL."""
-        non_existent_logfile_id = 0
-        self.assertFalse(
-            LogFile.objects.filter(id=non_existent_logfile_id).exists()
-        )
-        self._assert_get_as_admin_user_succeeds(
-            reverse(
-                self.device_logfile_download_url,
-                kwargs={"id_logfile": non_existent_logfile_id},
-            ),
-            expected_status=status.HTTP_404_NOT_FOUND,
         )
 
     def tes_logfile_download_url_as_fp_staff(self):

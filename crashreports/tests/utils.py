@@ -3,12 +3,13 @@
 import os
 from typing import Optional
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
 from crashreports.models import Crashreport
+from hiccup.allauth_adapters import FP_STAFF_GROUP_NAME
 
 DEFAULT_DUMMY_LOG_FILE_DIRECTORY = os.path.join("resources", "test")
 
@@ -137,16 +138,18 @@ class HiccupCrashreportsAPITestCase(APITestCase):
     REGISTER_DEVICE_URL = "api_v1_register_device"
 
     def setUp(self):
-        """Create an admin user for accessing the API.
+        """Create a Fairphone staff user for accessing the API.
 
         The APIClient that can be used to make authenticated requests to the
-        server is stored in self.admin.
+        server is stored in self.fp_staff_client.
         """
-        admin_user = User.objects.create_superuser(
-            "somebody", "somebody@example.com", "thepassword"
+        fp_staff_group = Group.objects.get(name=FP_STAFF_GROUP_NAME)
+        fp_staff_user = User.objects.create_user(
+            "fp_staff", "somebody@fairphone.com", "thepassword"
         )
-        self.admin = APIClient()
-        self.admin.force_authenticate(admin_user)
+        fp_staff_user.groups.add(fp_staff_group)
+        self.fp_staff_client = APIClient()
+        self.fp_staff_client.force_login(fp_staff_user)
 
     def _register_device(self, **kwargs):
         """Register a new device.

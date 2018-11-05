@@ -28,7 +28,7 @@ class HeartbeatsTestCase(HiccupCrashreportsAPITestCase):
 
     def _retrieve_single(self, user):
         count = 5
-        response = self._post_multiple(self.admin, self.data, count)
+        response = self._post_multiple(self.fp_staff_client, self.data, count)
         self.assertEqual(len(response), count)
         self.assertEqual(response[0].status_code, status.HTTP_201_CREATED)
         url = reverse(self.RETRIEVE_URL, args=[response[0].data["id"]])
@@ -59,15 +59,17 @@ class HeartbeatsTestCase(HiccupCrashreportsAPITestCase):
         response = noauth_client.post(reverse(self.LIST_CREATE_URL), self.data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_create_as_admin(self):
-        """Test creation as admin."""
-        response = self.admin.post(reverse(self.LIST_CREATE_URL), self.data)
+    def test_create_as_fp_staff(self):
+        """Test creation as Fairphone staff."""
+        response = self.fp_staff_client.post(
+            reverse(self.LIST_CREATE_URL), self.data
+        )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(response.data["id"] > 0)
 
-    def test_create_as_admin_not_existing_device(self):
+    def test_create_as_fp_staff_not_existing_device(self):
         """Test creation of heartbeat on non-existing device."""
-        response = self.admin.post(
+        response = self.fp_staff_client.post(
             reverse(self.LIST_CREATE_URL), self._create_dummy_data()
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -93,13 +95,15 @@ class HeartbeatsTestCase(HiccupCrashreportsAPITestCase):
         """Test listing of heartbeats."""
         count = 5
         self._post_multiple(self.user, self.data, count)
-        response = self.admin.get(reverse(self.LIST_CREATE_URL))
+        response = self.fp_staff_client.get(reverse(self.LIST_CREATE_URL))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), count)
 
-    def test_retrieve_single_admin(self):
-        """Test retrieval as admin."""
-        self.assertEqual(self._retrieve_single(self.admin), status.HTTP_200_OK)
+    def test_retrieve_single_fp_staff(self):
+        """Test retrieval as Fairphone staff."""
+        self.assertEqual(
+            self._retrieve_single(self.fp_staff_client), status.HTTP_200_OK
+        )
 
     def test_retrieve_single_device_owner(self):
         """Test retrieval as device owner."""
@@ -114,10 +118,11 @@ class HeartbeatsTestCase(HiccupCrashreportsAPITestCase):
             self._retrieve_single(noauth_client), status.HTTP_401_UNAUTHORIZED
         )
 
-    def test_retrieve_single_by_device_admin(self):
-        """Test retrieval by device as admin."""
+    def test_retrieve_single_by_device_fp_staff(self):
+        """Test retrieval by device as Fairphone staff."""
         self.assertEqual(
-            self._retrieve_single_by_device(self.admin), status.HTTP_200_OK
+            self._retrieve_single_by_device(self.fp_staff_client),
+            status.HTTP_200_OK,
         )
 
     def test_retrieve_single_by_device_device_owner(self):
@@ -141,10 +146,10 @@ class HeartbeatsTestCase(HiccupCrashreportsAPITestCase):
         uuid, _, _ = self._register_device()
         self._post_multiple(self.user, self.data, count)
         self._post_multiple(
-            self.admin, self._create_dummy_data(uuid=uuid), count
+            self.fp_staff_client, self._create_dummy_data(uuid=uuid), count
         )
         url = reverse(self.LIST_CREATE_BY_UUID_URL, args=[self.uuid])
-        response = self.admin.get(url)
+        response = self.fp_staff_client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), count)
 
@@ -170,7 +175,7 @@ class HeartbeatsTestCase(HiccupCrashreportsAPITestCase):
         response = self.user.post(reverse(self.LIST_CREATE_URL), data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         url = reverse(self.LIST_CREATE_BY_UUID_URL, args=[self.uuid])
-        response = self.admin.get(url)
+        response = self.fp_staff_client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 1)
         self.assertIsNone(response.data["results"][0]["radio_version"])
@@ -180,7 +185,7 @@ class HeartbeatsTestCase(HiccupCrashreportsAPITestCase):
         response = self.user.post(reverse(self.LIST_CREATE_URL), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         url = reverse(self.LIST_CREATE_BY_UUID_URL, args=[self.uuid])
-        response = self.admin.get(url)
+        response = self.fp_staff_client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 1)
         self.assertEqual(

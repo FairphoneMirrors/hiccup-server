@@ -31,10 +31,6 @@ class ViewsTestCase(HiccupStatsAPITestCase):
     def _get_with_params(self, url, params):
         return self.fp_staff_client.get(self._url_with_params(url, params))
 
-    def test_home_view_as_admin(self):
-        """Test that admin users can access the home view."""
-        self._assert_get_as_admin_user_succeeds(self.home_url)
-
     def test_home_view_as_fp_staff(self):
         """Test that Fairphone staff users can access the home view."""
         self._assert_get_as_fp_staff_succeeds(self.home_url)
@@ -51,14 +47,6 @@ class ViewsTestCase(HiccupStatsAPITestCase):
         # Assert that the response is a redirect (to the login page)
         self._assert_get_without_authentication_fails(
             self.home_url, expected_status=status.HTTP_302_FOUND
-        )
-
-    def test_device_view_as_admin(self):
-        """Test that admin users can access the device view."""
-        self._assert_get_as_admin_user_succeeds(
-            self._url_with_params(
-                self.device_url, {"uuid": self.device_owner_device.uuid}
-            )
         )
 
     def test_device_view_as_fp_staff(self):
@@ -89,10 +77,6 @@ class ViewsTestCase(HiccupStatsAPITestCase):
             expected_status=status.HTTP_302_FOUND,
         )
 
-    def test_versions_view_as_admin(self):
-        """Test that admin users can access the versions view."""
-        self._assert_get_as_admin_user_succeeds(self.versions_url)
-
     def test_versions_view_as_fp_staff(self):
         """Test that Fairphone staff users can access the versions view."""
         self._assert_get_as_fp_staff_succeeds(self.versions_url)
@@ -111,10 +95,6 @@ class ViewsTestCase(HiccupStatsAPITestCase):
             self.versions_url, expected_status=status.HTTP_302_FOUND
         )
 
-    def test_versions_all_view_as_admin(self):
-        """Test that admin users can access the versions all view."""
-        self._assert_get_as_admin_user_succeeds(self.versions_all_url)
-
     def test_versions_all_view_as_fp_staff(self):
         """Test that Fairphone staff users can access the versions all view."""
         self._assert_get_as_fp_staff_succeeds(self.versions_all_url)
@@ -131,20 +111,6 @@ class ViewsTestCase(HiccupStatsAPITestCase):
         # Assert that the response is a redirect (to the login page)
         self._assert_get_without_authentication_fails(
             self.versions_all_url, expected_status=status.HTTP_302_FOUND
-        )
-
-    def test_home_view_post_as_admin_user(self):
-        """Test HTTP POST method to home view as admin user."""
-        response = self.admin.post(
-            self.home_url, data={"uuid": str(self.device_owner_device.uuid)}
-        )
-
-        # Assert that the response is a redirect to the device page
-        self.assertRedirects(
-            response,
-            self._url_with_params(
-                self.device_url, {"uuid": self.device_owner_device.uuid}
-            ),
         )
 
     def test_home_view_post_as_fp_staff(self):

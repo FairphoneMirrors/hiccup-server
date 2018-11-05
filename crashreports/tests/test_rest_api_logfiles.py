@@ -98,9 +98,9 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
         """Test upload of logfiles as device owner."""
         self._test_logfile_upload(self.user, self.device_uuid)
 
-    def test_logfile_upload_as_admin(self):
-        """Test upload of logfiles as admin user."""
-        self._test_logfile_upload(self.admin, self.device_uuid)
+    def test_logfile_upload_as_fp_staff(self):
+        """Test upload of logfiles as Fairphone staff user."""
+        self._test_logfile_upload(self.fp_staff_client, self.device_uuid)
 
     def tearDown(self):
         """Remove the file and directories that were created for the test."""

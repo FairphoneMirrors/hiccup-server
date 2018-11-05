@@ -89,7 +89,7 @@ class ListDevicesTestCase(HiccupCrashreportsAPITestCase):
             str(self._register_device()[0]) for _ in range(number_of_devices)
         ]
 
-        response = self.admin.get(reverse(self.LIST_CREATE_URL), {})
+        response = self.fp_staff_client.get(reverse(self.LIST_CREATE_URL), {})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), number_of_devices)
         for result in response.data["results"]:
@@ -101,9 +101,11 @@ class ListDevicesTestCase(HiccupCrashreportsAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_retrieve_device_auth(self):
-        """Test retrieval of devices as admin user."""
+        """Test retrieval of devices as Fairphone staff user."""
         uuid, _, token = self._register_device()
-        response = self.admin.get(reverse(self.RETRIEVE_URL, args=[uuid]), {})
+        response = self.fp_staff_client.get(
+            reverse(self.RETRIEVE_URL, args=[uuid]), {}
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["uuid"], str(uuid))
         self.assertEqual(response.data["token"], token)
@@ -115,10 +117,10 @@ class ListDevicesTestCase(HiccupCrashreportsAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_delete_device_auth(self):
-        """Test deletion of devices as admin user."""
+        """Test deletion of devices as Fairphone staff user."""
         uuid, _, _ = self._register_device()
         url = reverse(self.RETRIEVE_URL, args=[uuid])
-        response = self.admin.delete(url, {})
+        response = self.fp_staff_client.delete(url, {})
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        response = self.admin.delete(url, {})
+        response = self.fp_staff_client.delete(url, {})
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

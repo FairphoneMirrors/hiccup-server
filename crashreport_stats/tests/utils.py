@@ -322,20 +322,13 @@ class HiccupStatsAPITestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):  # noqa: N802
-        """Create an admin and two client users for accessing the API.
+        """Create client users for accessing the API.
 
         The APIClient that can be used to make authenticated requests as
-        admin user is stored in self.admin. A client which is related to a
-        user that is part of the Fairphone staff group is stored in
-        self.fp_staff_client. A client which is related to a device owner
-        user is stored in self.device_owner_client.
+        Fairphone staff user is stored in self.fp_staff_client. Additionally, a
+        client which is related to a device owner user is stored in
+        self.device_owner_client.
         """
-        admin_user = User.objects.create_superuser(
-            "somebody", "somebody@example.com", "thepassword"
-        )
-        cls.admin = APIClient()
-        cls.admin.force_login(admin_user)
-
         fp_staff_group = Group.objects.get(name=FP_STAFF_GROUP_NAME)
         fp_staff_user = User.objects.create_user(
             "fp_staff", "somebody@fairphone.com", "thepassword"
@@ -355,12 +348,6 @@ class HiccupStatsAPITestCase(APITestCase):
         cls.device_owner_client.credentials(
             HTTP_AUTHORIZATION="Token " + cls.device_owner_user.auth_token.key
         )
-
-    def _assert_get_as_admin_user_succeeds(
-        self, url, expected_status=status.HTTP_200_OK
-    ):
-        response = self.admin.get(url)
-        self.assertEqual(response.status_code, expected_status)
 
     def _assert_get_as_fp_staff_succeeds(
         self, url, expected_status=status.HTTP_200_OK
