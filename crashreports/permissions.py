@@ -36,8 +36,7 @@ def user_is_hiccup_staff(user):
     """Determine whether a user is part of the Hiccup staff.
 
     Returns true if either the user is part of the group
-    "FairphoneSoftwareTeam", or he/she has all permissions for manipulating
-    crashreports, heartbeats and logfiles.
+    "FairphoneSoftwareTeam".
 
     Args:
         user: The user making the request.
@@ -45,24 +44,7 @@ def user_is_hiccup_staff(user):
     Returns: True if user is part of the Hiccup staff.
 
     """
-    if user.groups.filter(name=FP_STAFF_GROUP_NAME).exists():
-        return True
-    return user.has_perms(
-        [
-            # Crashreports
-            "crashreports.add_crashreport",
-            "crashreports.change_crashreport",
-            "crashreports.del_crashreport",
-            # Heartbeats
-            "heartbeat.add_crashreport",
-            "heartbeat.change_crashreport",
-            "heartbeat.del_crashreport",
-            # Logfiles
-            "heartbeat.add_logfile",
-            "heartbeat.change_logfile",
-            "heartbeat.del_logfile",
-        ]
-    )
+    return user.groups.filter(name=FP_STAFF_GROUP_NAME).exists()
 
 
 class HasStatsAccess(BasePermission):
