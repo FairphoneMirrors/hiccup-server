@@ -1,5 +1,4 @@
 """Tests for the stats management command module."""
-
 from io import StringIO
 from datetime import datetime, timedelta
 import unittest
@@ -38,13 +37,14 @@ class StatsCommandVersionsTestCase(TestCase):
         self, report_type, unique_entry_name, device, number, **kwargs
     ):
         # Create reports with distinct timestamps
-        now = datetime.now(pytz.utc)
+        report_date = datetime.now(pytz.utc)
+        if report_type == HeartBeat:
+            report_date = report_date.date()
         for i in range(number):
-            report_date = now - timedelta(milliseconds=i)
             report_attributes = {
                 self.unique_entry_name: unique_entry_name,
                 "device": device,
-                "date": report_date,
+                "date": report_date - timedelta(days=i),
             }
             report_attributes.update(**kwargs)
             Dummy.create_dummy_report(report_type, **report_attributes)
@@ -86,12 +86,15 @@ class StatsCommandVersionsTestCase(TestCase):
         }
         version = self.version_class.objects.get(**get_params)
 
-        self.assertEqual(report.date.date(), version.first_seen_on)
+        report_date = (
+            report.date.date() if report_type == Crashreport else report.date
+        )
+        self.assertEqual(report_date, version.first_seen_on)
 
         # Create a new report from an earlier point in time
-        report_time_2 = report.date - timedelta(weeks=1)
+        report_date_2 = report.date - timedelta(weeks=1)
         Dummy.create_dummy_report(
-            report_type, device=device, date=report_time_2
+            report_type, device=device, date=report_date_2
         )
 
         # Run the command to update the database
@@ -101,7 +104,9 @@ class StatsCommandVersionsTestCase(TestCase):
         version = self.version_class.objects.get(**get_params)
 
         # Validate that the date matches the report recently sent
-        self.assertEqual(report_time_2.date(), version.first_seen_on)
+        if report_type == Crashreport:
+            report_date_2 = report_date_2.date()
+        self.assertEqual(report_date_2, version.first_seen_on)
 
     def test_older_heartbeat_updates_version_date(self):
         """Validate updating version date with older heartbeats."""
@@ -114,9 +119,9 @@ class StatsCommandVersionsTestCase(TestCase):
     def test_entries_are_unique(self):
         """Validate the entries' unicity and value."""
         # Create some reports
-        user = Dummy.create_dummy_user()
-        device = Dummy.create_dummy_device(user=user)
-        for unique_entry in self.unique_entries:
+        for unique_entry, username in zip(self.unique_entries, Dummy.USERNAMES):
+            user = Dummy.create_dummy_user(username=username)
+            device = Dummy.create_dummy_device(user=user)
             self._create_reports(HeartBeat, unique_entry, device, 10)
 
         # Run the command to update the database
@@ -142,9 +147,11 @@ class StatsCommandVersionsTestCase(TestCase):
                 "({} != {})".format(len(numbers), len(self.unique_entries))
             )
         # Create some reports
-        user = Dummy.create_dummy_user()
-        device = Dummy.create_dummy_device(user=user)
-        for unique_entry, num in zip(self.unique_entries, numbers):
+        for unique_entry, num, username in zip(
+            self.unique_entries, numbers, Dummy.USERNAMES
+        ):
+            user = Dummy.create_dummy_user(username=username)
+            device = Dummy.create_dummy_device(user=user)
             self._create_reports(
                 report_type, unique_entry, device, num, **kwargs
             )
@@ -334,20 +341,24 @@ class StatsCommandVersionsTestCase(TestCase):
     def _assert_updating_twice_gives_correct_counters(
         self, report_type, counter_attribute_name, **boot_reason_param
     ):
-        # Create a device and a corresponding reports for 2 different versions
-        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        # Create a two devices and a corresponding reports for 2 different
+        # versions
+        device_1 = Dummy.create_dummy_device(Dummy.create_dummy_user())
         num_reports = 5
         self._create_reports(
             report_type,
             self.unique_entries[0],
-            device,
+            device_1,
             num_reports,
             **boot_reason_param
+        )
+        device_2 = Dummy.create_dummy_device(
+            Dummy.create_dummy_user(username=Dummy.USERNAMES[1])
         )
         self._create_reports(
             report_type,
             self.unique_entries[1],
-            device,
+            device_2,
             num_reports,
             **boot_reason_param
         )
@@ -372,7 +383,7 @@ class StatsCommandVersionsTestCase(TestCase):
         # Create another report for the first version
         report_new_attributes = {
             self.unique_entry_name: self.unique_entries[0],
-            "device": device,
+            "device": device_1,
             **boot_reason_param,
         }
         Dummy.create_dummy_report(report_type, **report_new_attributes)
@@ -520,74 +531,6 @@ class StatsCommandVersionsTestCase(TestCase):
             Crashreport, counter_attribute_name, **params
         )
 
-    def _assert_duplicates_are_ignored(
-        self, report_type, device, counter_attribute_name, **kwargs
-    ):
-        """Validate that reports with duplicate timestamps are ignored."""
-        # Create a report
-        report = Dummy.create_dummy_report(report_type, device=device, **kwargs)
-
-        # Create a second report with the same timestamp
-        Dummy.create_dummy_report(
-            report_type, device=device, date=report.date, **kwargs
-        )
-
-        # Run the command to update the database
-        call_command("stats", "update")
-
-        # Get the corresponding version instance from the database
-        get_params = {
-            self.unique_entry_name: getattr(report, self.unique_entry_name)
-        }
-        version = self.version_class.objects.get(**get_params)
-
-        # Assert that the report with the duplicate timestamp is not
-        # counted, i.e. only 1 report is counted.
-        self.assertEqual(getattr(version, counter_attribute_name), 1)
-
-    def test_heartbeat_duplicates_are_ignored(self):
-        """Validate that heartbeat duplicates are ignored."""
-        counter_attribute_name = "heartbeats"
-        device = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
-        self._assert_duplicates_are_ignored(
-            HeartBeat, device, counter_attribute_name
-        )
-
-    def test_crash_report_duplicates_are_ignored(self):
-        """Validate that crash report duplicates are ignored."""
-        counter_attribute_name = "prob_crashes"
-        device = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
-        for i, boot_reason in enumerate(Crashreport.CRASH_BOOT_REASONS):
-            params = {
-                "boot_reason": boot_reason,
-                self.unique_entry_name: self.unique_entries[i],
-            }
-            self._assert_duplicates_are_ignored(
-                Crashreport, device, counter_attribute_name, **params
-            )
-
-    def test_smpl_report_duplicates_are_ignored(self):
-        """Validate that smpl report duplicates are ignored."""
-        counter_attribute_name = "smpl"
-        device = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
-        for i, boot_reason in enumerate(Crashreport.SMPL_BOOT_REASONS):
-            params = {
-                "boot_reason": boot_reason,
-                self.unique_entry_name: self.unique_entries[i],
-            }
-            self._assert_duplicates_are_ignored(
-                Crashreport, device, counter_attribute_name, **params
-            )
-
-    def test_other_report_duplicates_are_ignored(self):
-        """Validate that other report duplicates are ignored."""
-        counter_attribute_name = "other"
-        params = {"boot_reason": "random boot reason"}
-        device = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
-        self._assert_duplicates_are_ignored(
-            Crashreport, device, counter_attribute_name, **params
-        )
-
     def _assert_older_reports_update_released_on_date(
         self, report_type, **kwargs
     ):
@@ -609,7 +552,10 @@ class StatsCommandVersionsTestCase(TestCase):
         )
 
         # Assert that the released_on date matches the first report date
-        self.assertEqual(version.released_on, report.date.date())
+        report_date = (
+            report.date.date() if report_type == Crashreport else report.date
+        )
+        self.assertEqual(version.released_on, report_date)
 
         # Create a second report with the a timestamp earlier in time
         report_2_date = report.date - timedelta(days=1)
@@ -626,7 +572,9 @@ class StatsCommandVersionsTestCase(TestCase):
         )
 
         # Assert that the released_on date matches the older report date
-        self.assertEqual(version.released_on, report_2_date.date())
+        if report_type == Crashreport:
+            report_2_date = report_2_date.date()
+        self.assertEqual(version.released_on, report_2_date)
 
     def _assert_newer_reports_do_not_update_released_on_date(
         self, report_type, **kwargs
@@ -639,7 +587,9 @@ class StatsCommandVersionsTestCase(TestCase):
         # Create a report
         device = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
         report = Dummy.create_dummy_report(report_type, device=device, **kwargs)
-        report_1_date = report.date.date()
+        report_1_date = (
+            report.date.date() if report_type == Crashreport else report.date
+        )
 
         # Run the command to update the database
         call_command("stats", "update")
@@ -706,7 +656,10 @@ class StatsCommandVersionsTestCase(TestCase):
         )
 
         # Assert that the released_on date matches the first report date
-        self.assertEqual(version.released_on, report.date.date())
+        report_date = (
+            report.date.date() if report_type == Crashreport else report.date
+        )
+        self.assertEqual(version.released_on, report_date)
 
         # Create a second report with a timestamp earlier in time
         report_2_date = report.date - timedelta(days=1)
@@ -715,7 +668,7 @@ class StatsCommandVersionsTestCase(TestCase):
         )
 
         # Manually change the released_on date
-        version_release_date = report.date + timedelta(days=1)
+        version_release_date = report_date + timedelta(days=1)
         version.released_on = version_release_date
         version.save()
 
@@ -729,7 +682,7 @@ class StatsCommandVersionsTestCase(TestCase):
 
         # Assert that the released_on date still matches the date is was
         # manually changed to
-        self.assertEqual(version.released_on, version_release_date.date())
+        self.assertEqual(version.released_on, version_release_date)
 
     def test_manually_changed_released_on_date_is_not_updated_by_heartbeat(
         self

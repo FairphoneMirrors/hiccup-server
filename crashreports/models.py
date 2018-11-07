@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 """Models for devices, heartbeats, crashreports and log files."""
-
+import logging
 import os
 import uuid
 
-from django.db import models, transaction
+from django.db import models, transaction, IntegrityError
 from django.contrib.auth.models import User
 from django.dispatch import receiver
+from django.forms import model_to_dict
 from taggit.managers import TaggableManager
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Device(models.Model):
@@ -109,6 +112,9 @@ class Crashreport(models.Model):
     next_logfile_key = models.PositiveIntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:  # noqa: D106
+        unique_together = ("device", "date")
+
     @transaction.atomic
     def get_logfile_key(self):
         """Get the next key for a log file and update the ID-counter."""
@@ -125,11 +131,21 @@ class Crashreport(models.Model):
         update_fields=None,
     ):
         """Save the crashreport and set its local ID if it was not set."""
-        if not self.device_local_id:
-            self.device_local_id = self.device.get_crashreport_key()
-        super(Crashreport, self).save(
-            force_insert, force_update, using, update_fields
-        )
+        try:
+            with transaction.atomic():
+                if not self.device_local_id:
+                    self.device_local_id = self.device.get_crashreport_key()
+                super(Crashreport, self).save(
+                    force_insert, force_update, using, update_fields
+                )
+        except IntegrityError:
+            # If there is a duplicate entry, log its values and return
+            # without throwing an exception to keep idempotency of the
+            # interface.
+            LOGGER.debug(
+                "Duplicate Crashreport received and dropped: %s",
+                model_to_dict(self),
+            )
 
     def _get_uuid(self):
         """Return the device UUID."""
@@ -187,9 +203,12 @@ class HeartBeat(models.Model):
     uptime = models.CharField(max_length=200)
     build_fingerprint = models.CharField(db_index=True, max_length=200)
     radio_version = models.CharField(db_index=True, max_length=200, null=True)
-    date = models.DateTimeField(db_index=True)
+    date = models.DateField(db_index=True)
     device_local_id = models.PositiveIntegerField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:  # noqa: D106
+        unique_together = ("device", "date")
 
     def save(
         self,
@@ -199,11 +218,21 @@ class HeartBeat(models.Model):
         update_fields=None,
     ):
         """Save the heartbeat and set its local ID if it was not set."""
-        if not self.device_local_id:
-            self.device_local_id = self.device.get_heartbeat_key()
-        super(HeartBeat, self).save(
-            force_insert, force_update, using, update_fields
-        )
+        try:
+            with transaction.atomic():
+                if not self.device_local_id:
+                    self.device_local_id = self.device.get_heartbeat_key()
+                super(HeartBeat, self).save(
+                    force_insert, force_update, using, update_fields
+                )
+        except IntegrityError:
+            # If there is a duplicate entry, log its values and return
+            # without throwing an exception to keep idempotency of the
+            # interface.
+            LOGGER.debug(
+                "Duplicate HeartBeat received and dropped: %s",
+                model_to_dict(self),
+            )
 
     def _get_uuid(self):
         """Return the device UUID."""

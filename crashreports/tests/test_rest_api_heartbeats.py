@@ -1,5 +1,7 @@
 """Tests for the heartbeats REST API."""
+from datetime import timedelta, datetime
 
+import pytz
 from django.urls import reverse
 
 from rest_framework import status
@@ -11,6 +13,8 @@ from crashreports.tests.utils import HiccupCrashreportsAPITestCase, Dummy
 class HeartbeatsTestCase(HiccupCrashreportsAPITestCase):
     """Test cases for heartbeats."""
 
+    # pylint: disable=too-many-public-methods
+
     LIST_CREATE_URL = "api_v1_heartbeats"
     RETRIEVE_URL = "api_v1_heartbeat"
     LIST_CREATE_BY_UUID_URL = "api_v1_heartbeats_by_uuid"
@@ -20,11 +24,34 @@ class HeartbeatsTestCase(HiccupCrashreportsAPITestCase):
     def _create_dummy_data(**kwargs):
         return Dummy.heartbeat_data(**kwargs)
 
+    @staticmethod
+    def _create_alternative_dummy_data(**kwargs):
+        return Dummy.alternative_heartbeat_data(**kwargs)
+
     def _post_multiple(self, client, data, count):
-        return [
-            client.post(reverse(self.LIST_CREATE_URL), data)
-            for _ in range(count)
-        ]
+        """Send multiple POST requests to create reports.
+
+        Note that the date of the data will be adapted for each POST request
+        so that no duplicate reports are being created. However, the given
+        `data` parameter value will not be modified.
+
+        Args:
+            client: The client used for sending the requests
+            data: The data that is sent each request
+            count: The number of requests that should be made
+
+        Returns: A list of HTTP response objects
+
+        """
+        results = []
+        data_to_send = data.copy()
+        for i in range(count):
+            data_to_send["date"] += timedelta(days=i)
+            results.append(
+                client.post(reverse(self.LIST_CREATE_URL), data_to_send)
+            )
+
+        return results
 
     def _retrieve_single(self, user):
         count = 5
@@ -221,3 +248,68 @@ class HeartbeatsTestCase(HiccupCrashreportsAPITestCase):
         data["date"] = "2017-10-29 02:34:56"
         response = self.user.post(reverse(self.LIST_CREATE_URL), data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_create_duplicate(self):
+        """Test creation of a duplicate Heartbeat."""
+        # Create a first Heartbeat
+        report_data = self._create_dummy_data(uuid=self.uuid)
+        response_first = self.user.post(
+            reverse(self.LIST_CREATE_URL), report_data
+        )
+        self.assertEqual(response_first.status_code, status.HTTP_201_CREATED)
+
+        # Create a second heartbeat for the same day
+        response_second = self.user.post(
+            reverse(self.LIST_CREATE_URL), report_data
+        )
+        self.assertEqual(response_second.status_code, status.HTTP_201_CREATED)
+
+        # Assert that only one heartbeat instance was created
+        url = reverse(self.LIST_CREATE_BY_UUID_URL, args=[self.uuid])
+        response = self.fp_staff_client.get(url)
+        self.assertEqual(len(response.data["results"]), 1)
+
+    def test_create_duplicate_different_values(self):
+        """Test creation of a duplicate Heartbeat with different values."""
+        # Create a first Heartbeat
+        report_1_data = self._create_dummy_data(uuid=self.uuid)
+        response_first = self.user.post(
+            reverse(self.LIST_CREATE_URL), report_1_data
+        )
+        self.assertEqual(response_first.status_code, status.HTTP_201_CREATED)
+
+        # Create a second heartbeat for the same day with all different
+        # values except for the date and UUID
+        report_2_data = self._create_alternative_dummy_data(uuid=self.uuid)
+        response_second = self.user.post(
+            reverse(self.LIST_CREATE_URL), report_2_data
+        )
+        self.assertEqual(response_second.status_code, status.HTTP_201_CREATED)
+
+        # Assert that only one heartbeat instance was created
+        url = reverse(self.LIST_CREATE_BY_UUID_URL, args=[self.uuid])
+        response = self.fp_staff_client.get(url)
+        self.assertEqual(len(response.data["results"]), 1)
+
+        # Assert that the values are all the same as of the first heartbeat, as
+        # we are dropping all incoming duplicates (we need to ignore the `id`
+        # because its value is set to -1 in the response for creating reports)
+        self.assertTrue(
+            {k: v for k, v in response.data["results"][0].items() if k != "id"}
+            == {k: v for k, v in response_first.data.items() if k != "id"}
+        )
+
+    def test_create_with_datetime(self):
+        """Test creation of heartbeats with datetime instead of date value.
+
+        Initially, the 'date' field of the HeartBeat model was a datetime
+        field but now has been changed to a date field. However, Hiccup clients
+        are still sending datetime values which also need to be accepted and
+        processed by the server.
+        """
+        data = self._create_dummy_data(uuid=self.uuid)
+        data["date"] = datetime(2018, 3, 19, 12, 0, 0, tzinfo=pytz.utc)
+
+        response = self.user.post(reverse(self.LIST_CREATE_URL), data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["date"], str(data["date"].date()))

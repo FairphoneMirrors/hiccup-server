@@ -70,7 +70,7 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
         device_local_id = self._upload_crashreport(user, uuid)
 
         # Upload a logfile for the crashreport
-        logfile = open(Dummy.DEFAULT_DUMMY_LOG_FILE_PATH, "rb")
+        logfile = open(Dummy.DEFAULT_DUMMY_LOG_FILE_PATHS[0], "rb")
 
         logfile_name = os.path.basename(logfile.name)
         response = user.post(
@@ -97,7 +97,7 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
         # bytes. However, we mainly care that the contents are equal:
         self._assert_zip_file_contents_equal(
             default_storage.path(uploaded_logfile_path),
-            Dummy.DEFAULT_DUMMY_LOG_FILE_PATH,
+            Dummy.DEFAULT_DUMMY_LOG_FILE_PATHS[0],
         )
 
     def test_logfile_upload_as_user(self):

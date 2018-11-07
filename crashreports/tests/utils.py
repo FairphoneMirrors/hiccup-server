@@ -73,7 +73,7 @@ class Dummy:
     ]
     UUIDs = ["e1c0cc95-ab8d-461a-a768-cb8d9d7fdb04"]
 
-    USERNAMES = ["testuser1", "testuser2", "testuser3"]
+    USERNAMES = ["testuser1", "testuser2", "testuser3", "testuser4"]
 
     DATES = [date(2018, 3, 19), date(2018, 3, 26), date(2018, 5, 1)]
 
@@ -97,16 +97,39 @@ class Dummy:
         ),
         "build_fingerprint": BUILD_FINGERPRINTS[0],
         "radio_version": RADIO_VERSIONS[0],
-        "date": datetime(2018, 3, 19, 12, 0, 0, tzinfo=pytz.utc),
+        "date": date(2018, 3, 19),
+    }
+
+    ALTERNATIVE_HEARTBEAT_VALUES = {
+        "app_version": 10101,
+        "uptime": (
+            "up time: 2 days, 12:39:13, idle time: 2 days, 11:35:01, "
+            "sleep time: 2 days, 11:56:12"
+        ),
+        "build_fingerprint": BUILD_FINGERPRINTS[1],
+        "radio_version": RADIO_VERSIONS[1],
+        "date": date(2018, 3, 19),
     }
 
     DEFAULT_DUMMY_CRASHREPORT_VALUES = DEFAULT_DUMMY_HEARTBEAT_VALUES.copy()
     DEFAULT_DUMMY_CRASHREPORT_VALUES.update(
         {
-            "is_fake_report": 0,
+            "is_fake_report": False,
             "boot_reason": Crashreport.BOOT_REASON_UNKOWN,
             "power_on_reason": "it was powered on",
             "power_off_reason": "something happened and it went off",
+            "date": datetime(2018, 3, 19, 12, 0, 0, tzinfo=pytz.utc),
+        }
+    )
+
+    ALTERNATIVE_CRASHREPORT_VALUES = ALTERNATIVE_HEARTBEAT_VALUES.copy()
+    ALTERNATIVE_CRASHREPORT_VALUES.update(
+        {
+            "is_fake_report": True,
+            "boot_reason": Crashreport.BOOT_REASON_KEYBOARD_POWER_ON,
+            "power_on_reason": "alternative power on reason",
+            "power_off_reason": "alternative power off reason",
+            "date": datetime(2018, 3, 19, 12, 0, 0, tzinfo=pytz.utc),
         }
     )
 
@@ -118,17 +141,27 @@ class Dummy:
         "other": "whatever",
     }
 
-    DEFAULT_DUMMY_LOG_FILE_FILENAME = "test_logfile.zip"
+    DEFAULT_DUMMY_LOG_FILE_FILENAMES = [
+        "test_logfile_1.zip",
+        "test_logfile_2.zip",
+    ]
     DEFAULT_DUMMY_LOG_FILE_DIRECTORY = os.path.join("resources", "test")
-
-    DEFAULT_DUMMY_LOG_FILE_PATH = os.path.join(
-        DEFAULT_DUMMY_LOG_FILE_DIRECTORY, DEFAULT_DUMMY_LOG_FILE_FILENAME
-    )
 
     DEFAULT_DUMMY_LOG_FILE_VALUES = {
         "logfile_type": "last_kmsg",
-        "logfile": DEFAULT_DUMMY_LOG_FILE_FILENAME,
+        "logfile": DEFAULT_DUMMY_LOG_FILE_FILENAMES[0],
     }
+
+    DEFAULT_DUMMY_LOG_FILE_PATHS = [
+        os.path.join(
+            DEFAULT_DUMMY_LOG_FILE_DIRECTORY,
+            DEFAULT_DUMMY_LOG_FILE_FILENAMES[0],
+        ),
+        os.path.join(
+            DEFAULT_DUMMY_LOG_FILE_DIRECTORY,
+            DEFAULT_DUMMY_LOG_FILE_FILENAMES[1],
+        ),
+    ]
 
     @staticmethod
     def _update_copy(original, update):
@@ -158,6 +191,15 @@ class Dummy:
         return Dummy._update_copy(Dummy.DEFAULT_DUMMY_HEARTBEAT_VALUES, kwargs)
 
     @staticmethod
+    def alternative_heartbeat_data(**kwargs):
+        """Return the alternative data required to create a heartbeat.
+
+        Use the values passed as keyword arguments or default to the ones
+        from `Dummy.ALTERNATIVE_HEARTBEAT_VALUES`.
+        """
+        return Dummy._update_copy(Dummy.ALTERNATIVE_HEARTBEAT_VALUES, kwargs)
+
+    @staticmethod
     def crashreport_data(report_type: Optional[str] = None, **kwargs):
         """Return the data required to create a crashreport.
 
@@ -180,6 +222,15 @@ class Dummy:
                 report_type
             )
         return data
+
+    @staticmethod
+    def alternative_crashreport_data(**kwargs):
+        """Return the alternative data required to create a crashreport.
+
+        Use the values passed as keyword arguments or default to the ones
+        from `Dummy.ALTERNATIVE_CRASHREPORT_VALUES`.
+        """
+        return Dummy._update_copy(Dummy.ALTERNATIVE_CRASHREPORT_VALUES, kwargs)
 
     @staticmethod
     def create_dummy_user(**kwargs):

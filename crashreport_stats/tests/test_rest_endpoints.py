@@ -1,7 +1,6 @@
 """Tests for the rest_endpoints module."""
 import operator
 from datetime import datetime, timedelta
-import unittest
 
 import pytz
 from django.test import override_settings
@@ -585,15 +584,22 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
         """Test getting device stats for a device."""
         # Create a device with a heartbeat and one report of each type
         device = Dummy.create_dummy_device(Dummy.create_dummy_user())
-        heartbeat = Dummy.create_dummy_report(HeartBeat, device)
+        crashreport_date = Dummy.DEFAULT_DUMMY_CRASHREPORT_VALUES["date"]
+        heartbeat = Dummy.create_dummy_report(
+            HeartBeat, device, date=crashreport_date.date()
+        )
         for boot_reason in (
             Crashreport.SMPL_BOOT_REASONS
             + Crashreport.CRASH_BOOT_REASONS
             + ["other boot reason"]
         ):
             Dummy.create_dummy_report(
-                Crashreport, device, boot_reason=boot_reason
+                Crashreport,
+                device,
+                boot_reason=boot_reason,
+                date=crashreport_date,
             )
+            crashreport_date += timedelta(milliseconds=1)
 
         # Get the device statistics
         response = self._get_with_params(
@@ -619,15 +625,15 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
         device = Dummy.create_dummy_device(Dummy.create_dummy_user())
         num_days = 100
         for i in range(num_days):
-            report_day = datetime.now(tz=pytz.utc) + timedelta(days=i)
+            report_date = datetime.now(tz=pytz.utc) + timedelta(days=i)
             heartbeat = Dummy.create_dummy_report(
-                HeartBeat, device, date=report_day
+                HeartBeat, device, date=report_date.date()
             )
-            Dummy.create_dummy_report(Crashreport, device, date=report_day)
+            Dummy.create_dummy_report(Crashreport, device, date=report_date)
             Dummy.create_dummy_report(
                 Crashreport,
                 device,
-                date=report_day,
+                date=report_date + timedelta(minutes=1),
                 boot_reason=Crashreport.SMPL_BOOT_REASONS[0],
             )
 
@@ -656,13 +662,13 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
         num_days = 100
         skip_day = round(num_days / 2)
         for i in range(num_days):
-            report_day = datetime.now(tz=pytz.utc) + timedelta(days=i)
+            report_date = datetime.now(tz=pytz.utc) + timedelta(days=i)
             # Skip creation of heartbeat at one day
             if i != skip_day:
                 heartbeat = Dummy.create_dummy_report(
-                    HeartBeat, device, date=report_day
+                    HeartBeat, device, date=report_date.date()
                 )
-            Dummy.create_dummy_report(Crashreport, device, date=report_day)
+            Dummy.create_dummy_report(Crashreport, device, date=report_date)
 
         # Get the device statistics
         response = self._get_with_params(
@@ -678,48 +684,6 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
             num_crashreports=num_days,
             num_smpls=0,
             crashes_per_day=num_days / (num_days - 1),
-            smpl_per_day=0,
-            last_active=heartbeat.date,
-        )
-
-    @unittest.skip("Duplicate heartbeats are currently not dropped.")
-    def test_get_device_stats_multiple_days_duplicate_heartbeat(self):
-        """Test getting device stats for a device with duplicate heartbeat.
-
-        Duplicate heartbeats are dropped and thus should not influence the
-        statistics.
-        """
-        # Create a device with some heartbeats and reports over time
-        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
-        num_days = 100
-        duplicate_day = round(num_days / 2)
-        first_report_day = Dummy.DEFAULT_DUMMY_HEARTBEAT_VALUES["date"]
-        for i in range(num_days):
-            report_day = first_report_day + timedelta(days=i)
-            heartbeat = Dummy.create_dummy_report(
-                HeartBeat, device, date=report_day
-            )
-            # Create a second at the duplicate day (with 1 hour delay)
-            if i == duplicate_day:
-                Dummy.create_dummy_report(
-                    HeartBeat, device, date=report_day + timedelta(hours=1)
-                )
-            Dummy.create_dummy_report(Crashreport, device, date=report_day)
-
-        # Get the device statistics
-        response = self._get_with_params(
-            self.device_overview_url, {"uuid": device.uuid}
-        )
-
-        # Assert that the statistics match
-        self._assert_device_stats_response_is(
-            response=response,
-            uuid=str(device.uuid),
-            board_date=device.board_date,
-            num_heartbeats=num_days,
-            num_crashreports=num_days,
-            num_smpls=0,
-            crashes_per_day=1,
             smpl_per_day=0,
             last_active=heartbeat.date,
         )
@@ -741,15 +705,22 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
         """Test getting report history stats for a device."""
         # Create a device with a heartbeat and one report of each type
         device = Dummy.create_dummy_device(Dummy.create_dummy_user())
-        heartbeat = Dummy.create_dummy_report(HeartBeat, device)
+        crashreport_date = Dummy.DEFAULT_DUMMY_CRASHREPORT_VALUES["date"]
+        heartbeat = Dummy.create_dummy_report(
+            HeartBeat, device, date=crashreport_date.date()
+        )
         for boot_reason in (
             Crashreport.SMPL_BOOT_REASONS
             + Crashreport.CRASH_BOOT_REASONS
             + ["other boot reason"]
         ):
             Dummy.create_dummy_report(
-                Crashreport, device, boot_reason=boot_reason
+                Crashreport,
+                device,
+                boot_reason=boot_reason,
+                date=crashreport_date,
             )
+            crashreport_date += timedelta(milliseconds=1)
 
         # Get the device report history statistics
         response = self._get_with_params(
@@ -759,7 +730,7 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
         # Assert that the statistics match
         report_history = [
             {
-                "date": heartbeat.date.date(),
+                "date": heartbeat.date,
                 "heartbeats": 1,
                 "smpl": len(Crashreport.SMPL_BOOT_REASONS),
                 "prob_crashes": len(Crashreport.CRASH_BOOT_REASONS),
@@ -779,8 +750,10 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
         for _ in range(10):
             report_date = report_date + timedelta(days=1)
 
-            Dummy.create_dummy_report(HeartBeat, device, date=report_date)
-            for boot_reason in (
+            Dummy.create_dummy_report(
+                HeartBeat, device, date=report_date.date()
+            )
+            for i, boot_reason in enumerate(
                 Crashreport.SMPL_BOOT_REASONS
                 + Crashreport.CRASH_BOOT_REASONS
                 + ["other boot reason"]
@@ -789,7 +762,7 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
                     Crashreport,
                     device,
                     boot_reason=boot_reason,
-                    date=report_date,
+                    date=report_date + timedelta(milliseconds=i),
                 )
 
             # Create the expected report history object
@@ -831,14 +804,18 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
         """Test getting update history stats for a device."""
         # Create a device with a heartbeat and one report of each type
         device = Dummy.create_dummy_device(Dummy.create_dummy_user())
-        heartbeat = Dummy.create_dummy_report(HeartBeat, device)
+        crashreport_date = Dummy.DEFAULT_DUMMY_CRASHREPORT_VALUES["date"]
+        heartbeat = Dummy.create_dummy_report(
+            HeartBeat, device, date=crashreport_date.date()
+        )
         for boot_reason in (
             Crashreport.SMPL_BOOT_REASONS
             + Crashreport.CRASH_BOOT_REASONS
             + ["other boot reason"]
         ):
-            params = {"boot_reason": boot_reason}
+            params = {"boot_reason": boot_reason, "date": crashreport_date}
             Dummy.create_dummy_report(Crashreport, device, **params)
+            crashreport_date += timedelta(milliseconds=1)
 
         # Get the device update history statistics
         response = self._get_with_params(
@@ -866,24 +843,24 @@ class DeviceStatsTestCase(HiccupStatsAPITestCase):
         device = Dummy.create_dummy_device(Dummy.create_dummy_user())
         expected_update_history = []
         for i, build_fingerprint in enumerate(Dummy.BUILD_FINGERPRINTS):
-            report_day = datetime.now(tz=pytz.utc) + timedelta(days=i)
+            report_date = datetime.now(tz=pytz.utc) + timedelta(days=i)
             Dummy.create_dummy_report(
                 HeartBeat,
                 device,
-                date=report_day,
+                date=report_date,
                 build_fingerprint=build_fingerprint,
             )
             Dummy.create_dummy_report(
                 Crashreport,
                 device,
-                date=report_day,
+                date=report_date,
                 build_fingerprint=build_fingerprint,
             )
 
             # Create the expected update history object
             expected_update_history.append(
                 {
-                    "update_date": report_day,
+                    "update_date": report_date.date(),
                     "build_fingerprint": build_fingerprint,
                     "max": device.id,
                     "prob_crashes": 1,

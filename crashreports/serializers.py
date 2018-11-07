@@ -1,6 +1,7 @@
 """Serializers for Crashreport-related models."""
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils.dateparse import parse_datetime
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework import permissions
@@ -77,7 +78,7 @@ class HeartBeatSerializer(serializers.ModelSerializer):
     uuid = serializers.CharField(max_length=64)
     id = PrivateField()
     device_local_id = serializers.IntegerField(required=False)
-    date = serializers.DateTimeField(default_timezone=timezone.utc)
+    date = serializers.DateField()
 
     class Meta:  # noqa: D106
         model = HeartBeat
@@ -101,6 +102,22 @@ class HeartBeatSerializer(serializers.ModelSerializer):
         heartbeat.device = device
         heartbeat.save()
         return heartbeat
+
+    def to_internal_value(self, data):
+        """Parse serialized heartbeat representations.
+
+        Incoming 'date' values that are datetime values (including time) are
+        changed so that only the date part of the value is deserialized.
+        Initially, the date was a datetime field and Hiccup clients can still
+        send datetime values.
+        """
+        datetime = parse_datetime(data["date"])
+        if datetime:
+            updated_data = data.copy()
+            updated_data["date"] = datetime.date().isoformat()
+            data = updated_data
+
+        return super(HeartBeatSerializer, self).to_internal_value(data)
 
 
 class LogFileSerializer(serializers.ModelSerializer):

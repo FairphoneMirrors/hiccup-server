@@ -189,7 +189,7 @@ class DeviceReportHistory(APIView):
         device_heartbeats = list(device.heartbeats.all())
         device_crashreports = list(device.crashreports.all())
 
-        dates = {heartbeat.date.date() for heartbeat in device_heartbeats}
+        dates = {heartbeat.date for heartbeat in device_heartbeats}
 
         response = [
             get_stats_for_date(date, device_crashreports, device_heartbeats)
@@ -201,7 +201,7 @@ class DeviceReportHistory(APIView):
 
 def get_stats_for_date(date, crashreports, heartbeats):
     """Get the stats for a device for a specific date."""
-    heartbeats = filter_instances(heartbeats, lambda hb: hb.date.date() == date)
+    heartbeats = filter_instances(heartbeats, lambda hb: hb.date == date)
     crashreports = filter_instances(
         crashreports, lambda c: c.date.date() == date
     )

@@ -256,7 +256,7 @@ class _StatsModelsEngine:
         return (
             query_objects.annotate(_report_day=TruncDate("date"))
             .values(self.version_field_name, "_report_day")
-            .annotate(count=Count("date", distinct=True))
+            .annotate(count=Count("date"))
         )
 
     def delete_stats(self) -> Dict[str, int]:
