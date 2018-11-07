@@ -1,7 +1,6 @@
 """Tests for the stats management command module."""
 from io import StringIO
 from datetime import datetime, timedelta
-import unittest
 
 import pytz
 
@@ -435,7 +434,12 @@ class StatsCommandVersionsTestCase(TestCase):
         )
 
     def _assert_reports_with_same_timestamp_are_counted(
-        self, report_type, counter_attribute_name, **kwargs
+        self,
+        report_type,
+        counter_attribute_name,
+        username_1=Dummy.USERNAMES[0],
+        username_2=Dummy.USERNAMES[1],
+        **kwargs
     ):
         """Validate that reports with the same timestamp are counted.
 
@@ -443,14 +447,16 @@ class StatsCommandVersionsTestCase(TestCase):
         counted as independent reports.
         """
         # Create a report
-        device1 = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
+        device1 = Dummy.create_dummy_device(
+            user=Dummy.create_dummy_user(username=username_1)
+        )
         report1 = Dummy.create_dummy_report(
             report_type, device=device1, **kwargs
         )
 
         # Create a second report with the same timestamp but from another device
         device2 = Dummy.create_dummy_device(
-            user=Dummy.create_dummy_user(username=Dummy.USERNAMES[1])
+            user=Dummy.create_dummy_user(username=username_2)
         )
         Dummy.create_dummy_report(
             report_type, device=device2, date=report1.date, **kwargs
@@ -468,11 +474,6 @@ class StatsCommandVersionsTestCase(TestCase):
         # Assert that both reports are counted
         self.assertEqual(getattr(version, counter_attribute_name), 2)
 
-    @unittest.skip(
-        "Duplicates are dropped based on their timestamp at the moment. This is"
-        "to be adapted so that they are dropped taking into account the device"
-        "UUID as well."
-    )
     def test_heartbeats_with_same_timestamp_are_counted(self):
         """Validate that heartbeats with same timestamp are counted."""
         counter_attribute_name = "heartbeats"
@@ -480,51 +481,44 @@ class StatsCommandVersionsTestCase(TestCase):
             HeartBeat, counter_attribute_name
         )
 
-    @unittest.skip(
-        "Duplicates are dropped based on their timestamp at the moment. This is"
-        "to be adapted so that they are dropped taking into account the device"
-        "UUID as well."
-    )
     def test_crash_reports_with_same_timestamp_are_counted(self):
-        """Validate that crash report duplicates are ignored."""
+        """Validate that crash reports with same timestamp are counted."""
         counter_attribute_name = "prob_crashes"
-        for unique_entry, boot_reason in zip(
-            self.unique_entries, Crashreport.CRASH_BOOT_REASONS
+        for i, (unique_entry, boot_reason) in enumerate(
+            zip(self.unique_entries, Crashreport.CRASH_BOOT_REASONS)
         ):
             params = {
                 "boot_reason": boot_reason,
                 self.unique_entry_name: unique_entry,
             }
             self._assert_reports_with_same_timestamp_are_counted(
-                Crashreport, counter_attribute_name, **params
+                Crashreport,
+                counter_attribute_name,
+                Dummy.USERNAMES[2 * i],
+                Dummy.USERNAMES[2 * i + 1],
+                **params
             )
 
-    @unittest.skip(
-        "Duplicates are dropped based on their timestamp at the moment. This is"
-        "to be adapted so that they are dropped taking into account the device"
-        "UUID as well."
-    )
     def test_smpl_reports_with_same_timestamp_are_counted(self):
-        """Validate that smpl report duplicates are ignored."""
+        """Validate that smpl reports with same timestamp are counted."""
         counter_attribute_name = "smpl"
-        for unique_entry, boot_reason in zip(
-            self.unique_entries, Crashreport.SMPL_BOOT_REASONS
+        for i, (unique_entry, boot_reason) in enumerate(
+            zip(self.unique_entries, Crashreport.SMPL_BOOT_REASONS)
         ):
             params = {
                 "boot_reason": boot_reason,
                 self.unique_entry_name: unique_entry,
             }
             self._assert_reports_with_same_timestamp_are_counted(
-                Crashreport, counter_attribute_name, **params
+                Crashreport,
+                counter_attribute_name,
+                Dummy.USERNAMES[2 * i],
+                Dummy.USERNAMES[2 * i + 1],
+                **params
             )
 
-    @unittest.skip(
-        "Duplicates are dropped based on their timestamp at the moment. This is"
-        "to be adapted so that they are dropped taking into account the device"
-        "UUID as well."
-    )
     def test_other_reports_with_same_timestamp_are_counted(self):
-        """Validate that other report duplicates are ignored."""
+        """Validate that other reports with same timestamp are counted."""
         counter_attribute_name = "other"
         params = {"boot_reason": "random boot reason"}
         self._assert_reports_with_same_timestamp_are_counted(
