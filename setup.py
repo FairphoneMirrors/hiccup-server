@@ -14,6 +14,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Fairphone B.V.",
     packages=find_packages(),
+    package_data={"": ["*.html", "*.css", "*.js"]},
     python_requires="==3.6.*",
     install_requires=[
         "certifi==2018.8.24",
