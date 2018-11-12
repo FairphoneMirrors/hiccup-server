@@ -31,7 +31,6 @@ from crashreport_stats.models import (
 )
 from crashreports.models import Device, Crashreport, HeartBeat, LogFile
 from crashreports.permissions import (
-    HasRightsOrIsDeviceOwnerDeviceCreation,
     HasStatsAccess,
     SWAGGER_SECURITY_REQUIREMENTS_ALL,
     SWAGGER_SECURITY_REQUIREMENTS_OAUTH,
@@ -64,7 +63,7 @@ _DEVICE_UPDATE_HISTORY_SCHEMA = openapi.Schema(
 class DeviceUpdateHistory(APIView):
     """View the update history of a specific device."""
 
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
+    permission_classes = (HasStatsAccess,)
 
     @swagger_auto_schema(
         operation_description="Get the update history of a device",
@@ -157,7 +156,7 @@ _DEVICE_REPORT_HISTORY_SCHEMA = openapi.Schema(
 class DeviceReportHistory(APIView):
     """View the report history of a specific device."""
 
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
+    permission_classes = (HasStatsAccess,)
 
     @swagger_auto_schema(
         operation_description="Get the report history of a device",
@@ -318,7 +317,7 @@ _DEVICE_STAT_OVERVIEW_SCHEMA = openapi.Schema(
 class DeviceStat(APIView):
     """View an overview of the statistics of a device."""
 
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
+    permission_classes = (HasStatsAccess,)
 
     @swagger_auto_schema(
         operation_description="Get some general statistics for a device.",
@@ -389,7 +388,7 @@ _LOG_FILE_SCHEMA = openapi.Schema(title="LogFile", type=openapi.TYPE_FILE)
 class LogFileDownload(APIView):
     """View for downloading log files."""
 
-    permission_classes = (HasRightsOrIsDeviceOwnerDeviceCreation,)
+    permission_classes = (HasStatsAccess,)
 
     @swagger_auto_schema(
         operation_description="Get a log file.",
