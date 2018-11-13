@@ -1,8 +1,13 @@
 """Tests for the crashreports REST API."""
+import unittest
+from datetime import timedelta
+
+from django.db import connection
 from django.urls import reverse
 from rest_framework import status
 
-from crashreports.tests.utils import Dummy
+from crashreports.models import Crashreport
+from crashreports.tests.utils import Dummy, RaceConditionsTestCase
 from crashreports.tests.test_rest_api_heartbeats import HeartbeatsTestCase
 
 
@@ -47,3 +52,29 @@ class CrashreportsTestCase(HeartbeatsTestCase):
     def test_create_with_datetime(self):
         """Override to just pass because crashreports always use datetime."""
         pass
+
+
+@unittest.skip("Fails because of race condition when assigning local IDs")
+class CrashreportRaceConditionsTestCase(RaceConditionsTestCase):
+    """Test cases for crashreport race conditions."""
+
+    LIST_CREATE_URL = "api_v1_crashreports"
+
+    def test_create_multiple_crashreports(self):
+        """Test that no race condition occurs when creating crashreports."""
+        uuid, user, _ = self._register_device()
+
+        def upload_report(client, data):
+            response = client.post(reverse(self.LIST_CREATE_URL), data)
+            self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+            connection.close()
+
+        data = Dummy.crashreport_data(uuid=uuid)
+        argslist = [
+            [user, dict(data, date=data["date"] + timedelta(milliseconds=i))]
+            for i in range(10)
+        ]
+
+        self._test_create_multiple(
+            Crashreport, upload_report, argslist, "device_local_id"
+        )

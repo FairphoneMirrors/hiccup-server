@@ -4,11 +4,13 @@ from django.urls import reverse
 
 from rest_framework import status
 
-from crashreports.tests.utils import HiccupCrashreportsAPITestCase, Dummy
+from crashreports.tests.utils import Dummy, HiccupCrashreportsAPITestCase
 
 
 class DeviceTestCase(HiccupCrashreportsAPITestCase):
     """Test cases for registering devices."""
+
+    # pylint: disable=too-many-ancestors
 
     def test_register(self):
         """Test registration of devices."""
@@ -78,6 +80,8 @@ class DeviceTestCase(HiccupCrashreportsAPITestCase):
 
 class ListDevicesTestCase(HiccupCrashreportsAPITestCase):
     """Test cases for listing and deleting devices."""
+
+    # pylint: disable=too-many-ancestors
 
     LIST_CREATE_URL = "api_v1_list_devices"
     RETRIEVE_URL = "api_v1_retrieve_device"

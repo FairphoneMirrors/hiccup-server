@@ -2,6 +2,7 @@
 
 import os
 import shutil
+import threading
 import zipfile
 from datetime import date, datetime
 from typing import Optional
@@ -9,9 +10,10 @@ from typing import Optional
 import pytz
 from django.conf import settings
 from django.contrib.auth.models import User, Group
+from django.test import TransactionTestCase
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase, APIClient
+from rest_framework.test import APIClient, APITestCase
 
 from crashreports.models import (
     Crashreport,
@@ -370,7 +372,7 @@ class Dummy:
         return archive.read(logfile_name)
 
 
-class HiccupCrashreportsAPITestCase(APITestCase):
+class HiccupCrashreportsTransactionTestCase(TransactionTestCase):
     """Base class that offers a device registration method."""
 
     REGISTER_DEVICE_URL = "api_v1_register_device"
@@ -410,3 +412,40 @@ class HiccupCrashreportsAPITestCase(APITestCase):
         user.credentials(HTTP_AUTHORIZATION="Token " + token)
 
         return uuid, user, token
+
+
+class HiccupCrashreportsAPITestCase(
+    HiccupCrashreportsTransactionTestCase, APITestCase
+):
+    """Base class combining device registration methods and API test methods."""
+
+    pass
+
+
+class RaceConditionsTestCase(HiccupCrashreportsTransactionTestCase):
+    """Test cases for race conditions."""
+
+    # Make data from migrations available in the test cases
+    serialized_rollback = True
+
+    def _test_create_multiple(
+        self, report_type, create_function, argslist, local_id_name
+    ):
+        """Test that no race condition occurs when creating instances."""
+        # Create multiple threads which send reports simultaneously
+        threads = []
+        for args in argslist:
+            thread = threading.Thread(target=create_function, args=args)
+            threads.append(thread)
+            thread.start()
+
+        # Wait until the threads have finished
+        for thread in threads:
+            thread.join()
+
+        # Assert that no duplicate local IDs have been assigned
+        reports = report_type.objects.all()
+        self.assertEqual(
+            reports.count(), reports.distinct(local_id_name).count()
+        )
+        self.assertEqual(reports.count(), len(argslist))

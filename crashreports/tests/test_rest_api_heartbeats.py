@@ -1,19 +1,26 @@
 """Tests for the heartbeats REST API."""
 from datetime import timedelta, datetime
+import unittest
 
 import pytz
+from django.db import connection
 from django.urls import reverse
 
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from crashreports.tests.utils import HiccupCrashreportsAPITestCase, Dummy
+from crashreports.tests.utils import (
+    Dummy,
+    RaceConditionsTestCase,
+    HiccupCrashreportsAPITestCase,
+)
+from crashreports.models import HeartBeat
 
 
 class HeartbeatsTestCase(HiccupCrashreportsAPITestCase):
     """Test cases for heartbeats."""
 
-    # pylint: disable=too-many-public-methods
+    # pylint: disable=too-many-public-methods,too-many-ancestors
 
     LIST_CREATE_URL = "api_v1_heartbeats"
     RETRIEVE_URL = "api_v1_heartbeat"
@@ -313,3 +320,29 @@ class HeartbeatsTestCase(HiccupCrashreportsAPITestCase):
         response = self.user.post(reverse(self.LIST_CREATE_URL), data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["date"], str(data["date"].date()))
+
+
+@unittest.skip("Fails because of race condition when assigning local IDs")
+class HeartBeatRaceConditionsTestCase(RaceConditionsTestCase):
+    """Test cases for heartbeat race conditions."""
+
+    LIST_CREATE_URL = "api_v1_heartbeats"
+
+    def test_create_multiple_heartbeats(self):
+        """Test that no race condition occurs when creating heartbeats."""
+        uuid, user, _ = self._register_device()
+
+        def upload_report(client, data):
+            response = client.post(reverse(self.LIST_CREATE_URL), data)
+            self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+            connection.close()
+
+        data = Dummy.heartbeat_data(uuid=uuid)
+        argslist = [
+            [user, dict(data, date=data["date"] + timedelta(days=i))]
+            for i in range(10)
+        ]
+
+        self._test_create_multiple(
+            HeartBeat, upload_report, argslist, "device_local_id"
+        )

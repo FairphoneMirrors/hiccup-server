@@ -3,10 +3,12 @@
 import os
 import shutil
 import tempfile
+import unittest
 import zipfile
 
 from django.conf import settings
 from django.core.files.storage import default_storage
+from django.db import connection
 from django.test import override_settings
 from django.urls import reverse
 
@@ -18,12 +20,21 @@ from crashreports.models import (
     Crashreport,
     LogFile,
 )
-from crashreports.tests.utils import HiccupCrashreportsAPITestCase, Dummy
+from crashreports.tests.utils import (
+    Dummy,
+    RaceConditionsTestCase,
+    HiccupCrashreportsAPITestCase,
+)
+
+LIST_CREATE_URL = "api_v1_crashreports"
+PUT_LOGFILE_URL = "api_v1_putlogfile_for_device_id"
 
 
 @override_settings(MEDIA_ROOT=tempfile.mkdtemp(".hiccup-tests"))
 class LogfileUploadTest(HiccupCrashreportsAPITestCase):
     """Test cases for upload of log files."""
+
+    # pylint: disable=too-many-ancestors
 
     LIST_CREATE_URL = "api_v1_crashreports"
     PUT_LOGFILE_URL = "api_v1_putlogfile_for_device_id"
@@ -34,7 +45,7 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
         super().setUp()
         self.device_uuid, self.user, _ = self._register_device()
 
-    def _upload_crashreport(self, user, uuid):
+    def upload_crashreport(self, user, uuid):
         """
         Upload dummy crashreport data.
 
@@ -46,7 +57,7 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
 
         """
         data = Dummy.crashreport_data(uuid=uuid)
-        response = user.post(reverse(self.LIST_CREATE_URL), data)
+        response = user.post(reverse(LIST_CREATE_URL), data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertTrue("device_local_id" in response.data)
         device_local_id = response.data["device_local_id"]
@@ -65,23 +76,27 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
 
             self.assertEqual(file_1.read(), file_2.read())
 
-    def _test_logfile_upload(self, user, uuid):
-        # Upload crashreport
-        device_local_id = self._upload_crashreport(user, uuid)
-
-        # Upload a logfile for the crashreport
+    def upload_logfile(self, client, uuid, device_local_id):
+        """Upload a log file and assert that it was created."""
         logfile = open(Dummy.DEFAULT_DUMMY_LOG_FILE_PATHS[0], "rb")
-
         logfile_name = os.path.basename(logfile.name)
-        response = user.post(
+        response = client.post(
             reverse(
-                self.PUT_LOGFILE_URL, args=[uuid, device_local_id, logfile_name]
+                PUT_LOGFILE_URL, args=[uuid, device_local_id, logfile_name]
             ),
             {"file": logfile},
             format="multipart",
         )
         logfile.close()
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        return response
+
+    def _test_logfile_upload(self, user, uuid):
+        # Upload crashreport
+        device_local_id = self.upload_crashreport(user, uuid)
+
+        # Upload a logfile for the crashreport
+        self.upload_logfile(user, uuid, device_local_id)
 
         logfile_instance = (
             Device.objects.get(uuid=uuid)
@@ -89,7 +104,8 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
             .logfiles.last()
         )
         uploaded_logfile_path = crashreport_file_name(
-            logfile_instance, logfile_name
+            logfile_instance,
+            os.path.basename(Dummy.DEFAULT_DUMMY_LOG_FILE_PATHS[0]),
         )
 
         self.assertTrue(default_storage.exists(uploaded_logfile_path))
@@ -135,3 +151,25 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
     def tearDown(self):
         """Remove the file and directories that were created for the test."""
         shutil.rmtree(settings.MEDIA_ROOT)
+
+
+@unittest.skip("Fails because of race condition when assigning local IDs")
+class LogfileRaceConditionsTestCase(RaceConditionsTestCase):
+    """Test cases for logfile race conditions."""
+
+    def test_create_multiple_logfiles(self):
+        """Test that no race condition occurs when creating logfiles."""
+        uuid, user, _ = self._register_device()
+        device_local_id = LogfileUploadTest.upload_crashreport(self, user, uuid)
+
+        def upload_logfile(client, uuid, device_local_id):
+            LogfileUploadTest.upload_logfile(
+                self, client, uuid, device_local_id
+            )
+            connection.close()
+
+        argslist = [[user, uuid, device_local_id] for _ in range(10)]
+
+        self._test_create_multiple(
+            LogFile, upload_logfile, argslist, "crashreport_local_id"
+        )
