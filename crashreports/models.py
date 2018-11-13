@@ -46,17 +46,19 @@ class Device(models.Model):
     @transaction.atomic
     def get_crashreport_key(self):
         """Get the next key for a crashreport and update the ID-counter."""
-        ret = self.next_per_crashreport_key
-        self.next_per_crashreport_key = self.next_per_crashreport_key + 1
-        self.save()
+        device = Device.objects.select_for_update().get(id=self.id)
+        ret = device.next_per_crashreport_key
+        device.next_per_crashreport_key += 1
+        device.save()
         return ret
 
     @transaction.atomic
     def get_heartbeat_key(self):
         """Get the next key for a heartbeat and update the ID-counter."""
-        ret = self.next_per_heartbeat_key
-        self.next_per_heartbeat_key = self.next_per_heartbeat_key + 1
-        self.save()
+        device = Device.objects.select_for_update().get(id=self.id)
+        ret = device.next_per_heartbeat_key
+        device.next_per_heartbeat_key += 1
+        device.save()
         return ret
 
 
@@ -118,9 +120,10 @@ class Crashreport(models.Model):
     @transaction.atomic
     def get_logfile_key(self):
         """Get the next key for a log file and update the ID-counter."""
-        ret = self.next_logfile_key
-        self.next_logfile_key = self.next_logfile_key + 1
-        self.save()
+        crashreport = Crashreport.objects.select_for_update().get(id=self.id)
+        ret = crashreport.next_logfile_key
+        crashreport.next_logfile_key += 1
+        crashreport.save()
         return ret
 
     def save(

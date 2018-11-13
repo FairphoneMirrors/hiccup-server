@@ -3,7 +3,6 @@
 import os
 import shutil
 import tempfile
-import unittest
 import zipfile
 
 from django.conf import settings
@@ -153,7 +152,6 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
         shutil.rmtree(settings.MEDIA_ROOT)
 
 
-@unittest.skip("Fails because of race condition when assigning local IDs")
 class LogfileRaceConditionsTestCase(RaceConditionsTestCase):
     """Test cases for logfile race conditions."""
 

@@ -1,6 +1,5 @@
 """Tests for the heartbeats REST API."""
 from datetime import timedelta, datetime
-import unittest
 
 import pytz
 from django.db import connection
@@ -322,7 +321,6 @@ class HeartbeatsTestCase(HiccupCrashreportsAPITestCase):
         self.assertEqual(response.data["date"], str(data["date"].date()))
 
 
-@unittest.skip("Fails because of race condition when assigning local IDs")
 class HeartBeatRaceConditionsTestCase(RaceConditionsTestCase):
     """Test cases for heartbeat race conditions."""
 

@@ -1,5 +1,4 @@
 """Tests for the crashreports REST API."""
-import unittest
 from datetime import timedelta
 
 from django.db import connection
@@ -54,7 +53,6 @@ class CrashreportsTestCase(HeartbeatsTestCase):
         pass
 
 
-@unittest.skip("Fails because of race condition when assigning local IDs")
 class CrashreportRaceConditionsTestCase(RaceConditionsTestCase):
     """Test cases for crashreport race conditions."""
 
