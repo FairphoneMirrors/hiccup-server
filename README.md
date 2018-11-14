@@ -201,3 +201,11 @@ The `production` branch reflects the codebase currently running on the productio
 changes should be pushed for review to the `master` branch. Every version that is merged into the
 `master` branch has to be buildable. From there they can be merged into the `production` branch to
 integrate the changes in the running server.
+
+
+## License
+
+Copyright 2018 Fairphone B.V.
+
+The project is made available under the terms of the Apache 2.0 license.
+See [LICENSE](LICENSE) for details.
