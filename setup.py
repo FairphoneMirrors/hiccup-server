@@ -16,6 +16,7 @@ setup(
     packages=find_packages(),
     package_data={"": ["*.html", "*.css", "*.js"]},
     python_requires="==3.6.*",
+    scripts=["manage.py"],
     install_requires=[
         "certifi==2018.8.24",
         "chardet==3.0.4",
