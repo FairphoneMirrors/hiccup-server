@@ -1,5 +1,4 @@
 """Views for the Hiccup statistics."""
-
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.template import loader
 from django.contrib.auth.decorators import user_passes_test
@@ -7,8 +6,8 @@ from django import forms
 from django.contrib import messages
 from django.urls import reverse
 
+from crashreport_stats.permissions import check_user_is_hiccup_staff
 from crashreports.models import Device
-from crashreports.permissions import user_is_hiccup_staff
 
 
 class DeviceUUIDForm(forms.Form):
@@ -17,7 +16,7 @@ class DeviceUUIDForm(forms.Form):
     uuid = forms.CharField(label="Device UUID:", max_length=100)
 
 
-@user_passes_test(user_is_hiccup_staff)
+@user_passes_test(check_user_is_hiccup_staff)
 def device_stats(request):
     """Respond with statistics for a specific device."""
     template = loader.get_template("crashreport_stats/device.html")
@@ -27,21 +26,21 @@ def device_stats(request):
     return HttpResponse(template.render({"uuid": uuid}, request))
 
 
-@user_passes_test(user_is_hiccup_staff)
+@user_passes_test(check_user_is_hiccup_staff)
 def versions_all_overview(request):
     """Respond with the distribution of official release versions."""
     template = loader.get_template("crashreport_stats/versions.html")
     return HttpResponse(template.render({"is_official_release": "1"}, request))
 
 
-@user_passes_test(user_is_hiccup_staff)
+@user_passes_test(check_user_is_hiccup_staff)
 def versions_overview(request):
     """Respond with the distribution of non-official release versions."""
     template = loader.get_template("crashreport_stats/versions.html")
     return HttpResponse(template.render({"is_official_release": "2"}, request))
 
 
-@user_passes_test(user_is_hiccup_staff)
+@user_passes_test(check_user_is_hiccup_staff)
 def home(request):
     """Respond with a form for searching devices by UUID.
 

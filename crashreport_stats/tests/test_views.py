@@ -3,7 +3,6 @@
 import unittest
 from urllib.parse import urlencode
 
-from django.conf import settings
 from django.urls import reverse
 
 from rest_framework import status
@@ -37,16 +36,16 @@ class ViewsTestCase(HiccupStatsAPITestCase):
 
     def test_home_view_as_device_owner(self):
         """Test that device owner users can not access the home view."""
-        # Assert that the response is a redirect (to the login page)
+        # Assert that the permission is denied.
         self._assert_get_as_device_owner_fails(
-            self.home_url, expected_status=status.HTTP_302_FOUND
+            self.home_url, expected_status=status.HTTP_403_FORBIDDEN
         )
 
     def test_home_view_no_auth(self):
         """Test that one can not access the home view without auth."""
-        # Assert that the response is a redirect (to the login page)
+        # Assert that the permission is denied
         self._assert_get_without_authentication_fails(
-            self.home_url, expected_status=status.HTTP_302_FOUND
+            self.home_url, expected_status=status.HTTP_403_FORBIDDEN
         )
 
     def test_device_view_as_fp_staff(self):
@@ -59,22 +58,21 @@ class ViewsTestCase(HiccupStatsAPITestCase):
 
     def test_device_view_as_device_owner(self):
         """Test that device owner users can not access the device view."""
-        # Assert that the response is a redirect (to the login page)
+        # Assert that the the permission is denied.
         self._assert_get_as_device_owner_fails(
             self._url_with_params(
                 self.device_url, {"uuid": self.device_owner_device.uuid}
-            ),
-            expected_status=status.HTTP_302_FOUND,
+            )
         )
 
     def test_device_view_no_auth(self):
         """Test that non-authenticated users can not access the device view."""
-        # Assert that the response is a redirect (to the login page)
+        # Assert that the permission is denied.
         self._assert_get_without_authentication_fails(
             self._url_with_params(
                 self.device_url, {"uuid": self.device_owner_device.uuid}
             ),
-            expected_status=status.HTTP_302_FOUND,
+            expected_status=status.HTTP_403_FORBIDDEN,
         )
 
     def test_versions_view_as_fp_staff(self):
@@ -83,16 +81,16 @@ class ViewsTestCase(HiccupStatsAPITestCase):
 
     def test_versions_view_as_device_owner(self):
         """Test that device owner users can not access the versions view."""
-        # Assert that the response is a redirect (to the login page)
+        # Assert that the permission is denied
         self._assert_get_as_device_owner_fails(
-            self.versions_url, expected_status=status.HTTP_302_FOUND
+            self.versions_url, expected_status=status.HTTP_403_FORBIDDEN
         )
 
     def test_versions_view_no_auth(self):
         """Test one can not access the versions view without auth."""
-        # Assert that the response is a redirect (to the login page)
+        # Assert that the permission is denied
         self._assert_get_without_authentication_fails(
-            self.versions_url, expected_status=status.HTTP_302_FOUND
+            self.versions_url, expected_status=status.HTTP_403_FORBIDDEN
         )
 
     def test_versions_all_view_as_fp_staff(self):
@@ -101,16 +99,16 @@ class ViewsTestCase(HiccupStatsAPITestCase):
 
     def test_versions_all_view_as_device_owner(self):
         """Test that device owner users can not access the versions all view."""
-        # Assert that the response is a redirect (to the login page)
+        # Assert that the permission is denied
         self._assert_get_as_device_owner_fails(
-            self.versions_all_url, expected_status=status.HTTP_302_FOUND
+            self.versions_all_url, expected_status=status.HTTP_403_FORBIDDEN
         )
 
     def test_versions_all_view_no_auth(self):
         """Test that one can not access the versions all view without auth."""
-        # Assert that the response is a redirect (to the login page)
+        # Assert that the permission is denied
         self._assert_get_without_authentication_fails(
-            self.versions_all_url, expected_status=status.HTTP_302_FOUND
+            self.versions_all_url, expected_status=status.HTTP_403_FORBIDDEN
         )
 
     def test_home_view_post_as_fp_staff(self):
@@ -133,14 +131,8 @@ class ViewsTestCase(HiccupStatsAPITestCase):
             self.home_url, data={"uuid": str(self.device_owner_device.uuid)}
         )
 
-        # Assert that the response is a redirect to the login page
-        self.assertRedirects(
-            response,
-            self._url_with_params(
-                settings.ACCOUNT_LOGOUT_REDIRECT_URL,
-                {"next": settings.LOGIN_REDIRECT_URL},
-            ),
-        )
+        # Assert that the permission is denied
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_home_view_post_as_device_owner(self):
         """Test HTTP POST method to home view as device owner."""
@@ -148,15 +140,8 @@ class ViewsTestCase(HiccupStatsAPITestCase):
             self.home_url, data={"uuid": str(self.device_owner_device.uuid)}
         )
 
-        # Assert that the response is a redirect to the login page
-
-        self.assertRedirects(
-            response,
-            self._url_with_params(
-                settings.ACCOUNT_LOGOUT_REDIRECT_URL,
-                {"next": settings.LOGIN_REDIRECT_URL},
-            ),
-        )
+        # Assert that the permission is denied
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_get_home_view(self):
         """Test getting the home view with device search form."""
