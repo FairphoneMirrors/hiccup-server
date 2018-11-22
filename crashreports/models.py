@@ -6,6 +6,7 @@ import uuid
 
 from django.db import models, transaction
 from django.contrib.auth.models import User
+from django.dispatch import receiver
 from taggit.managers import TaggableManager
 
 
@@ -161,6 +162,16 @@ class LogFile(models.Model):
         super(LogFile, self).save(
             force_insert, force_update, using, update_fields
         )
+
+
+@receiver(models.signals.post_delete, sender=LogFile)
+def auto_delete_file_on_delete(sender, instance, **kwargs):
+    """Delete the file from the filesystem on deletion of the db instance."""
+    # pylint: disable=unused-argument
+
+    if instance.logfile:
+        if os.path.isfile(instance.logfile.path):
+            instance.logfile.delete(save=False)
 
 
 class HeartBeat(models.Model):

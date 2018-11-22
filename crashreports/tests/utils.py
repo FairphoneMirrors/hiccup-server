@@ -1,17 +1,25 @@
 """Utility functions shared by all crashreports tests."""
 
 import os
+import shutil
 import zipfile
 from datetime import date, datetime
 from typing import Optional
 
 import pytz
+from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
-from crashreports.models import Crashreport, Device, HeartBeat, LogFile
+from crashreports.models import (
+    Crashreport,
+    Device,
+    HeartBeat,
+    LogFile,
+    crashreport_file_name,
+)
 from hiccup.allauth_adapters import FP_STAFF_GROUP_NAME
 
 
@@ -102,11 +110,6 @@ class Dummy:
         }
     )
 
-    DEFAULT_DUMMY_LOG_FILE_VALUES = {
-        "logfile_type": "last_kmsg",
-        "logfile": "test_logfile.zip",
-    }
-
     DEFAULT_DUMMY_LOG_FILE_NAME = "dmesg.log"
 
     CRASH_TYPE_TO_BOOT_REASON_MAP = {
@@ -115,11 +118,17 @@ class Dummy:
         "other": "whatever",
     }
 
+    DEFAULT_DUMMY_LOG_FILE_FILENAME = "test_logfile.zip"
     DEFAULT_DUMMY_LOG_FILE_DIRECTORY = os.path.join("resources", "test")
 
     DEFAULT_DUMMY_LOG_FILE_PATH = os.path.join(
-        DEFAULT_DUMMY_LOG_FILE_DIRECTORY, "test_logfile.zip"
+        DEFAULT_DUMMY_LOG_FILE_DIRECTORY, DEFAULT_DUMMY_LOG_FILE_FILENAME
     )
+
+    DEFAULT_DUMMY_LOG_FILE_VALUES = {
+        "logfile_type": "last_kmsg",
+        "logfile": DEFAULT_DUMMY_LOG_FILE_FILENAME,
+    }
 
     @staticmethod
     def _update_copy(original, update):
@@ -270,6 +279,38 @@ class Dummy:
 
         entity.save()
         return entity
+
+    @staticmethod
+    def create_dummy_log_file_with_actual_file(crashreport, **kwargs):
+        """Create a dummy log file instance along with a file.
+
+        The dummy instance is created and saved to the database. The log file
+        is copied to the respective location in the media directory.
+
+        Args:
+            crashreport: The crashreport that the log file belongs to.
+            **kwargs: Optional arguments to extend/overwrite the default values.
+
+        Returns: The created log file instance and the path to the copied file.
+
+        """
+        logfile = Dummy.create_dummy_log_file(crashreport, **kwargs)
+        logfile_filename = os.path.basename(logfile.logfile.path)
+        test_logfile_path = os.path.join(
+            settings.MEDIA_ROOT,
+            crashreport_file_name(logfile, logfile_filename),
+        )
+        logfile.logfile = test_logfile_path
+        logfile.save()
+
+        os.makedirs(os.path.dirname(test_logfile_path))
+        shutil.copy(
+            os.path.join(
+                Dummy.DEFAULT_DUMMY_LOG_FILE_DIRECTORY, logfile_filename
+            ),
+            test_logfile_path,
+        )
+        return logfile, test_logfile_path
 
     @staticmethod
     def read_logfile_contents(path_to_zipfile, logfile_name):

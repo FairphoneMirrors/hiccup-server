@@ -12,7 +12,12 @@ from django.urls import reverse
 
 from rest_framework import status
 
-from crashreports.models import crashreport_file_name, Device
+from crashreports.models import (
+    crashreport_file_name,
+    Device,
+    Crashreport,
+    LogFile,
+)
 from crashreports.tests.utils import HiccupCrashreportsAPITestCase, Dummy
 
 
@@ -22,6 +27,7 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
 
     LIST_CREATE_URL = "api_v1_crashreports"
     PUT_LOGFILE_URL = "api_v1_putlogfile_for_device_id"
+    POST_LOGFILE_URL = "api_v1_logfiles_by_id"
 
     def setUp(self):
         """Call the super setup method and register a device."""
@@ -101,6 +107,30 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
     def test_logfile_upload_as_fp_staff(self):
         """Test upload of logfiles as Fairphone staff user."""
         self._test_logfile_upload(self.fp_staff_client, self.device_uuid)
+
+    def test_logfile_deletion(self):
+        """Test deletion of logfile instances."""
+        # Create a user, device and crashreport with logfile
+        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        crashreport = Dummy.create_dummy_report(Crashreport, device)
+        logfile, logfile_path = Dummy.create_dummy_log_file_with_actual_file(
+            crashreport
+        )
+
+        # Assert that the crashreport and logfile have been created
+        self.assertEqual(Crashreport.objects.count(), 1)
+        self.assertEqual(LogFile.objects.count(), 1)
+        self.assertTrue(os.path.isfile(logfile_path))
+
+        # Delete the logfile
+        response = self.fp_staff_client.delete(
+            reverse(self.POST_LOGFILE_URL, args=[logfile.id])
+        )
+        self.assertEqual(status.HTTP_204_NO_CONTENT, response.status_code)
+
+        # Assert that the logfile has been deleted
+        self.assertEqual(LogFile.objects.count(), 0)
+        self.assertFalse(os.path.isfile(logfile_path))
 
     def tearDown(self):
         """Remove the file and directories that were created for the test."""
