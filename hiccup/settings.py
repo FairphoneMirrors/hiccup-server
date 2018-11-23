@@ -202,7 +202,18 @@ LOGGING = {
         }
     },
     "loggers": {
-        "django": {"handlers": ["file"], "level": "DEBUG", "propagate": True}
+        "django": {"handlers": ["file"], "level": "DEBUG", "propagate": True},
+        "hiccup": {"handlers": ["file"], "level": "DEBUG", "propagate": True},
+        "crashreports": {
+            "handlers": ["file"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
+        "crashreport_stats": {
+            "handlers": ["file"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
     },
 }
 

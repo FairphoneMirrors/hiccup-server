@@ -13,25 +13,18 @@ from django.core.files.storage import default_storage
 
 from crashreports.models import LogFile, crashreport_file_name
 
-
-def get_django_logger():
-    """Get the Django logger instance."""
-    logger_name = next(iter(settings.LOGGING["loggers"].keys()))
-    return logging.getLogger(logger_name)
+LOGGER = logging.getLogger(__name__)
 
 
 def migrate_logfiles(apps, schema_editor):
     """Migrate the logfiles and update the logfile paths in the database."""
     # pylint: disable=unused-argument
-
-    logger = get_django_logger()
-
     crashreport_uploads_dir = "crashreport_uploads"
 
     if not LogFile.objects.filter(
         logfile__startswith=crashreport_uploads_dir
     ).exists():
-        logger.info(
+        LOGGER.info(
             "No old logfile path found. Assuming this is a new installation "
             "and the migration does not need to be applied."
         )
@@ -56,8 +49,6 @@ def migrate_logfile_instance(
     logfile, crashreport_uploads_dir, crashreport_uploads_legacy_dir
 ):
     """Migrate a single logfile instance."""
-    logger = get_django_logger()
-
     old_logfile_relative_path = logfile.logfile.name.replace(
         crashreport_uploads_dir, crashreport_uploads_legacy_dir, 1
     )
@@ -67,33 +58,31 @@ def migrate_logfile_instance(
     new_logfile_path = crashreport_file_name(
         logfile, os.path.basename(old_logfile_relative_path)
     )
-    logger.info("Migrating %s", old_logfile_absolute_path)
+    LOGGER.info("Migrating %s", old_logfile_absolute_path)
     if os.path.isfile(old_logfile_absolute_path):
         update_logfile_path(logfile, new_logfile_path)
         move_logfile_file(old_logfile_absolute_path, new_logfile_path)
     else:
-        logger.warning("Logfile does not exist: %s", old_logfile_absolute_path)
+        LOGGER.warning("Logfile does not exist: %s", old_logfile_absolute_path)
 
 
 def move_logfile_file(old_logfile_path, new_logfile_path):
     """Move a logfile to a new path and delete empty directories."""
-    logger = get_django_logger()
     new_logfile_absolute_path = default_storage.path(new_logfile_path)
 
-    logger.debug("Creating directories for %s", new_logfile_absolute_path)
+    LOGGER.debug("Creating directories for %s", new_logfile_absolute_path)
     os.makedirs(os.path.dirname(new_logfile_absolute_path), exist_ok=True)
 
-    logger.debug("Moving %s to %s", old_logfile_path, new_logfile_absolute_path)
+    LOGGER.debug("Moving %s to %s", old_logfile_path, new_logfile_absolute_path)
     shutil.move(old_logfile_path, new_logfile_absolute_path)
 
-    logger.debug("Deleting empty directories from %s", old_logfile_path)
+    LOGGER.debug("Deleting empty directories from %s", old_logfile_path)
     os.removedirs(os.path.dirname(old_logfile_path))
 
 
 def update_logfile_path(logfile, new_logfile_path):
     """Update the path of a logfile database instance."""
-    logger = get_django_logger()
-    logger.debug(
+    LOGGER.debug(
         "Changing logfile path in database from %s to %s",
         logfile.logfile,
         new_logfile_path,
