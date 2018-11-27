@@ -1,7 +1,6 @@
 """Utility functions shared by all crashreport stats tests."""
 
-from datetime import datetime, date
-import zipfile
+from datetime import datetime
 
 import pytz
 from django.contrib.auth.models import Group
@@ -17,207 +16,37 @@ from crashreport_stats.models import (
     StatsMetadata,
 )
 
-from crashreports.models import Crashreport, Device, HeartBeat, LogFile, User
+from crashreports.models import User
+from crashreports.tests.utils import Dummy as CrashreportsDummy
 from hiccup.allauth_adapters import FP_STAFF_GROUP_NAME
 
 
-class Dummy:
+class Dummy(CrashreportsDummy):
     """Class for creating dummy instances for testing."""
 
-    # Valid unique entries
-    BUILD_FINGERPRINTS = [
-        (
-            "Fairphone/FP2/FP2:5.1/FP2/r4275.1_FP2_gms76_1.13.0"
-            ":user/release-keys"
-        ),
-        (
-            "Fairphone/FP2/FP2:5.1.1/FP2-gms75.1.13.0/FP2-gms75.1.13.0"
-            ":user/release-keys"
-        ),
-        (
-            "Fairphone/FP2/FP2:6.0.1/FP2-gms-18.04.1/FP2-gms-18.04.1"
-            ":user/release-keys"
-        ),
-        ("Fairphone/FP2/FP2:7.1.2/18.07.2/gms-7480c31d:user/release-keys"),
-    ]
-    RADIO_VERSIONS = [
-        "4437.1-FP2-0-07",
-        "4437.1-FP2-0-08",
-        "4437.1-FP2-0-09",
-        "4437.1-FP2-0-10",
-    ]
-    UUIDs = ["e1c0cc95-ab8d-461a-a768-cb8d9d7fdb04"]
-
-    USERNAMES = ["testuser1", "testuser2", "testuser3"]
-
-    DATES = [date(2018, 3, 19), date(2018, 3, 26), date(2018, 5, 1)]
-
     DEFAULT_DUMMY_VERSION_VALUES = {
-        "build_fingerprint": BUILD_FINGERPRINTS[0],
-        "first_seen_on": DATES[1],
-        "released_on": DATES[0],
+        "build_fingerprint": CrashreportsDummy.BUILD_FINGERPRINTS[0],
+        "first_seen_on": CrashreportsDummy.DATES[1],
+        "released_on": CrashreportsDummy.DATES[0],
         "is_beta_release": False,
         "is_official_release": True,
     }
 
-    DEFAULT_DUMMY_VERSION_DAILY_VALUES = {"date": DATES[1]}
+    DEFAULT_DUMMY_VERSION_DAILY_VALUES = {"date": CrashreportsDummy.DATES[1]}
 
     DEFAULT_DUMMY_RADIO_VERSION_VALUES = {
-        "radio_version": RADIO_VERSIONS[0],
-        "first_seen_on": DATES[1],
-        "released_on": DATES[0],
+        "radio_version": CrashreportsDummy.RADIO_VERSIONS[0],
+        "first_seen_on": CrashreportsDummy.DATES[1],
+        "released_on": CrashreportsDummy.DATES[0],
     }
 
-    DEFAULT_DUMMY_RADIO_VERSION_DAILY_VALUES = {"date": DATES[1]}
+    DEFAULT_DUMMY_RADIO_VERSION_DAILY_VALUES = {
+        "date": CrashreportsDummy.DATES[1]
+    }
 
     DEFAULT_DUMMY_STATSMETADATA_VALUES = {
         "updated_at": datetime(2018, 6, 15, 2, 12, 24, tzinfo=pytz.utc)
     }
-
-    DEFAULT_DUMMY_DEVICE_VALUES = {
-        "board_date": datetime(2015, 12, 15, 1, 23, 45, tzinfo=pytz.utc),
-        "chipset": "Qualcomm MSM8974PRO-AA",
-        "token": "64111c62d521fb4724454ca6dea27e18f93ef56e",
-    }
-
-    DEFAULT_DUMMY_USER_VALUES = {"username": USERNAMES[0]}
-
-    DEFAULT_DUMMY_HEARTBEAT_VALUES = {
-        "app_version": 10100,
-        "uptime": (
-            "up time: 16 days, 21:49:56, idle time: 5 days, 20:55:04, "
-            "sleep time: 10 days, 20:46:27"
-        ),
-        "build_fingerprint": BUILD_FINGERPRINTS[0],
-        "radio_version": RADIO_VERSIONS[0],
-        "date": datetime(2018, 3, 19, 12, 0, 0, tzinfo=pytz.utc),
-    }
-
-    DEFAULT_DUMMY_CRASHREPORT_VALUES = DEFAULT_DUMMY_HEARTBEAT_VALUES.copy()
-    DEFAULT_DUMMY_CRASHREPORT_VALUES.update(
-        {
-            "is_fake_report": 0,
-            "boot_reason": Crashreport.BOOT_REASON_UNKOWN,
-            "power_on_reason": "it was powered on",
-            "power_off_reason": "something happened and it went off",
-        }
-    )
-
-    DEFAULT_DUMMY_LOG_FILE_VALUES = {
-        "logfile_type": "last_kmsg",
-        "logfile": "test_logfile.zip",
-    }
-
-    DEFAULT_DUMMY_LOG_FILE_NAME = "dmesg.log"
-
-    @staticmethod
-    def update_copy(original, update):
-        """Merge fields of update into a copy of original."""
-        data = original.copy()
-        data.update(update)
-        return data
-
-    @staticmethod
-    def create_dummy_user(**kwargs):
-        """Create a dummy user instance.
-
-        The dummy instance is created and saved to the database.
-        Args:
-            **kwargs:
-                Optional arguments to extend/overwrite the default values.
-
-        Returns: The created user instance.
-
-        """
-        entity = User(
-            **Dummy.update_copy(Dummy.DEFAULT_DUMMY_USER_VALUES, kwargs)
-        )
-        entity.save()
-        return entity
-
-    @staticmethod
-    def create_dummy_device(user, **kwargs):
-        """Create a dummy device instance.
-
-        The dummy instance is created and saved to the database.
-        Args:
-            user: The user instance that the device should relate to
-            **kwargs:
-                Optional arguments to extend/overwrite the default values.
-
-        Returns: The created device instance.
-
-        """
-        entity = Device(
-            user=user,
-            **Dummy.update_copy(Dummy.DEFAULT_DUMMY_DEVICE_VALUES, kwargs)
-        )
-        entity.save()
-        return entity
-
-    @staticmethod
-    def create_dummy_report(report_type, device, **kwargs):
-        """Create a dummy report instance of the given report class type.
-
-        The dummy instance is created and saved to the database.
-        Args:
-            report_type: The class of the report type to be created.
-            user: The device instance that the heartbeat should relate to
-            **kwargs:
-                Optional arguments to extend/overwrite the default values.
-
-        Returns: The created report instance.
-
-        """
-        if report_type == HeartBeat:
-            entity = HeartBeat(
-                device=device,
-                **Dummy.update_copy(
-                    Dummy.DEFAULT_DUMMY_HEARTBEAT_VALUES, kwargs
-                )
-            )
-        elif report_type == Crashreport:
-            entity = Crashreport(
-                device=device,
-                **Dummy.update_copy(
-                    Dummy.DEFAULT_DUMMY_CRASHREPORT_VALUES, kwargs
-                )
-            )
-        else:
-            raise RuntimeError(
-                "No dummy report instance can be created for {}".format(
-                    report_type.__name__
-                )
-            )
-        entity.save()
-        return entity
-
-    @staticmethod
-    def create_dummy_log_file(crashreport, **kwargs):
-        """Create a dummy log file instance.
-
-        The dummy instance is created and saved to the database.
-
-        Args:
-            crashreport: The crashreport that the log file belongs to.
-            **kwargs: Optional arguments to extend/overwrite the default values.
-
-        Returns: The created log file instance.
-
-        """
-        entity = LogFile(
-            crashreport=crashreport,
-            **Dummy.update_copy(Dummy.DEFAULT_DUMMY_LOG_FILE_VALUES, kwargs)
-        )
-
-        entity.save()
-        return entity
-
-    @staticmethod
-    def read_logfile_contents(path_to_zipfile, logfile_name):
-        """Read bytes of a zipped logfile."""
-        archive = zipfile.ZipFile(path_to_zipfile, "r")
-        return archive.read(logfile_name)
 
     @staticmethod
     def create_dummy_version(version_type=Version, **kwargs):
@@ -237,11 +66,11 @@ class Dummy:
         """
         if version_type == Version:
             entity = Version(
-                **Dummy.update_copy(Dummy.DEFAULT_DUMMY_VERSION_VALUES, kwargs)
+                **Dummy._update_copy(Dummy.DEFAULT_DUMMY_VERSION_VALUES, kwargs)
             )
         elif version_type == RadioVersion:
             entity = RadioVersion(
-                **Dummy.update_copy(
+                **Dummy._update_copy(
                     Dummy.DEFAULT_DUMMY_RADIO_VERSION_VALUES, kwargs
                 )
             )
@@ -268,7 +97,7 @@ class Dummy:
         """
         entity = VersionDaily(
             version=version,
-            **Dummy.update_copy(
+            **Dummy._update_copy(
                 Dummy.DEFAULT_DUMMY_VERSION_DAILY_VALUES, kwargs
             )
         )
@@ -289,7 +118,7 @@ class Dummy:
         """
         entity = RadioVersionDaily(
             version=version,
-            **Dummy.update_copy(
+            **Dummy._update_copy(
                 Dummy.DEFAULT_DUMMY_RADIO_VERSION_DAILY_VALUES, kwargs
             )
         )
@@ -309,7 +138,7 @@ class Dummy:
 
         """
         entity = StatsMetadata(
-            **Dummy.update_copy(
+            **Dummy._update_copy(
                 Dummy.DEFAULT_DUMMY_STATSMETADATA_VALUES, kwargs
             )
         )

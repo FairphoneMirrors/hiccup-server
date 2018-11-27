@@ -15,7 +15,6 @@ from crashreport_stats.models import RadioVersion
 from crashreport_stats.tests.utils import Dummy, HiccupStatsAPITestCase
 
 from crashreports.models import Crashreport, HeartBeat, LogFile
-from crashreports.tests.utils import DEFAULT_DUMMY_LOG_FILE_DIRECTORY
 
 # pylint: disable=too-many-public-methods
 
@@ -344,7 +343,7 @@ class RadioVersionDailyTestCase(VersionDailyTestCase):
         return Dummy.create_dummy_daily_radio_version(version, **kwargs)
 
 
-@override_settings(MEDIA_ROOT=DEFAULT_DUMMY_LOG_FILE_DIRECTORY)
+@override_settings(MEDIA_ROOT=Dummy.DEFAULT_DUMMY_LOG_FILE_DIRECTORY)
 class DeviceStatsTestCase(HiccupStatsAPITestCase):
     """Test the single device stats REST endpoints."""
 

@@ -70,7 +70,8 @@ class HeartbeatsTestCase(HiccupCrashreportsAPITestCase):
     def test_create_as_fp_staff_not_existing_device(self):
         """Test creation of heartbeat on non-existing device."""
         response = self.fp_staff_client.post(
-            reverse(self.LIST_CREATE_URL), self._create_dummy_data()
+            reverse(self.LIST_CREATE_URL),
+            self._create_dummy_data(uuid=Dummy.UUIDs[0]),
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
