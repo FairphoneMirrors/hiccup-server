@@ -195,11 +195,15 @@ set to true:
 
 ### Branching structure
 
-The `production` branch reflects the codebase currently running on the production server. New
-changes should be pushed for review to the `master` branch. Every version that is merged into the
-`master` branch has to be buildable. From there they can be merged into the `production` branch to
-integrate the changes in the running server.
+New changes should be pushed for review to the `master` branch. Every
+version that is merged into the `master` branch has to be buildable.
 
+The production server is fetching its code from the
+[public mirror of the project](https://code.fairphone.com/gerrit/#/admin/projects/tools/hiccup/hiccup-server).
+
+To update the production server, new changes have to be pulled into the
+public project and the server should be redeployed using the corresponding
+ansible playbook.
 
 ## License
 
