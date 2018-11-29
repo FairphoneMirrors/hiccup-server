@@ -160,6 +160,10 @@ To generate HTML coverage reports (saved to `htmlcov/`):
 
 #### Linters and Formatters
 
+To run the linters (flake8 and pylint) on all files:
+
+    (hiccupenv) $ tox -e linters
+
 To run flake8 on only the diff with upstream:
 
     (hiccupenv) $ git diff origin/master ./**/*py | flake8 --diff
@@ -188,12 +192,6 @@ To prevent commits when the flake8 check fails the *strict* option can be
 set to true:
 
     (hiccupenv) $ git config --bool flake8.strict true
-
-There is also a lint check included with tox (`tox -e linters`) but it is very
-noisy at the moment since the codebase is not clean yet. Since you are already
-validating the changes you are making with the git pre-commit hook, you are
-all set to submit your change.
-
 
 ### Branching structure
 
