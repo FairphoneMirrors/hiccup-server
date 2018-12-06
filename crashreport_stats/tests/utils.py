@@ -1,6 +1,7 @@
 """Utility functions shared by all crashreport stats tests."""
 
 from datetime import datetime
+from typing import Any, Union, Type
 
 import pytz
 from django.contrib.auth.models import Group
@@ -47,7 +48,10 @@ class Dummy(CrashreportsDummy):
     }
 
     @staticmethod
-    def create_version(version_type=Version, **kwargs):
+    def create_version(
+        version_type: Type[Union[Version, RadioVersion]] = Version,
+        **kwargs: Any
+    ) -> Union[Version, RadioVersion]:
         """Create a dummy version instance.
 
         The dummy instance is created and saved to the database.
@@ -80,7 +84,7 @@ class Dummy(CrashreportsDummy):
         return entity
 
     @staticmethod
-    def create_daily_version(version, **kwargs):
+    def create_daily_version(version: Version, **kwargs: Any) -> VersionDaily:
         """Create a dummy daily version instance.
 
         The dummy instance is created and saved to the database.
@@ -99,7 +103,9 @@ class Dummy(CrashreportsDummy):
         return entity
 
     @staticmethod
-    def create_daily_radio_version(version, **kwargs):
+    def create_daily_radio_version(
+        version: RadioVersion, **kwargs: Any
+    ) -> RadioVersionDaily:
         """Create a dummy daily radio version instance.
 
         The dummy instance is created and saved to the database.
@@ -120,7 +126,7 @@ class Dummy(CrashreportsDummy):
         return entity
 
     @staticmethod
-    def create_stats_metadata(**kwargs):
+    def create_stats_metadata(**kwargs: Any) -> StatsMetadata:
         """Create a dummy stats metadata instance.
 
         The dummy instance is created and saved to the database.

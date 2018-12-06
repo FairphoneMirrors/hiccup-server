@@ -5,7 +5,7 @@ import shutil
 import threading
 import zipfile
 from datetime import date, datetime
-from typing import Optional
+from typing import Optional, Dict, Type, Union, Tuple, Any
 
 import pytz
 from django.conf import settings
@@ -157,14 +157,16 @@ class Dummy:
     ]
 
     @staticmethod
-    def _update_copy(original, update):
+    def _update_copy(
+        original: Dict[str, Any], update: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Merge fields of update into a copy of original."""
         data = original.copy()
         data.update(update)
         return data
 
     @staticmethod
-    def device_register_data(**kwargs):
+    def device_register_data(**kwargs: Any) -> Dict[str, Any]:
         """Return the data required to register a device.
 
         Use the values passed as keyword arguments or default to the ones
@@ -173,7 +175,7 @@ class Dummy:
         return Dummy._update_copy(Dummy.DEFAULT_DEVICE_REGISTER_VALUES, kwargs)
 
     @staticmethod
-    def heartbeat_data(**kwargs):
+    def heartbeat_data(**kwargs: Any) -> Dict[str, Any]:
         """Return the data required to create a heartbeat.
 
         Use the values passed as keyword arguments or default to the ones
@@ -182,7 +184,7 @@ class Dummy:
         return Dummy._update_copy(Dummy.DEFAULT_HEARTBEAT_VALUES, kwargs)
 
     @staticmethod
-    def alternative_heartbeat_data(**kwargs):
+    def alternative_heartbeat_data(**kwargs: Any) -> Dict[str, Any]:
         """Return the alternative data required to create a heartbeat.
 
         Use the values passed as keyword arguments or default to the ones
@@ -191,7 +193,9 @@ class Dummy:
         return Dummy._update_copy(Dummy.ALTERNATIVE_HEARTBEAT_VALUES, kwargs)
 
     @staticmethod
-    def crashreport_data(report_type: Optional[str] = None, **kwargs):
+    def crashreport_data(
+        report_type: Optional[str] = None, **kwargs: Any
+    ) -> Dict[str, Any]:
         """Return the data required to create a crashreport.
 
         Use the values passed as keyword arguments or default to the ones
@@ -213,7 +217,7 @@ class Dummy:
         return data
 
     @staticmethod
-    def alternative_crashreport_data(**kwargs):
+    def alternative_crashreport_data(**kwargs: Any) -> Dict[str, Any]:
         """Return the alternative data required to create a crashreport.
 
         Use the values passed as keyword arguments or default to the ones
@@ -222,7 +226,7 @@ class Dummy:
         return Dummy._update_copy(Dummy.ALTERNATIVE_CRASHREPORT_VALUES, kwargs)
 
     @staticmethod
-    def create_user(**kwargs):
+    def create_user(**kwargs: Any) -> User:
         """Create a dummy user instance.
 
         The dummy instance is created and saved to the database.
@@ -238,7 +242,7 @@ class Dummy:
         return entity
 
     @staticmethod
-    def create_device(user, **kwargs):
+    def create_device(user: User, **kwargs: Any) -> Device:
         """Create a dummy device instance.
 
         The dummy instance is created and saved to the database.
@@ -257,7 +261,11 @@ class Dummy:
         return entity
 
     @staticmethod
-    def create_report(report_type, device, **kwargs):
+    def create_report(
+        report_type: Type[Union[HeartBeat, Crashreport]],
+        device: Device,
+        **kwargs: Any
+    ) -> Union[HeartBeat, Crashreport]:
         """Create a dummy report instance of the given report class type.
 
         The dummy instance is created and saved to the database.
@@ -293,7 +301,7 @@ class Dummy:
         return entity
 
     @staticmethod
-    def create_log_file(crashreport, **kwargs):
+    def create_log_file(crashreport: Crashreport, **kwargs: Any) -> LogFile:
         """Create a dummy log file instance.
 
         The dummy instance is created and saved to the database.
@@ -314,7 +322,9 @@ class Dummy:
         return entity
 
     @staticmethod
-    def create_log_file_with_actual_file(crashreport, **kwargs):
+    def create_log_file_with_actual_file(
+        crashreport: Crashreport, **kwargs: Any
+    ) -> Tuple[LogFile, str]:
         """Create a dummy log file instance along with a file.
 
         The dummy instance is created and saved to the database. The log file
