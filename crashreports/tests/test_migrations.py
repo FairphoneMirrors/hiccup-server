@@ -55,10 +55,10 @@ class DropDuplicatesMigrationTestCase(MigrationTestCase):
 
     def _assert_duplicates_are_deleted(self, object_type):
         # Create a user, device and two duplicate reports
-        user = Dummy.create_dummy_user()
-        device = Dummy.create_dummy_device(user)
-        report_1 = Dummy.create_dummy_report(object_type, device)
-        Dummy.create_dummy_report(object_type, device)
+        user = Dummy.create_user()
+        device = Dummy.create_device(user)
+        report_1 = Dummy.create_report(object_type, device)
+        Dummy.create_report(object_type, device)
 
         # Assert that 2 instances have been created
         self.assertEqual(object_type.objects.count(), 2)
@@ -96,15 +96,15 @@ class DropDuplicatesMigrationTestCase(MigrationTestCase):
     def test_delete_duplicate_crashreport_with_logfile(self):
         """Test deletion of a duplicate crashreport with logfile."""
         # Create a user, device and two duplicate reports with logfiles
-        user = Dummy.create_dummy_user()
-        device = Dummy.create_dummy_device(user)
-        crashreport_1 = Dummy.create_dummy_report(Crashreport, device)
-        crashreport_2 = Dummy.create_dummy_report(Crashreport, device)
-        _, logfile_1_path = Dummy.create_dummy_log_file_with_actual_file(
+        user = Dummy.create_user()
+        device = Dummy.create_device(user)
+        crashreport_1 = Dummy.create_report(Crashreport, device)
+        crashreport_2 = Dummy.create_report(Crashreport, device)
+        _, logfile_1_path = Dummy.create_log_file_with_actual_file(
             crashreport_1
         )
-        _, logfile_2_path = Dummy.create_dummy_log_file_with_actual_file(
-            crashreport_2, logfile=Dummy.DEFAULT_DUMMY_LOG_FILE_PATHS[1]
+        _, logfile_2_path = Dummy.create_log_file_with_actual_file(
+            crashreport_2, logfile=Dummy.DEFAULT_LOG_FILE_PATHS[1]
         )
 
         # Assert that 2 crashreports and logfiles have been created
@@ -129,11 +129,11 @@ class DropDuplicatesMigrationTestCase(MigrationTestCase):
     def test_change_of_date_field_type(self):
         """Test that the 'date' field of heartbeats is changed to a date."""
         # Create a user, device and a heartbeat
-        user = Dummy.create_dummy_user()
-        device = Dummy.create_dummy_device(user)
+        user = Dummy.create_user()
+        device = Dummy.create_device(user)
         heartbeat_timestamp = datetime(2015, 12, 15, 1, 23, 45, tzinfo=pytz.utc)
 
-        heartbeat = Dummy.create_dummy_report(
+        heartbeat = Dummy.create_report(
             HeartBeat, device, date=heartbeat_timestamp
         )
 

@@ -24,7 +24,7 @@ from hiccup.allauth_adapters import FP_STAFF_GROUP_NAME
 class Dummy(CrashreportsDummy):
     """Class for creating dummy instances for testing."""
 
-    DEFAULT_DUMMY_VERSION_VALUES = {
+    DEFAULT_VERSION_VALUES = {
         "build_fingerprint": CrashreportsDummy.BUILD_FINGERPRINTS[0],
         "first_seen_on": CrashreportsDummy.DATES[1],
         "released_on": CrashreportsDummy.DATES[0],
@@ -32,24 +32,22 @@ class Dummy(CrashreportsDummy):
         "is_official_release": True,
     }
 
-    DEFAULT_DUMMY_VERSION_DAILY_VALUES = {"date": CrashreportsDummy.DATES[1]}
+    DEFAULT_VERSION_DAILY_VALUES = {"date": CrashreportsDummy.DATES[1]}
 
-    DEFAULT_DUMMY_RADIO_VERSION_VALUES = {
+    DEFAULT_RADIO_VERSION_VALUES = {
         "radio_version": CrashreportsDummy.RADIO_VERSIONS[0],
         "first_seen_on": CrashreportsDummy.DATES[1],
         "released_on": CrashreportsDummy.DATES[0],
     }
 
-    DEFAULT_DUMMY_RADIO_VERSION_DAILY_VALUES = {
-        "date": CrashreportsDummy.DATES[1]
-    }
+    DEFAULT_RADIO_VERSION_DAILY_VALUES = {"date": CrashreportsDummy.DATES[1]}
 
-    DEFAULT_DUMMY_STATSMETADATA_VALUES = {
+    DEFAULT_STATSMETADATA_VALUES = {
         "updated_at": datetime(2018, 6, 15, 2, 12, 24, tzinfo=pytz.utc)
     }
 
     @staticmethod
-    def create_dummy_version(version_type=Version, **kwargs):
+    def create_version(version_type=Version, **kwargs):
         """Create a dummy version instance.
 
         The dummy instance is created and saved to the database.
@@ -66,13 +64,11 @@ class Dummy(CrashreportsDummy):
         """
         if version_type == Version:
             entity = Version(
-                **Dummy._update_copy(Dummy.DEFAULT_DUMMY_VERSION_VALUES, kwargs)
+                **Dummy._update_copy(Dummy.DEFAULT_VERSION_VALUES, kwargs)
             )
         elif version_type == RadioVersion:
             entity = RadioVersion(
-                **Dummy._update_copy(
-                    Dummy.DEFAULT_DUMMY_RADIO_VERSION_VALUES, kwargs
-                )
+                **Dummy._update_copy(Dummy.DEFAULT_RADIO_VERSION_VALUES, kwargs)
             )
         else:
             raise ValueError(
@@ -84,7 +80,7 @@ class Dummy(CrashreportsDummy):
         return entity
 
     @staticmethod
-    def create_dummy_daily_version(version, **kwargs):
+    def create_daily_version(version, **kwargs):
         """Create a dummy daily version instance.
 
         The dummy instance is created and saved to the database.
@@ -97,15 +93,13 @@ class Dummy(CrashreportsDummy):
         """
         entity = VersionDaily(
             version=version,
-            **Dummy._update_copy(
-                Dummy.DEFAULT_DUMMY_VERSION_DAILY_VALUES, kwargs
-            )
+            **Dummy._update_copy(Dummy.DEFAULT_VERSION_DAILY_VALUES, kwargs)
         )
         entity.save()
         return entity
 
     @staticmethod
-    def create_dummy_daily_radio_version(version, **kwargs):
+    def create_daily_radio_version(version, **kwargs):
         """Create a dummy daily radio version instance.
 
         The dummy instance is created and saved to the database.
@@ -119,14 +113,14 @@ class Dummy(CrashreportsDummy):
         entity = RadioVersionDaily(
             version=version,
             **Dummy._update_copy(
-                Dummy.DEFAULT_DUMMY_RADIO_VERSION_DAILY_VALUES, kwargs
+                Dummy.DEFAULT_RADIO_VERSION_DAILY_VALUES, kwargs
             )
         )
         entity.save()
         return entity
 
     @staticmethod
-    def create_dummy_stats_metadata(**kwargs):
+    def create_stats_metadata(**kwargs):
         """Create a dummy stats metadata instance.
 
         The dummy instance is created and saved to the database.
@@ -138,9 +132,7 @@ class Dummy(CrashreportsDummy):
 
         """
         entity = StatsMetadata(
-            **Dummy._update_copy(
-                Dummy.DEFAULT_DUMMY_STATSMETADATA_VALUES, kwargs
-            )
+            **Dummy._update_copy(Dummy.DEFAULT_STATSMETADATA_VALUES, kwargs)
         )
         entity.save()
         return entity
@@ -170,7 +162,7 @@ class HiccupStatsAPITestCase(APITestCase):
             "device_owner", "somebody@somemail.com", "thepassword"
         )
         Token.objects.create(user=cls.device_owner_user)
-        cls.device_owner_device = Dummy.create_dummy_device(
+        cls.device_owner_device = Dummy.create_device(
             user=cls.device_owner_user
         )
         cls.device_owner_client = APIClient()

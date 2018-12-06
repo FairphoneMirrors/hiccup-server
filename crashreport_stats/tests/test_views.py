@@ -155,7 +155,7 @@ class ViewsTestCase(HiccupStatsAPITestCase):
     def test_home_view_filter_devices_by_uuid(self):
         """Test filtering devices by UUID."""
         # Create a device
-        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        device = Dummy.create_device(Dummy.create_user())
 
         # Filter devices by UUID of the created device
         response = self.fp_staff_client.post(
@@ -171,7 +171,7 @@ class ViewsTestCase(HiccupStatsAPITestCase):
     def test_home_view_filter_devices_by_uuid_part(self):
         """Test filtering devices by start of UUID."""
         # Create a device
-        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        device = Dummy.create_device(Dummy.create_user())
 
         # Filter devices with start of the created device's UUID
         response = self.fp_staff_client.post(
@@ -187,9 +187,9 @@ class ViewsTestCase(HiccupStatsAPITestCase):
     def test_home_view_filter_devices_by_uuid_part_ambiguous_result(self):
         """Test filtering devices with common start of UUIDs."""
         # Create two devices
-        device1 = Dummy.create_dummy_device(Dummy.create_dummy_user())
-        device2 = Dummy.create_dummy_device(
-            Dummy.create_dummy_user(username=Dummy.USERNAMES[1])
+        device1 = Dummy.create_device(Dummy.create_user())
+        device2 = Dummy.create_device(
+            Dummy.create_user(username=Dummy.USERNAMES[1])
         )
 
         # Adapt the devices' UUID so that they start with the same characters
@@ -235,7 +235,7 @@ class ViewsTestCase(HiccupStatsAPITestCase):
     def test_get_device_view(self):
         """Test getting device view."""
         # Create a device
-        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        device = Dummy.create_device(Dummy.create_user())
 
         # Get the corresponding device view
         response = self._get_with_params(self.device_url, {"uuid": device.uuid})
@@ -297,7 +297,7 @@ class ViewsTestCase(HiccupStatsAPITestCase):
     def test_get_versions_view(self):
         """Test getting versions view."""
         # Create a version
-        Dummy.create_dummy_version()
+        Dummy.create_version()
 
         # Get the versions view
         response = self.fp_staff_client.get(self.versions_url)
@@ -321,7 +321,7 @@ class ViewsTestCase(HiccupStatsAPITestCase):
     def test_get_versions_all_view(self):
         """Test getting versions view."""
         # Create a version
-        Dummy.create_dummy_version()
+        Dummy.create_version()
 
         # Get the versions view
         response = self.fp_staff_client.get(self.versions_all_url)

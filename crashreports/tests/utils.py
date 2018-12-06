@@ -79,19 +79,19 @@ class Dummy:
 
     DATES = [date(2018, 3, 19), date(2018, 3, 26), date(2018, 5, 1)]
 
-    DEFAULT_DUMMY_USER_VALUES = {"username": USERNAMES[0]}
+    DEFAULT_USER_VALUES = {"username": USERNAMES[0]}
 
-    DEFAULT_DUMMY_DEVICE_REGISTER_VALUES = {
+    DEFAULT_DEVICE_REGISTER_VALUES = {
         "board_date": datetime(2015, 12, 15, 1, 23, 45, tzinfo=pytz.utc),
         "chipset": "Qualcomm MSM8974PRO-AA",
     }
 
-    DEFAULT_DUMMY_DEVICE_VALUES = DEFAULT_DUMMY_DEVICE_REGISTER_VALUES.copy()
-    DEFAULT_DUMMY_DEVICE_VALUES.update(
+    DEFAULT_DEVICE_VALUES = DEFAULT_DEVICE_REGISTER_VALUES.copy()
+    DEFAULT_DEVICE_VALUES.update(
         {"token": "64111c62d521fb4724454ca6dea27e18f93ef56e"}
     )
 
-    DEFAULT_DUMMY_HEARTBEAT_VALUES = {
+    DEFAULT_HEARTBEAT_VALUES = {
         "app_version": 10100,
         "uptime": (
             "up time: 16 days, 21:49:56, idle time: 5 days, 20:55:04, "
@@ -113,8 +113,8 @@ class Dummy:
         "date": date(2018, 3, 19),
     }
 
-    DEFAULT_DUMMY_CRASHREPORT_VALUES = DEFAULT_DUMMY_HEARTBEAT_VALUES.copy()
-    DEFAULT_DUMMY_CRASHREPORT_VALUES.update(
+    DEFAULT_CRASHREPORT_VALUES = DEFAULT_HEARTBEAT_VALUES.copy()
+    DEFAULT_CRASHREPORT_VALUES.update(
         {
             "is_fake_report": False,
             "boot_reason": Crashreport.BOOT_REASON_UNKOWN,
@@ -135,7 +135,7 @@ class Dummy:
         }
     )
 
-    DEFAULT_DUMMY_LOG_FILE_NAME = "dmesg.log"
+    DEFAULT_LOG_FILE_NAME = "dmesg.log"
 
     CRASH_TYPE_TO_BOOT_REASON_MAP = {
         "crash": Crashreport.BOOT_REASON_KEYBOARD_POWER_ON,
@@ -143,26 +143,17 @@ class Dummy:
         "other": "whatever",
     }
 
-    DEFAULT_DUMMY_LOG_FILE_FILENAMES = [
-        "test_logfile_1.zip",
-        "test_logfile_2.zip",
-    ]
-    DEFAULT_DUMMY_LOG_FILE_DIRECTORY = os.path.join("resources", "test")
+    DEFAULT_LOG_FILE_FILENAMES = ["test_logfile_1.zip", "test_logfile_2.zip"]
+    DEFAULT_LOG_FILE_DIRECTORY = os.path.join("resources", "test")
 
-    DEFAULT_DUMMY_LOG_FILE_VALUES = {
+    DEFAULT_LOG_FILE_VALUES = {
         "logfile_type": "last_kmsg",
-        "logfile": DEFAULT_DUMMY_LOG_FILE_FILENAMES[0],
+        "logfile": DEFAULT_LOG_FILE_FILENAMES[0],
     }
 
-    DEFAULT_DUMMY_LOG_FILE_PATHS = [
-        os.path.join(
-            DEFAULT_DUMMY_LOG_FILE_DIRECTORY,
-            DEFAULT_DUMMY_LOG_FILE_FILENAMES[0],
-        ),
-        os.path.join(
-            DEFAULT_DUMMY_LOG_FILE_DIRECTORY,
-            DEFAULT_DUMMY_LOG_FILE_FILENAMES[1],
-        ),
+    DEFAULT_LOG_FILE_PATHS = [
+        os.path.join(DEFAULT_LOG_FILE_DIRECTORY, DEFAULT_LOG_FILE_FILENAMES[0]),
+        os.path.join(DEFAULT_LOG_FILE_DIRECTORY, DEFAULT_LOG_FILE_FILENAMES[1]),
     ]
 
     @staticmethod
@@ -177,20 +168,18 @@ class Dummy:
         """Return the data required to register a device.
 
         Use the values passed as keyword arguments or default to the ones
-        from `Dummy.DEFAULT_DUMMY_DEVICE_REGISTER_VALUES`.
+        from `Dummy.DEFAULT_DEVICE_REGISTER_VALUES`.
         """
-        return Dummy._update_copy(
-            Dummy.DEFAULT_DUMMY_DEVICE_REGISTER_VALUES, kwargs
-        )
+        return Dummy._update_copy(Dummy.DEFAULT_DEVICE_REGISTER_VALUES, kwargs)
 
     @staticmethod
     def heartbeat_data(**kwargs):
         """Return the data required to create a heartbeat.
 
         Use the values passed as keyword arguments or default to the ones
-        from `Dummy.DEFAULT_DUMMY_HEARTBEAT_VALUES`.
+        from `Dummy.DEFAULT_HEARTBEAT_VALUES`.
         """
-        return Dummy._update_copy(Dummy.DEFAULT_DUMMY_HEARTBEAT_VALUES, kwargs)
+        return Dummy._update_copy(Dummy.DEFAULT_HEARTBEAT_VALUES, kwargs)
 
     @staticmethod
     def alternative_heartbeat_data(**kwargs):
@@ -206,7 +195,7 @@ class Dummy:
         """Return the data required to create a crashreport.
 
         Use the values passed as keyword arguments or default to the ones
-        from `Dummy.DEFAULT_DUMMY_CRASHREPORTS_VALUES`.
+        from `Dummy.DEFAULT_CRASHREPORTS_VALUES`.
 
         Args:
             report_type: A valid value from
@@ -214,9 +203,7 @@ class Dummy:
                 define the boot reason if not explicitly defined in the
                 keyword arguments already.
         """
-        data = Dummy._update_copy(
-            Dummy.DEFAULT_DUMMY_CRASHREPORT_VALUES, kwargs
-        )
+        data = Dummy._update_copy(Dummy.DEFAULT_CRASHREPORT_VALUES, kwargs)
         if report_type and "boot_reason" not in kwargs:
             if report_type not in Dummy.CRASH_TYPE_TO_BOOT_REASON_MAP:
                 raise InvalidCrashTypeError(report_type)
@@ -235,7 +222,7 @@ class Dummy:
         return Dummy._update_copy(Dummy.ALTERNATIVE_CRASHREPORT_VALUES, kwargs)
 
     @staticmethod
-    def create_dummy_user(**kwargs):
+    def create_user(**kwargs):
         """Create a dummy user instance.
 
         The dummy instance is created and saved to the database.
@@ -246,14 +233,12 @@ class Dummy:
         Returns: The created user instance.
 
         """
-        entity = User(
-            **Dummy._update_copy(Dummy.DEFAULT_DUMMY_USER_VALUES, kwargs)
-        )
+        entity = User(**Dummy._update_copy(Dummy.DEFAULT_USER_VALUES, kwargs))
         entity.save()
         return entity
 
     @staticmethod
-    def create_dummy_device(user, **kwargs):
+    def create_device(user, **kwargs):
         """Create a dummy device instance.
 
         The dummy instance is created and saved to the database.
@@ -266,14 +251,13 @@ class Dummy:
 
         """
         entity = Device(
-            user=user,
-            **Dummy._update_copy(Dummy.DEFAULT_DUMMY_DEVICE_VALUES, kwargs)
+            user=user, **Dummy._update_copy(Dummy.DEFAULT_DEVICE_VALUES, kwargs)
         )
         entity.save()
         return entity
 
     @staticmethod
-    def create_dummy_report(report_type, device, **kwargs):
+    def create_report(report_type, device, **kwargs):
         """Create a dummy report instance of the given report class type.
 
         The dummy instance is created and saved to the database.
@@ -292,16 +276,12 @@ class Dummy:
         if report_type == HeartBeat:
             entity = HeartBeat(
                 device=device,
-                **Dummy._update_copy(
-                    Dummy.DEFAULT_DUMMY_HEARTBEAT_VALUES, kwargs
-                )
+                **Dummy._update_copy(Dummy.DEFAULT_HEARTBEAT_VALUES, kwargs)
             )
         elif report_type == Crashreport:
             entity = Crashreport(
                 device=device,
-                **Dummy._update_copy(
-                    Dummy.DEFAULT_DUMMY_CRASHREPORT_VALUES, kwargs
-                )
+                **Dummy._update_copy(Dummy.DEFAULT_CRASHREPORT_VALUES, kwargs)
             )
         else:
             raise RuntimeError(
@@ -313,7 +293,7 @@ class Dummy:
         return entity
 
     @staticmethod
-    def create_dummy_log_file(crashreport, **kwargs):
+    def create_log_file(crashreport, **kwargs):
         """Create a dummy log file instance.
 
         The dummy instance is created and saved to the database.
@@ -327,14 +307,14 @@ class Dummy:
         """
         entity = LogFile(
             crashreport=crashreport,
-            **Dummy._update_copy(Dummy.DEFAULT_DUMMY_LOG_FILE_VALUES, kwargs)
+            **Dummy._update_copy(Dummy.DEFAULT_LOG_FILE_VALUES, kwargs)
         )
 
         entity.save()
         return entity
 
     @staticmethod
-    def create_dummy_log_file_with_actual_file(crashreport, **kwargs):
+    def create_log_file_with_actual_file(crashreport, **kwargs):
         """Create a dummy log file instance along with a file.
 
         The dummy instance is created and saved to the database. The log file
@@ -347,7 +327,7 @@ class Dummy:
         Returns: The created log file instance and the path to the copied file.
 
         """
-        logfile = Dummy.create_dummy_log_file(crashreport, **kwargs)
+        logfile = Dummy.create_log_file(crashreport, **kwargs)
         logfile_filename = os.path.basename(logfile.logfile.path)
         test_logfile_path = os.path.join(
             settings.MEDIA_ROOT,
@@ -358,9 +338,7 @@ class Dummy:
 
         os.makedirs(os.path.dirname(test_logfile_path))
         shutil.copy(
-            os.path.join(
-                Dummy.DEFAULT_DUMMY_LOG_FILE_DIRECTORY, logfile_filename
-            ),
+            os.path.join(Dummy.DEFAULT_LOG_FILE_DIRECTORY, logfile_filename),
             test_logfile_path,
         )
         return logfile, test_logfile_path

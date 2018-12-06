@@ -77,7 +77,7 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
 
     def upload_logfile(self, client, uuid, device_local_id):
         """Upload a log file and assert that it was created."""
-        logfile = open(Dummy.DEFAULT_DUMMY_LOG_FILE_PATHS[0], "rb")
+        logfile = open(Dummy.DEFAULT_LOG_FILE_PATHS[0], "rb")
         logfile_name = os.path.basename(logfile.name)
         response = client.post(
             reverse(
@@ -103,8 +103,7 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
             .logfiles.last()
         )
         uploaded_logfile_path = crashreport_file_name(
-            logfile_instance,
-            os.path.basename(Dummy.DEFAULT_DUMMY_LOG_FILE_PATHS[0]),
+            logfile_instance, os.path.basename(Dummy.DEFAULT_LOG_FILE_PATHS[0])
         )
 
         self.assertTrue(default_storage.exists(uploaded_logfile_path))
@@ -112,7 +111,7 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
         # bytes. However, we mainly care that the contents are equal:
         self._assert_zip_file_contents_equal(
             default_storage.path(uploaded_logfile_path),
-            Dummy.DEFAULT_DUMMY_LOG_FILE_PATHS[0],
+            Dummy.DEFAULT_LOG_FILE_PATHS[0],
         )
 
     def test_logfile_upload_as_user(self):
@@ -126,9 +125,9 @@ class LogfileUploadTest(HiccupCrashreportsAPITestCase):
     def test_logfile_deletion(self):
         """Test deletion of logfile instances."""
         # Create a user, device and crashreport with logfile
-        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
-        crashreport = Dummy.create_dummy_report(Crashreport, device)
-        logfile, logfile_path = Dummy.create_dummy_log_file_with_actual_file(
+        device = Dummy.create_device(Dummy.create_user())
+        crashreport = Dummy.create_report(Crashreport, device)
+        logfile, logfile_path = Dummy.create_log_file_with_actual_file(
             crashreport
         )
 

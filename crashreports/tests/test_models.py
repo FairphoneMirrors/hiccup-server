@@ -21,14 +21,14 @@ class DuplicatesTestCase(TestCase):
 
     def _assert_duplicate_entries_can_not_be_created(self, object_type):
         # Create a user, device and a report
-        user = Dummy.create_dummy_user()
-        device = Dummy.create_dummy_device(user)
-        Dummy.create_dummy_report(object_type, device)
+        user = Dummy.create_user()
+        device = Dummy.create_device(user)
+        Dummy.create_report(object_type, device)
 
         # Assert creating a duplicate report fails
         logger = logging.getLogger("crashreports")
         with self.assertLogs(logger, "DEBUG") as logging_watcher:
-            report = Dummy.create_dummy_report(object_type, device)
+            report = Dummy.create_report(object_type, device)
         self.assertEqual(
             logging_watcher.output,
             [

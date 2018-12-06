@@ -46,13 +46,13 @@ class StatsCommandVersionsTestCase(TestCase):
                 "date": report_date - timedelta(days=i),
             }
             report_attributes.update(**kwargs)
-            Dummy.create_dummy_report(report_type, **report_attributes)
+            Dummy.create_report(report_type, **report_attributes)
 
     def test_stats_calculation(self):
         """Test generation of a Version instance."""
-        user = Dummy.create_dummy_user()
-        device = Dummy.create_dummy_device(user=user)
-        heartbeat = Dummy.create_dummy_report(HeartBeat, device=device)
+        user = Dummy.create_user()
+        device = Dummy.create_device(user=user)
+        heartbeat = Dummy.create_report(HeartBeat, device=device)
 
         # Expect that we do not have the Version before updating the stats
         get_params = {
@@ -73,9 +73,9 @@ class StatsCommandVersionsTestCase(TestCase):
 
     def _assert_older_report_updates_version_date(self, report_type):
         """Validate that older reports sent later affect the version date."""
-        user = Dummy.create_dummy_user()
-        device = Dummy.create_dummy_device(user=user)
-        report = Dummy.create_dummy_report(report_type, device=device)
+        user = Dummy.create_user()
+        device = Dummy.create_device(user=user)
+        report = Dummy.create_report(report_type, device=device)
 
         # Run the command to update the database
         call_command("stats", "update")
@@ -92,9 +92,7 @@ class StatsCommandVersionsTestCase(TestCase):
 
         # Create a new report from an earlier point in time
         report_date_2 = report.date - timedelta(weeks=1)
-        Dummy.create_dummy_report(
-            report_type, device=device, date=report_date_2
-        )
+        Dummy.create_report(report_type, device=device, date=report_date_2)
 
         # Run the command to update the database
         call_command("stats", "update")
@@ -119,8 +117,8 @@ class StatsCommandVersionsTestCase(TestCase):
         """Validate the entries' unicity and value."""
         # Create some reports
         for unique_entry, username in zip(self.unique_entries, Dummy.USERNAMES):
-            user = Dummy.create_dummy_user(username=username)
-            device = Dummy.create_dummy_device(user=user)
+            user = Dummy.create_user(username=username)
+            device = Dummy.create_device(user=user)
             self._create_reports(HeartBeat, unique_entry, device, 10)
 
         # Run the command to update the database
@@ -149,8 +147,8 @@ class StatsCommandVersionsTestCase(TestCase):
         for unique_entry, num, username in zip(
             self.unique_entries, numbers, Dummy.USERNAMES
         ):
-            user = Dummy.create_dummy_user(username=username)
-            device = Dummy.create_dummy_device(user=user)
+            user = Dummy.create_user(username=username)
+            device = Dummy.create_device(user=user)
             self._create_reports(
                 report_type, unique_entry, device, num, **kwargs
             )
@@ -205,7 +203,7 @@ class StatsCommandVersionsTestCase(TestCase):
         """Validate a counter distribution with reports of different devices."""
         # Create some devices and corresponding reports
         devices = [
-            Dummy.create_dummy_device(Dummy.create_dummy_user(username=name))
+            Dummy.create_device(Dummy.create_user(username=name))
             for name in Dummy.USERNAMES
         ]
         num_reports = 5
@@ -268,7 +266,7 @@ class StatsCommandVersionsTestCase(TestCase):
     def test_reset_deletion_of_unrelated_version(self):
         """Test delete functionality of the reset command."""
         # Create a version instance that is not related to any reports
-        Dummy.create_dummy_version(
+        Dummy.create_version(
             self.version_class,
             **{self.unique_entry_name: self.unique_entries[0]}
         )
@@ -287,7 +285,7 @@ class StatsCommandVersionsTestCase(TestCase):
         self, report_type, counter_attribute_name, **kwargs
     ):
         # Create a device and corresponding reports
-        device = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        device = Dummy.create_device(Dummy.create_user())
         num_reports = 5
         self._create_reports(
             report_type, self.unique_entries[0], device, num_reports, **kwargs
@@ -295,7 +293,7 @@ class StatsCommandVersionsTestCase(TestCase):
 
         # Create a version instance with wrong numbers
         wrong_num_of_reports = 4
-        Dummy.create_dummy_version(
+        Dummy.create_version(
             self.version_class,
             **{
                 self.unique_entry_name: self.unique_entries[0],
@@ -342,7 +340,7 @@ class StatsCommandVersionsTestCase(TestCase):
     ):
         # Create a two devices and a corresponding reports for 2 different
         # versions
-        device_1 = Dummy.create_dummy_device(Dummy.create_dummy_user())
+        device_1 = Dummy.create_device(Dummy.create_user())
         num_reports = 5
         self._create_reports(
             report_type,
@@ -351,8 +349,8 @@ class StatsCommandVersionsTestCase(TestCase):
             num_reports,
             **boot_reason_param
         )
-        device_2 = Dummy.create_dummy_device(
-            Dummy.create_dummy_user(username=Dummy.USERNAMES[1])
+        device_2 = Dummy.create_device(
+            Dummy.create_user(username=Dummy.USERNAMES[1])
         )
         self._create_reports(
             report_type,
@@ -385,7 +383,7 @@ class StatsCommandVersionsTestCase(TestCase):
             "device": device_1,
             **boot_reason_param,
         }
-        Dummy.create_dummy_report(report_type, **report_new_attributes)
+        Dummy.create_report(report_type, **report_new_attributes)
 
         # Run the command to update the database again
         call_command("stats", "update")
@@ -447,18 +445,16 @@ class StatsCommandVersionsTestCase(TestCase):
         counted as independent reports.
         """
         # Create a report
-        device1 = Dummy.create_dummy_device(
-            user=Dummy.create_dummy_user(username=username_1)
+        device1 = Dummy.create_device(
+            user=Dummy.create_user(username=username_1)
         )
-        report1 = Dummy.create_dummy_report(
-            report_type, device=device1, **kwargs
-        )
+        report1 = Dummy.create_report(report_type, device=device1, **kwargs)
 
         # Create a second report with the same timestamp but from another device
-        device2 = Dummy.create_dummy_device(
-            user=Dummy.create_dummy_user(username=username_2)
+        device2 = Dummy.create_device(
+            user=Dummy.create_user(username=username_2)
         )
-        Dummy.create_dummy_report(
+        Dummy.create_report(
             report_type, device=device2, date=report1.date, **kwargs
         )
 
@@ -534,8 +530,8 @@ class StatsCommandVersionsTestCase(TestCase):
         sent.
         """
         # Create a report
-        device = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
-        report = Dummy.create_dummy_report(report_type, device=device, **kwargs)
+        device = Dummy.create_device(user=Dummy.create_user())
+        report = Dummy.create_report(report_type, device=device, **kwargs)
 
         # Run the command to update the database
         call_command("stats", "update")
@@ -553,7 +549,7 @@ class StatsCommandVersionsTestCase(TestCase):
 
         # Create a second report with the a timestamp earlier in time
         report_2_date = report.date - timedelta(days=1)
-        Dummy.create_dummy_report(
+        Dummy.create_report(
             report_type, device=device, date=report_2_date, **kwargs
         )
 
@@ -579,8 +575,8 @@ class StatsCommandVersionsTestCase(TestCase):
         sent.
         """
         # Create a report
-        device = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
-        report = Dummy.create_dummy_report(report_type, device=device, **kwargs)
+        device = Dummy.create_device(user=Dummy.create_user())
+        report = Dummy.create_report(report_type, device=device, **kwargs)
         report_1_date = (
             report.date.date() if report_type == Crashreport else report.date
         )
@@ -598,7 +594,7 @@ class StatsCommandVersionsTestCase(TestCase):
 
         # Create a second report with the a timestamp later in time
         report_2_date = report.date + timedelta(days=1)
-        Dummy.create_dummy_report(
+        Dummy.create_report(
             report_type, device=device, date=report_2_date, **kwargs
         )
 
@@ -638,8 +634,8 @@ class StatsCommandVersionsTestCase(TestCase):
         new reports are sent.
         """
         # Create a report
-        device = Dummy.create_dummy_device(user=Dummy.create_dummy_user())
-        report = Dummy.create_dummy_report(report_type, device=device, **kwargs)
+        device = Dummy.create_device(user=Dummy.create_user())
+        report = Dummy.create_report(report_type, device=device, **kwargs)
 
         # Run the command to update the database
         call_command("stats", "update")
@@ -657,7 +653,7 @@ class StatsCommandVersionsTestCase(TestCase):
 
         # Create a second report with a timestamp earlier in time
         report_2_date = report.date - timedelta(days=1)
-        Dummy.create_dummy_report(
+        Dummy.create_report(
             report_type, device=device, date=report_2_date, **kwargs
         )
 
@@ -767,11 +763,11 @@ class CommandDebugOutputTestCase(TestCase):
         model instance for each class.
         """
         # Create dummy version instances
-        version = Dummy.create_dummy_version()
-        radio_version = Dummy.create_dummy_version(RadioVersion)
-        Dummy.create_dummy_daily_version(version)
-        Dummy.create_dummy_daily_radio_version(radio_version)
-        Dummy.create_dummy_stats_metadata()
+        version = Dummy.create_version()
+        radio_version = Dummy.create_version(RadioVersion)
+        Dummy.create_daily_version(version)
+        Dummy.create_daily_radio_version(radio_version)
+        Dummy.create_stats_metadata()
 
         # We expect that the model instances get deleted
         self._assert_command_output_matches(
