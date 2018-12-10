@@ -178,6 +178,11 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
+# To use the Google OAuth feature, overwrite these values with the correct
+# client id and secret in your local settings before running the migrations.
+SOCIALACCOUNT_GOOGLE_CLIENT_ID = ""
+SOCIALACCOUNT_GOOGLE_SECRET = ""
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 

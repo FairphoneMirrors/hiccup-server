@@ -63,6 +63,20 @@ Test that the configuration is correct:
 See the end of the next section to add a super-user.
 
 
+### Configuring the Google OAuth authentication
+
+For accessing the statistics pages, Hiccup uses Django allauth for single
+sign on authentication with Google. Everybody with an email address issued
+by Fairphone is allowed to create an account.
+
+This step has to be run before running the migrations.
+
+In you local `local_settings.py`, overwrite the values for
+`SOCIALACCOUNT_GOOGLE_CLIENT_ID` and `SOCIALACCOUNT_GOOGLE_SECRET` with the
+correct values. These credentials can be created at the
+[Google developers console](https://console.developers.google.com/apis/credentials).
+
+
 ### Run Hiccup server
 
 The first time you run the server, the database will be empty and the model migrations have yet to
