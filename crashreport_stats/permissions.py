@@ -8,12 +8,16 @@ from hiccup.allauth_adapters import FP_STAFF_GROUP_NAME
 def check_user_is_hiccup_staff(user):
     """Check if the user is part of the Hiccup staff.
 
-    Returns: True if the user is part of the Hiccup staff group.
+    Returns:
+        True if the user is part of the Hiccup staff group, False if the user
+        is not logged in.
 
     Raises:
         PermissionDenied: If the user is not part of the Hiccup staff group.
 
     """
+    if not user.is_authenticated:
+        return False
     if not user_is_hiccup_staff(user):
         raise PermissionDenied(
             "User %s not part of the %s group" % (user, FP_STAFF_GROUP_NAME)

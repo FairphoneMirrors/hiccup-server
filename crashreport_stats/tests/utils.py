@@ -175,6 +175,7 @@ class HiccupStatsAPITestCase(APITestCase):
         cls.device_owner_client.credentials(
             HTTP_AUTHORIZATION="Token " + cls.device_owner_user.auth_token.key
         )
+        cls.device_owner_client.force_login(cls.device_owner_user)
 
     def _assert_get_as_fp_staff_succeeds(
         self, url, expected_status=status.HTTP_200_OK
